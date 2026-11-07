@@ -3,14 +3,14 @@
 export const T = {
   GRASS_TOP: 0, GRASS_SIDE: 1, DIRT: 2, STONE: 3, SAND: 4, LOG_SIDE: 5, LOG_TOP: 6,
   LEAVES: 7, PLANKS: 8, GLASS: 9, WATER: 10, COBBLE: 11, BRICK: 12, SNOW: 13,
-  SNOW_SIDE: 14, BEDROCK: 15, LAMP: 16, CLAY: 17, HAY_SIDE: 18, HAY_TOP: 19, ROOF: 20, CREAM: 21, MUD: 22,
+  SNOW_SIDE: 14, BEDROCK: 15, LAMP: 16, CLAY: 17, HAY_SIDE: 18, HAY_TOP: 19, ROOF: 20, CREAM: 21, MUD: 22, THRONE_TOP: 23, THRONE_SIDE: 24,
 };
-export const TILE_COUNT = 23;
+export const TILE_COUNT = 25;
 
 export const B = {
   AIR: 0, GRASS: 1, DIRT: 2, STONE: 3, SAND: 4, LOG: 5, LEAVES: 6, PLANKS: 7,
   GLASS: 8, WATER: 9, COBBLE: 10, BRICK: 11, SNOW: 12, BEDROCK: 13, LAMP: 14, CLAY: 15,
-  HAY: 16, ROOF: 17, CREAM: 18, MUD: 19,
+  HAY: 16, ROOF: 17, CREAM: 18, MUD: 19, THRONE: 20,
 };
 
 // kind: 'opaque' | 'cutout' (alpha-tested, e.g. leaves) | 'liquid' (translucent pass)
@@ -34,6 +34,7 @@ const defs = [
   { id: B.HAY, name: 'Hay', kind: 'opaque', top: T.HAY_TOP, side: T.HAY_SIDE, bottom: T.HAY_TOP, hard: 0.3, round: 0.15 },
   { id: B.ROOF, name: 'Roof', kind: 'opaque', all: T.ROOF, hard: 0.6, round: 0.16 },
   { id: B.CREAM, name: 'Wall', kind: 'opaque', all: T.CREAM, hard: 0.6 },
+  { id: B.THRONE, name: 'Throne', kind: 'opaque', top: T.THRONE_TOP, side: T.THRONE_SIDE, bottom: T.HAY_TOP, hard: 0.5, round: 0.16 },
   { id: B.MUD, name: 'Mud', kind: 'opaque', top: T.MUD, side: T.DIRT, bottom: T.DIRT, hard: 0.35, round: 0.2 },
 ];
 

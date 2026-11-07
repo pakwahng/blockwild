@@ -127,11 +127,17 @@ export class Nursery {
       for (const t of threats) { const d = dist2(a.p, t); if (d < td && Math.abs(t[1] - a.p[1]) < 4) { td = d; threat = t; } }
       if (threat) { a.flee = Math.max(a.flee, 1.5); a.fleeFrom = threat; }
       const treat = a.flee > 0 ? null : this.nearestTreat(a, 10);
+      let cheering = false;
       if (a.flee > 0 && a.fleeFrom) {
         // run away from the snake
         const dx = a.p[0] - a.fleeFrom[0], dz = a.p[2] - a.fleeFrom[2], l = Math.hypot(dx, dz) || 1;
         goal = [a.p[0] + dx / l * 3, a.p[1], a.p[2] + dz / l * 3]; speed = S.run * 0.85;
         a.spot = null; a.enjoy = 0; a.sleep = false;
+      } else if (this.gather && a.gatherSlot) {
+        // the king is on the throne: line up in front of it and cheer
+        const g = a.gatherSlot;
+        if (dist2(a.p, g) > 0.35 * 0.35) { goal = g; speed = S.run * 0.9; }
+        else { cheering = true; a.spot = null; a.enjoy = 0; a.sleep = false; }
       } else if (treat) {
         goal = treat.p; speed = S.run;
         if (dist2(a.p, treat.p) < (S.half + 0.3) ** 2 && Math.abs(a.p[1] - treat.p[1]) < 0.8) {
@@ -154,13 +160,13 @@ export class Nursery {
           }
         }
       }
-      if (!goal && holding === S.treat) {
+      if (!goal && !cheering && holding === S.treat) {
         const d2 = dist2(a.p, player.pos);
         const near = 1.4 + S.half * 2;
         if (d2 < 14 * 14 && d2 > near * near) { goal = player.pos; speed = S.run * 0.9; a.spot = null; a.enjoy = 0; }
       }
       // favourite spot: calves munch next to hay, piglets roll in mud
-      if (!goal && a.spot) {
+      if (!goal && !cheering && a.spot) {
         const sx = a.spot[0] + 0.5, sz = a.spot[2] + 0.5;
         const reach = S.likes === B.HAY ? 1.05 + S.half : 0.35;
         if (dist2(a.p, [sx, 0, sz]) > reach * reach && a.enjoy === 0) { goal = [sx, a.spot[1], sz]; speed = S.walk * 1.2; }
@@ -181,6 +187,9 @@ export class Nursery {
         const dx = goal[0] - a.p[0], dz = goal[2] - a.p[2], l = Math.hypot(dx, dz) || 1;
         a.dir[0] = dx / l; a.dir[1] = dz / l; a.speed = l < 0.3 ? 0 : speed;
         a.mode = 'goal';
+      } else if (cheering) {
+        a.speed = 0; a.mode = 'cheer';
+        if (a.onGround && Math.random() < dt * 0.9) a.v[1] = 3 + Math.random() * 1.5;   // little hops of joy
       } else if (night && a.enjoy === 0) {
         // night time: curl up and doze
         a.speed = 0; a.mode = 'sleep'; a.sleep = true; a.spot = null;
@@ -256,6 +265,7 @@ export class Nursery {
       const hs = Math.hypot(v[0], v[2]);
       let ty = hs > 0.15 ? Math.atan2(v[0], v[2]) : a.yaw;
       if (a.mode === 'goal' && holding === S.treat && hs <= 0.15) ty = Math.atan2(player.pos[0] - a.p[0], player.pos[2] - a.p[2]);
+      if (a.mode === 'cheer') ty = Math.atan2(this.gather.seat[0] - a.p[0], this.gather.seat[2] - a.p[2]);
       let dy = ty - a.yaw;
       dy = Math.atan2(Math.sin(dy), Math.cos(dy));
       a.yaw += dy * Math.min(1, dt * 10);
@@ -267,7 +277,7 @@ export class Nursery {
 
       if (S.wags) {
         const pd2 = dist2(a.p, player.pos);
-        const target = holding === S.treat && pd2 < 14 * 14 ? 1 : a.tame && pd2 < 6 * 6 ? 0.6 : a.love > 0 ? 0.8 : 0.12;
+        const target = (holding === S.treat && pd2 < 14 * 14) || a.mode === 'cheer' ? 1 : a.tame && pd2 < 6 * 6 ? 0.6 : a.love > 0 ? 0.8 : 0.12;
         a.wag += (target - a.wag) * Math.min(1, dt * 3);
       } else a.wag += ((a.love > 0 || a.mode === 'goal' ? 0.5 : 0.15) - a.wag) * Math.min(1, dt * 3);
       a.wagT += dt * (4 + a.wag * 14);
@@ -282,6 +292,24 @@ export class Nursery {
       if (b) { b.born = 0.6; b.v[1] = 3; this.events.push({ type: 'hatch', sp, p: [x, y, z] }); }
     }
   }
+
+  // Every tame baby nearby gathers in curved rows in front of the throne. Returns how many come.
+  gatherAt(seat, front) {
+    const list = this.animals.filter(a => a.tame && dist2(a.p, seat) < 32 * 32).sort((a, b) => dist2(a.p, seat) - dist2(b.p, seat));
+    const rx = -front[1], rz = front[0];
+    let i = 0;
+    for (let row = 0; i < list.length; row++) {
+      const radius = 3.2 + row * 0.95, cap = 6 + row * 3;
+      for (let k = 0; k < cap && i < list.length; k++, i++) {
+        const ang = (k / (cap - 1) - 0.5) * 2.4;
+        const fx = front[0] * Math.cos(ang) + rx * Math.sin(ang), fz = front[1] * Math.cos(ang) + rz * Math.sin(ang);
+        list[i].gatherSlot = [seat[0] + fx * radius, seat[1], seat[2] + fz * radius];
+      }
+    }
+    this.gather = { seat };
+    return list.length;
+  }
+  endGather() { this.gather = null; for (const a of this.animals) a.gatherSlot = null; }
 
   // Keep a few wild animals of each kind around the player; far-off wild ones wander away.
   spawnWild(dt, player) {

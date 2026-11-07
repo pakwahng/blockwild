@@ -223,6 +223,30 @@ const painters = {
     const grain = woodGrain(rnd, 3, false);
     return (u, v) => scale(mix(base, dark, grain(u, v) * 0.5), rim(u, v, 0.1, 0.16));
   },
+  [T.THRONE_TOP]: () => {
+    // red velvet cushion with a gold rim and button tufts
+    const red = hex('#d8323f'), deep = hex('#a81e2c'), gold = hex('#ffcf3a'), goldDark = hex('#d99a14');
+    return (u, v) => {
+      const d = Math.min(u, 1 - u, v, 1 - v);
+      if (d < 0.11) return scale(mix(goldDark, gold, sstep(0.0, 0.08, d)), rim(u, v, 0.05, 0.2));
+      const cu = u - 0.5, cv = v - 0.5, r = Math.hypot(cu, cv);
+      let c = mix(red, deep, sstep(0.15, 0.42, r) * 0.6);
+      for (const [bx, by] of [[0.33, 0.33], [0.67, 0.33], [0.33, 0.67], [0.67, 0.67]]) {
+        const bd = Math.hypot(u - bx, v - by);
+        c = mix(c, deep, 1 - sstep(0.02, 0.06, bd));
+        if (bd < 0.025) c = gold;
+      }
+      return c;
+    };
+  },
+  [T.THRONE_SIDE]: rnd => {
+    // a hay bale wrapped with a gold band
+    const hay = painters[T.HAY_SIDE](rnd), gold = hex('#ffcf3a'), goldDark = hex('#d99a14');
+    return (u, v) => {
+      if (v < 0.2) return scale(mix(gold, goldDark, sstep(0.12, 0.2, v)), rim(u, v, 0.06, 0.15));
+      return hay(u, v);
+    };
+  },
   [T.MUD]: rnd => {
     const base = hex('#7a4a2e'), dark = hex('#5f3820'), wet = hex('#9a6a48');
     const puddles = blobs(rnd, 5, 0.1, 0.2), shine = blobs(rnd, 6, 0.03, 0.06);

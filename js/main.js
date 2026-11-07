@@ -50,6 +50,7 @@ try {
 
 let world = null, player = null, flock = null, snakes = null, running = false, firsts = [];
 let clock = 0.08, nights = 0, swingCool = 0, wasBreaking = false;
+let crown = false, seat = null;
 let hotbar = [...DEFAULT_HOTBAR];
 let selected = 0;
 let target = null, breakT = { key: '', p: 0 };
@@ -57,7 +58,7 @@ let milestone = 0, throwCool = 0;
 const sfx = new Sfx();
 
 const icons = {};
-if (textures) for (const id of PLACEABLE) icons[id] = blockIcon(BLOCKS[id], textures.tiles, 64).toDataURL();
+if (textures) for (const id of [...PLACEABLE, B.THRONE]) icons[id] = blockIcon(BLOCKS[id], textures.tiles, 64).toDataURL();
 for (const id of [...TREATS, ITEM_SWORD]) icons[id] = M.treatIcon(ITEM_NAMES[id].toLowerCase(), 64).toDataURL();
 $('#held').src = icons[ITEM_SWORD] || '';
 const itemName = id => ITEM_NAMES[id] || BLOCKS[id].name;
@@ -139,6 +140,9 @@ function startWorld(save) {
   snakes = new Snakes(world);
   clock = save?.clock ?? 0.08;
   nights = save?.nights || 0;
+  crown = !!save?.crown;
+  seat = null;
+  showCrown();
   // a few wild babies of each kind close by, so there's someone to feed straight away
   for (const sp of SPECIES_ORDER) {
     if (flock.animals.some(a => a.sp === sp)) continue;
@@ -152,7 +156,7 @@ function startWorld(save) {
 function saveGame() {
   if (!world || !player) return;
   store.set(SAVE_KEY, {
-    v: 3, seed: world.seed, clock: +clock.toFixed(4), nights, pos: player.pos.map(v => +v.toFixed(2)), yaw: player.yaw, pitch: player.pitch,
+    v: 3, seed: world.seed, clock: +clock.toFixed(4), nights, crown, pos: player.pos.map(v => +v.toFixed(2)), yaw: player.yaw, pitch: player.pitch,
     flying: player.flying, hotbar, selected, edits: world.serializeEdits(),
     animals: flock ? flock.serialize() : [], milestone, firsts,
   });
@@ -186,8 +190,63 @@ function updateNursery() {
   for (const [at, text] of MILESTONES) {
     if (n.chick >= at && milestone < at) { milestone = at; if (shownCounts) { toast(text); if (at > 1) sfx.fanfare(); } }
   }
+  if (shownCounts && n.chick >= 100 && !crown) awardCrown();
   shownCounts = n;
 }
+
+// ---------- chicken king: the gold crown and the hay throne ----------
+const crownEl = document.createElement('div');
+crownEl.className = 'pill crown';
+crownEl.setAttribute('aria-label', 'Chicken king crown');
+crownEl.innerHTML = `<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M4 11l6 6 6-10 6 10 6-6-2 15H6z" fill="#ffcf3a" stroke="#c98a00" stroke-width="1.6" stroke-linejoin="round"/><rect x="6" y="23" width="20" height="4" rx="1.5" fill="#ffb800"/><circle cx="16" cy="18" r="2.4" fill="#e8443a"/><circle cx="10" cy="20" r="1.6" fill="#4aa8ff"/><circle cx="22" cy="20" r="1.6" fill="#4cc25a"/><circle cx="4" cy="10" r="1.8" fill="#ffcf3a"/><circle cx="16" cy="6" r="1.8" fill="#ffcf3a"/><circle cx="28" cy="10" r="1.8" fill="#ffcf3a"/></svg>`;
+nurseryEl.prepend(crownEl);
+function showCrown() { crownEl.hidden = !crown; }
+
+function awardCrown() {
+  crown = true;
+  showCrown();
+  crownEl.classList.remove('bump'); void crownEl.offsetWidth; crownEl.classList.add('bump');
+  if (!hotbar.includes(B.THRONE)) { hotbar[8] = B.THRONE; buildHotbar(); }
+  sfx.royal();
+  snakes.burst(player.pos, 90);
+  toast('Chicken king! You earned the gold crown and a hay bale throne. Place the throne and tap it to sit.');
+  saveGame();
+}
+
+// Places the throne seat with a hay back (away from the player) and hay arms.
+function buildThrone(x, y, z) {
+  const dx = x + 0.5 - player.pos[0], dz = z + 0.5 - player.pos[2];
+  const back = Math.abs(dx) > Math.abs(dz) ? [Math.sign(dx), 0] : [0, Math.sign(dz) || 1];
+  const side = [-back[1], back[0]];
+  const put = (px, py, pz, id) => { if (world.getBlock(px, py, pz) === B.AIR) world.setBlock(px, py, pz, id); };
+  for (let s = -1; s <= 1; s++) for (let h = 0; h < 2; h++) put(x + back[0] + side[0] * s, y + h, z + back[1] + side[1] * s, B.HAY);
+  put(x + back[0], y + 2, z + back[1], B.HAY);                      // a taller middle for the back
+  for (const s of [-1, 1]) put(x + side[0] * s, y, z + side[1] * s, B.HAY); // arms
+}
+
+// The front of a throne faces away from its hay back.
+function throneFront(x, y, z) {
+  for (const [bx, bz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+    if (world.getBlock(x + bx, y, z + bz) === B.HAY && world.getBlock(x + bx, y + 1, z + bz) === B.HAY) return [-bx, -bz];
+  }
+  const dx = player.pos[0] - (x + 0.5), dz = player.pos[2] - (z + 0.5), l = Math.hypot(dx, dz) || 1;
+  return Math.abs(dx) > Math.abs(dz) ? [Math.sign(dx), 0] : [0, Math.sign(dz) || 1];
+}
+
+function sit(x, y, z) {
+  const front = throneFront(x, y, z);
+  seat = { x, y, z, front };
+  player.flying = false;
+  document.body.classList.remove('flying'); $('#btn-fly').classList.remove('on');
+  player.pos = [x + 0.5, y + 1, z + 0.5]; player.vel = [0, 0, 0];
+  player.yaw = Math.atan2(-front[0], -front[1]); player.pitch = -0.42;
+  const n = flock.gatherAt([x + 0.5, y, z + 0.5], front);
+  sfx.royal();
+  snakes.burst(player.pos, 50);
+  toast(n ? `Chicken king! ${n} ${n === 1 ? 'baby gathers' : 'babies gather'} round your hay throne. Walk or jump to stand up.`
+    : 'You sit on your hay throne. Walk or jump to stand up.');
+}
+function standUp() { seat = null; flock.endGather(); }
 
 let toastTimer = 0;
 function toast(text) {
@@ -237,6 +296,8 @@ function handleChickEvents() {
         : 'Night falls. Watch out for the block snake!');
     } else if (ev.type === 'dawn') {
       nights++;
+      const babies = Object.values(flock.counts()).reduce((a, b) => a + b, 0);
+      if (!ev.spooked && babies > 0 && !crown) { awardCrown(); continue; }
       sfx.fanfare();
       toast(ev.spooked ? `Sunrise! The snake spooked ${ev.spooked} ${ev.spooked === 1 ? 'baby' : 'babies'}, but the nursery made it.`
         : 'Sunrise! Every baby made it safely through the night.');
@@ -310,6 +371,7 @@ function remeshAround(x, z) {
 function placeBlock() {
   if (!running) return;
   const id = hotbar[selected];
+  if (target && target.id === B.THRONE && !seat) { sit(target.x, target.y, target.z); return; }
   if (id === ITEM_SWORD) { swing(); return; }
   if (isTreat(id)) {
     if (throwCool > 0) return;
@@ -323,7 +385,10 @@ function placeBlock() {
   const here = world.getBlock(x, y, z);
   if (here !== B.AIR && here !== B.WATER) return;
   if (SOLID[id] && player.intersectsBlock(x, y, z)) return;
-  if (world.setBlock(x, y, z, id)) { remeshAround(x, z); buzz(8); sfx.place(); }
+  if (world.setBlock(x, y, z, id)) {
+    if (id === B.THRONE) buildThrone(x, y, z);
+    remeshAround(x, z); buzz(8); sfx.place();
+  }
 }
 
 function updateBreaking(dt) {
@@ -390,7 +455,7 @@ function openPicker() {
   if (document.pointerLockElement) { pickerOpenFromLock = true; document.exitPointerLock(); }
   const grid = $('#picker-grid');
   grid.innerHTML = '';
-  for (const id of [...TREATS, ITEM_SWORD, ...PLACEABLE]) {
+  for (const id of [...TREATS, ITEM_SWORD, ...(crown ? [B.THRONE] : []), ...PLACEABLE]) {
     const b = document.createElement('button');
     b.className = 'pick' + (hotbar[selected] === id ? ' cur' : '');
     b.innerHTML = `<img alt="" src="${icons[id]}"><span>${itemName(id)}</span>`;
@@ -509,7 +574,13 @@ function frame(now) {
     const l = input.consumeLook();
     player.yaw -= l.dx;
     player.pitch = Math.max(-1.55, Math.min(1.55, player.pitch - l.dy));
-    if (world.getChunk(Math.floor(player.pos[0] / CS), Math.floor(player.pos[2] / CS))) player.update(dt, input.state, world);
+    if (seat) {
+      // sitting on the throne: walking or jumping stands you up again
+      const st = input.state;
+      if (Math.abs(st.moveX) > 0.2 || Math.abs(st.moveZ) > 0.2 || st.jump || world.getBlock(seat.x, seat.y, seat.z) !== B.THRONE) standUp();
+      else { player.pos = [seat.x + 0.5, seat.y + 1, seat.z + 0.5]; player.vel = [0, 0, 0]; }
+    }
+    if (!seat && world.getChunk(Math.floor(player.pos[0] / CS), Math.floor(player.pos[2] / CS))) player.update(dt, input.state, world);
     if (player.pos[1] < -20) { player.pos[1] = CH; player.vel[1] = 0; }
     throwCool = Math.max(0, throwCool - dt);
     swingCool = Math.max(0, swingCool - dt);
@@ -551,6 +622,7 @@ requestAnimationFrame(loop);
 // handy for debugging from the console
 window.blockwild = { get world() { return world; }, get player() { return player; }, get target() { return target; }, get flock() { return flock; }, get nursery() { return flock; }, get snakes() { return snakes; }, input, raycast,
   get clock() { return clock; }, setTime(t) { clock = t; }, swing: () => swing(),
+  get seat() { return seat; }, awardCrown: () => awardCrown(), sit: (x, y, z) => sit(x, y, z), standUp: () => standUp(),
   // advance n frames by hand (useful when the page is in a background tab)
   step(n = 1) { for (let i = 0; i < n; i++) { last = performance.now() - 33; frame(performance.now()); } } };
 

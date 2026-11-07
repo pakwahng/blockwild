@@ -122,6 +122,17 @@ export class Sfx {
     [784, 988, 1175, 1568].forEach((f, k) => this.tone('sine', f, f * 1.02, t + 0.06 + k * 0.06, 0.14, 0.18));
   }
 
+  // A little royal trumpet tune for the chicken king.
+  royal() {
+    if (!this.ready) return;
+    const t = this.ctx.currentTime + 0.02;
+    const notes = [[392, 0, 0.14], [523, 0.15, 0.14], [659, 0.3, 0.14], [784, 0.45, 0.32], [659, 0.8, 0.14], [784, 0.95, 0.55]];
+    for (const [f, at, dur] of notes) {
+      this.voice('sawtooth', f, f * 1.003, t + at, dur, 0.22, 2400, 6, 6);
+      this.voice('triangle', f / 2, f / 2, t + at, dur, 0.12, 1500);
+    }
+  }
+
   whoosh() { if (this.ready) this.noise(this.ctx.currentTime + 0.01, 0.14, 0.2, 2200); }
 
   nightfall() {

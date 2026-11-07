@@ -45,6 +45,12 @@ A full day lasts 10 minutes: about 6 minutes of daylight, a pink dusk, roughly 3
 - Pick the **toy sword** and tap (or click) to swing. Two bonks and the snake poofs into confetti cubes.
 - At sunrise any remaining snakes leave. Lamps stay bright at night.
 
+## Chicken king
+
+- Keep every baby safe through a whole night (or raise 100 chicks) and at sunrise you earn the **gold crown** (shown at top left) and a **hay bale throne** on your hotbar.
+- Place the throne: it builds a red-cushioned seat with a hay back (facing you) and arms.
+- Tap the throne to sit. Every baby in your nursery nearby gathers in rows in front of it, hopping and wagging. Walk or jump to stand up.
+
 ## Controls
 
 | Phone | Keyboard / mouse |

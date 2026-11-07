@@ -214,6 +214,19 @@ export class Snakes {
     if (this.confetti.length > 600) this.confetti.splice(0, this.confetti.length - 600);
   }
 
+  // A celebration burst (gold, red and blue by default) around a point.
+  burst(p, n = 60, colors = [1, 1, 0, 3]) {
+    for (let k = 0; k < n; k++) {
+      const a = Math.random() * 6.28, sp = 1.5 + Math.random() * 3;
+      this.confetti.push({
+        p: [p[0] + Math.cos(a) * 0.5, p[1] + 1.6 + Math.random() * 0.4, p[2] + Math.sin(a) * 0.5],
+        v: [Math.cos(a) * sp, 4 + Math.random() * 4, Math.sin(a) * sp],
+        c: colors[Math.random() * colors.length | 0], yaw: Math.random() * 6.28, spin: (Math.random() - 0.5) * 14,
+        life: 2 + Math.random() * 1.5, rest: false,
+      });
+    }
+  }
+
   updateConfetti(dt) {
     const world = this.world;
     for (const c of this.confetti) {
