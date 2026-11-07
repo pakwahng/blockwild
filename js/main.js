@@ -1,6 +1,9 @@
 // Blockwild: bootstrap, game loop, streaming, interaction, UI and saving.
-import { B, BLOCKS, SOLID, PLACEABLE, TILE_COUNT, DEFAULT_HOTBAR } from './blocks.js';
+import { B, BLOCKS, SOLID, PLACEABLE, TILE_COUNT, DEFAULT_HOTBAR, ITEM_SEEDS } from './blocks.js';
 import { buildTextures, blockIcon } from './textures.js';
+import { chickModel, seedModel, shadowModel, seedIcon } from './models.js';
+import { Flock } from './chicks.js';
+import { Sfx } from './audio.js';
 import { World, CS, CH } from './world.js';
 import { buildMesh } from './mesher.js';
 import { Renderer } from './renderer.js';
@@ -15,7 +18,7 @@ const store = {
 };
 
 const coarse = matchMedia('(pointer: coarse)').matches;
-const settings = Object.assign({ view: coarse ? 5 : 7, sens: 1, autoJump: true, showFps: false }, store.get(SET_KEY) || {});
+const settings = Object.assign({ view: coarse ? 5 : 7, sens: 1, autoJump: true, showFps: false, sound: true }, store.get(SET_KEY) || {});
 const SKY = [0.8, 0.9, 0.98], ZENITH = [0.3, 0.62, 0.93], WATER_FOG = [0.1, 0.24, 0.45];
 const SUN_DIR = [0.45, 0.55, -0.7];
 const REACH = 6;
@@ -25,18 +28,35 @@ let textures, renderer;
 try {
   textures = buildTextures();
   renderer = new Renderer(canvas, textures, TILE_COUNT);
+  renderer.addModel('chick', chickModel());
+  renderer.addModel('seed', seedModel());
+  renderer.addModel('shadow', shadowModel());
 } catch (err) {
   console.error(err);
   showError('This device or browser cannot run Blockwild (WebGL2 is required). ' + err.message);
 }
 
-let world = null, player = null, running = false;
+let world = null, player = null, flock = null, running = false;
 let hotbar = [...DEFAULT_HOTBAR];
 let selected = 0;
 let target = null, breakT = { key: '', p: 0 };
+let milestone = 0, throwCool = 0;
+const sfx = new Sfx();
 
 const icons = {};
 if (textures) for (const id of PLACEABLE) icons[id] = blockIcon(BLOCKS[id], textures.tiles, 64).toDataURL();
+icons[ITEM_SEEDS] = seedIcon(64).toDataURL();
+const itemName = id => id === ITEM_SEEDS ? 'Seeds' : BLOCKS[id].name;
+const isItem = id => id === ITEM_SEEDS || !!BLOCKS[id];
+
+// Lines from the song, shown as the nursery grows.
+const MILESTONES = [
+  [1, 'Your first chick! Feed two chicks and a baby hatches.'],
+  [10, 'Ten chicks. The nursery is open!'],
+  [37, 'Thirty-seven chickens, and they’re all your pride!'],
+  [67, 'Sixty-seven chickens! The game’s starting to slide…'],
+  [100, 'A hundred deep and wide. Chicken king!'],
+];
 
 // ---------- input ----------
 const input = new Input(canvas, {
@@ -77,13 +97,21 @@ function startWorld(save) {
   }
   player = new Player(sx, sy, sz);
   if (save) { player.yaw = save.yaw || 0; player.pitch = save.pitch || 0; player.flying = !!save.flying; }
-  if (save?.hotbar?.length === 9) { hotbar = save.hotbar.filter(id => BLOCKS[id]); selected = save.selected || 0; }
+  if (save?.hotbar?.length === 9) { hotbar = save.hotbar.filter(isItem); selected = save.selected || 0; }
   while (hotbar.length < 9) hotbar.push(B.STONE);
+  if (!hotbar.includes(ITEM_SEEDS)) hotbar[0] = ITEM_SEEDS; // older saves: hand out the seed pouch
   player.autoJump = settings.autoJump;
   document.body.classList.toggle('flying', player.flying);
   $('#btn-fly').classList.toggle('on', player.flying);
   buildHotbar();
   stream(80);
+
+  flock = new Flock(world);
+  flock.load(save?.chicks);
+  milestone = save?.milestone || 0;
+  // a few wild chicks close by, so there's someone to feed straight away
+  if (!flock.chicks.length) flock.spawnGroup(sx, sz, 6, 3, 9);
+  updateChickCount();
 }
 
 function saveGame() {
@@ -91,7 +119,61 @@ function saveGame() {
   store.set(SAVE_KEY, {
     v: 1, seed: world.seed, pos: player.pos.map(v => +v.toFixed(2)), yaw: player.yaw, pitch: player.pitch,
     flying: player.flying, hotbar, selected, edits: world.serializeEdits(),
+    chicks: flock ? flock.serialize() : [], milestone,
   });
+}
+
+// ---------- chicks: counter, milestones, effects ----------
+let shownCount = -1;
+function updateChickCount() {
+  const n = flock ? flock.tameCount : 0;
+  if (n === shownCount) return;
+  const el = $('#chick-count');
+  el.querySelector('span').textContent = n;
+  if (shownCount >= 0 && n > shownCount) { el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); }
+  shownCount = n;
+  for (const [at, text] of MILESTONES) {
+    if (n >= at && milestone < at) { milestone = at; toast(text); if (at > 1) sfx.fanfare(); }
+  }
+}
+
+let toastTimer = 0;
+function toast(text) {
+  const t = $('#toast');
+  t.textContent = text;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 4200);
+}
+
+// Floating hearts and "+1" pops above chicks, positioned by projecting the 3D point to the screen.
+function floatFx(p, kind) {
+  const m = renderer.mvp;
+  if (!m) return;
+  const x = p[0], y = p[1] + 0.8, z = p[2];
+  const cx = m[0] * x + m[4] * y + m[8] * z + m[12], cy = m[1] * x + m[5] * y + m[9] * z + m[13], cw = m[3] * x + m[7] * y + m[11] * z + m[15];
+  if (cw <= 0.1) return;
+  const sx = (cx / cw * 0.5 + 0.5) * window.innerWidth, sy = (1 - (cy / cw * 0.5 + 0.5)) * window.innerHeight;
+  if (sx < -40 || sy < -40 || sx > window.innerWidth + 40 || sy > window.innerHeight + 40) return;
+  const el = document.createElement('div');
+  el.className = 'fx ' + kind;
+  el.textContent = kind === 'hatch' ? '+1' : '';
+  el.style.left = sx + 'px'; el.style.top = sy + 'px';
+  $('#fx').appendChild(el);
+  setTimeout(() => el.remove(), 1300);
+}
+
+function handleChickEvents() {
+  const eye = player.eye();
+  for (const ev of flock.events) {
+    const d = Math.hypot(ev.p[0] - eye[0], ev.p[1] - eye[1], ev.p[2] - eye[2]);
+    if (ev.type === 'cheep') { if (d < 18) sfx.cheep(0.35 * (1 - d / 18)); continue; }
+    if (d > 40) continue;
+    if (ev.type === 'hatch') { sfx.hatch(); floatFx(ev.p, 'hatch'); buzz(20); }
+    else { sfx.happy(); floatFx(ev.p, 'heart'); }
+  }
+  flock.events.length = 0;
+  updateChickCount();
 }
 
 // ---------- chunk streaming ----------
@@ -138,13 +220,21 @@ function remeshAround(x, z) {
 
 // ---------- interaction ----------
 function placeBlock() {
-  if (!running || !target) return;
-  const x = target.x + target.nx, y = target.y + target.ny, z = target.z + target.nz;
+  if (!running) return;
   const id = hotbar[selected];
+  if (id === ITEM_SEEDS) {
+    if (throwCool > 0) return;
+    throwCool = 0.2;
+    flock.throwSeeds(player.eye(), player.forward());
+    sfx.toss();
+    return;
+  }
+  if (!target) return;
+  const x = target.x + target.nx, y = target.y + target.ny, z = target.z + target.nz;
   const here = world.getBlock(x, y, z);
   if (here !== B.AIR && here !== B.WATER) return;
   if (SOLID[id] && player.intersectsBlock(x, y, z)) return;
-  if (world.setBlock(x, y, z, id)) { remeshAround(x, z); buzz(8); }
+  if (world.setBlock(x, y, z, id)) { remeshAround(x, z); buzz(8); sfx.place(); }
 }
 
 function updateBreaking(dt) {
@@ -161,6 +251,7 @@ function updateBreaking(dt) {
     world.setBlock(target.x, target.y, target.z, nearWater ? B.WATER : B.AIR);
     remeshAround(target.x, target.z);
     buzz(15);
+    sfx.dig();
     breakT.p = 0; breakT.key = '';
   }
   ring.style.setProperty('--p', Math.min(1, breakT.p).toFixed(3));
@@ -183,7 +274,7 @@ function buildHotbar() {
   hotbar.forEach((id, i) => {
     const b = document.createElement('button');
     b.className = 'slot' + (i === selected ? ' sel' : '');
-    b.setAttribute('aria-label', BLOCKS[id].name);
+    b.setAttribute('aria-label', itemName(id));
     b.innerHTML = `<img alt="" src="${icons[id]}">`;
     b.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); selectSlot(i); });
     bar.appendChild(b);
@@ -200,10 +291,10 @@ function openPicker() {
   if (document.pointerLockElement) { pickerOpenFromLock = true; document.exitPointerLock(); }
   const grid = $('#picker-grid');
   grid.innerHTML = '';
-  for (const id of PLACEABLE) {
+  for (const id of [ITEM_SEEDS, ...PLACEABLE]) {
     const b = document.createElement('button');
     b.className = 'pick' + (hotbar[selected] === id ? ' cur' : '');
-    b.innerHTML = `<img alt="" src="${icons[id]}"><span>${BLOCKS[id].name}</span>`;
+    b.innerHTML = `<img alt="" src="${icons[id]}"><span>${itemName(id)}</span>`;
     b.addEventListener('click', () => { hotbar[selected] = id; buildHotbar(); closePicker(); });
     grid.appendChild(b);
   }
@@ -250,6 +341,7 @@ function enterFullscreen() {
 
 $('#btn-play').addEventListener('click', () => {
   if (!renderer) return;
+  sfx.unlock();
   enterFullscreen();
   if (!world) startWorld(store.get(SAVE_KEY));
   if (coarse) input.setTouchMode(true);
@@ -262,6 +354,7 @@ $('#btn-create').addEventListener('click', () => {
   const raw = $('#seed-input').value.trim();
   let seed;
   if (raw) seed = /^\d+$/.test(raw) ? (+raw >>> 0) : [...raw].reduce((h, ch) => (Math.imul(h, 31) + ch.charCodeAt(0)) >>> 0, 7);
+  sfx.unlock();
   enterFullscreen();
   hotbar = [...DEFAULT_HOTBAR]; selected = 0;
   startWorld(seed === undefined ? null : { seed });
@@ -274,11 +367,12 @@ $('#btn-create').addEventListener('click', () => {
 function hideHintLater() { setTimeout(() => $('#touch-hint').classList.add('gone'), 7000); }
 
 // settings
-const sView = $('#set-view'), sSens = $('#set-sens'), sAuto = $('#set-autojump'), sFps = $('#set-fps');
+const sView = $('#set-view'), sSens = $('#set-sens'), sAuto = $('#set-autojump'), sFps = $('#set-fps'), sSound = $('#set-sound');
 function applySettings() {
   sView.value = settings.view; $('#view-val').textContent = settings.view + ' chunks';
   sSens.value = settings.sens; $('#sens-val').textContent = (+settings.sens).toFixed(1) + '×';
-  sAuto.checked = settings.autoJump; sFps.checked = settings.showFps;
+  sAuto.checked = settings.autoJump; sFps.checked = settings.showFps; sSound.checked = settings.sound;
+  sfx.enabled = settings.sound;
   input.touchSens = input.mouseSens = +settings.sens;
   if (player) player.autoJump = settings.autoJump;
   $('#info').hidden = !settings.showFps;
@@ -288,6 +382,7 @@ sView.addEventListener('input', () => { settings.view = +sView.value; applySetti
 sSens.addEventListener('input', () => { settings.sens = +sSens.value; applySettings(); });
 sAuto.addEventListener('change', () => { settings.autoJump = sAuto.checked; applySettings(); });
 sFps.addEventListener('change', () => { settings.showFps = sFps.checked; applySettings(); });
+sSound.addEventListener('change', () => { settings.sound = sSound.checked; applySettings(); });
 applySettings();
 
 if (store.get(SAVE_KEY)) $('#btn-play').textContent = 'Continue';
@@ -317,6 +412,9 @@ function frame(now) {
     player.pitch = Math.max(-1.55, Math.min(1.55, player.pitch - l.dy));
     if (world.getChunk(Math.floor(player.pos[0] / CS), Math.floor(player.pos[2] / CS))) player.update(dt, input.state, world);
     if (player.pos[1] < -20) { player.pos[1] = CH; player.vel[1] = 0; }
+    throwCool = Math.max(0, throwCool - dt);
+    flock.update(dt, player, hotbar[selected] === ITEM_SEEDS);
+    handleChickEvents();
   }
   const pending = stream(running ? 5 : 10);
   $('#loading').hidden = pending === 0 || running;
@@ -333,7 +431,7 @@ function frame(now) {
     sunDir: SUN_DIR, clouds: underwater ? 0 : 1,
     fogNear: underwater ? 0 : far * 0.6, fogFar: underwater ? 22 : far,
     tint: underwater ? [0.6, 0.75, 1.0] : [1, 1, 1],
-  }, world.chunks.values(), target, now / 1000);
+  }, world.chunks.values(), target, now / 1000, flock.instances(eye, far + 8, now / 1000));
 
   if (settings.showFps) {
     const p = player.pos;
@@ -344,7 +442,7 @@ function frame(now) {
 requestAnimationFrame(loop);
 
 // handy for debugging from the console
-window.blockwild = { get world() { return world; }, get player() { return player; }, get target() { return target; }, input, raycast,
+window.blockwild = { get world() { return world; }, get player() { return player; }, get target() { return target; }, get flock() { return flock; }, input, raycast,
   // advance n frames by hand (useful when the page is in a background tab)
   step(n = 1) { for (let i = 0; i < n; i++) { last = performance.now() - 33; frame(performance.now()); } } };
 

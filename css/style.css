@@ -41,8 +41,38 @@ button { font: inherit; color: inherit; cursor: pointer; }
   filter: drop-shadow(0 0 2px rgba(0, 0, 0, .7));
 }
 
-#info {
+#chick-count {
   position: absolute; left: calc(10px + var(--safe-l)); top: calc(8px + var(--safe-t));
+  display: flex; align-items: center; gap: 6px; padding: 4px 12px 4px 6px; border-radius: 99px;
+  background: rgba(10, 14, 20, 0.5); border: 1px solid var(--panel-edge);
+  font-weight: 800; font-size: 18px; color: #fff3b0;
+}
+#chick-count svg { width: 30px; height: 30px; }
+#chick-count.bump { animation: bump .45s ease-out; }
+@keyframes bump { 30% { transform: scale(1.25); } 100% { transform: scale(1); } }
+
+#toast {
+  position: absolute; left: 50%; top: calc(58px + var(--safe-t)); transform: translate(-50%, -10px);
+  max-width: min(520px, calc(100vw - 32px)); padding: 10px 18px; border-radius: 14px; text-align: center;
+  background: #fff3b0; color: #4a2c00; font-weight: 800; font-size: 16px;
+  box-shadow: 0 4px 0 #e0b84a, 0 8px 18px rgba(0, 0, 0, .3);
+  opacity: 0; transition: opacity .3s, transform .3s;
+}
+#toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+#fx { position: absolute; inset: 0; overflow: hidden; }
+.fx { position: absolute; transform: translate(-50%, -50%); animation: floatUp 1.3s ease-out forwards; }
+.fx.heart { width: 22px; height: 20px; }
+.fx.heart::before, .fx.heart::after {
+  content: ''; position: absolute; top: 0; width: 12px; height: 18px; background: #ff5c7a; border-radius: 6px 6px 0 0;
+}
+.fx.heart::before { left: 10px; transform: rotate(-45deg); transform-origin: 0 100%; }
+.fx.heart::after { left: 0; transform: rotate(45deg); transform-origin: 100% 100%; }
+.fx.hatch { font-weight: 900; font-size: 22px; color: #fff3b0; text-shadow: 0 2px 0 #c98a00, 0 3px 6px rgba(0,0,0,.4); }
+@keyframes floatUp { 0% { opacity: 0; margin-top: 0; } 15% { opacity: 1; } 100% { opacity: 0; margin-top: -60px; } }
+
+#info {
+  position: absolute; left: calc(10px + var(--safe-l)); top: calc(50px + var(--safe-t));
   font: 12px/1.35 ui-monospace, Menlo, Consolas, monospace; white-space: pre;
   text-shadow: 0 1px 2px #000; color: #fff;
 }

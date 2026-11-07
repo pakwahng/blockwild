@@ -17,6 +17,16 @@ The service worker and "Add to Home Screen" install need **HTTPS**, so the easie
 - **iPhone (Safari):** Share → Add to Home Screen. It opens full screen like an app.
 - **Android (Chrome):** menu → Install app.
 
+## The nursery (chicks)
+
+Based on the music video *Baby Chicken Empire*: build a nursery for baby chicks.
+
+- Pick the **seed pouch** (first hotbar slot). Chicks within ~14 blocks follow you while you hold it.
+- **Tap** (right click on desktop) to throw seeds. A chick that eats a seed joins your nursery (the counter at top left).
+- Two fed chicks find each other and **hatch a baby chick**. Each chick needs about 25 seconds before it can do that again.
+- Chicks hop up natural steps, but can't climb **wood, logs, hay, walls, roof, glass or brick**. A one-block fence keeps them in.
+- Milestones at 10, 37, 67 and 100 chicks quote the song.
+
 ## Controls
 
 | Phone | Keyboard / mouse |
@@ -32,7 +42,11 @@ The service worker and "Add to Home Screen" install need **HTTPS**, so the easie
 | File | What it does |
 |---|---|
 | `js/main.js` | Boot, game loop, chunk streaming, break/place, menus, saving |
-| `js/world.js` | Chunk storage, terrain/caves/trees generation, player edits, mesher with ambient occlusion |
+| `js/world.js` | Chunk storage, terrain/caves/trees generation, player edits |
+| `js/mesher.js` | Turns chunks into triangles, with rounded block edges and ambient occlusion |
+| `js/chicks.js` | Chick behaviour: wandering, following seeds, eating, hatching, pens |
+| `js/models.js` | Rounded-box 3D models for chicks and seeds, seed pouch icon |
+| `js/audio.js` | Synthesized cheeps and sound effects |
 | `js/renderer.js` | WebGL2 shaders, texture array, frustum culling, water pass, block outline |
 | `js/player.js` | Movement, collision, swimming, flying, voxel raycast |
 | `js/input.js` | Touch joystick/look/tap/hold and keyboard/mouse |

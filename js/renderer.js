@@ -79,6 +79,57 @@ void main() {
   outColor = vec4(col, 1.0);
 }`;
 
+// Instanced models (chicks, seeds, blob shadows) with soft "fuzzy" rim light.
+const ENT_VS = `#version 300 es
+layout(location=0) in vec3 aPos;
+layout(location=1) in vec3 aNormal;
+layout(location=2) in vec3 aColor;
+layout(location=3) in float aPart;
+layout(location=4) in vec4 iPosYaw;
+layout(location=5) in vec4 iAnim; // scale, hop, flap, squash
+uniform mat4 uMVP;
+uniform vec3 uCam;
+uniform float uFogNear, uFogFar;
+out vec3 vColor;
+out float vFog;
+vec2 rot(vec2 v, float a) { float c = cos(a), s = sin(a); return vec2(c * v.x - s * v.y, s * v.x + c * v.y); }
+void main() {
+  vec3 p = aPos, n = aNormal;
+  if (aPart > 0.5 && aPart < 2.5) {           // wings flap around their top edge
+    float side = aPart < 1.5 ? 1.0 : -1.0;
+    vec2 piv = vec2(side * 0.24, 0.36);
+    float a = iAnim.z * side;
+    p.xy = piv + rot(p.xy - piv, a);
+    n.xy = rot(n.xy, a);
+  }
+  float sq = iAnim.w;
+  if (aPart < 2.5) { p.y *= 1.0 + sq; p.xz *= 1.0 - sq * 0.6; }
+  p *= iAnim.x;
+  float c = cos(iPosYaw.w), s = sin(iPosYaw.w);
+  p = vec3(p.x * c + p.z * s, p.y, -p.x * s + p.z * c);
+  n = vec3(n.x * c + n.z * s, n.y, -n.x * s + n.z * c);
+  p += iPosYaw.xyz + vec3(0.0, iAnim.y, 0.0);
+  gl_Position = uMVP * vec4(p, 1.0);
+  vec3 L = normalize(vec3(0.45, 0.85, 0.35));
+  float diff = max(dot(n, L), 0.0);
+  float hemi = 0.5 + 0.5 * n.y;
+  vec3 V = normalize(uCam - p);
+  float rim = pow(1.0 - max(dot(n, V), 0.0), 2.2);
+  vColor = aColor * (0.5 + 0.35 * diff + 0.2 * hemi) + rim * 0.28 * vec3(1.0, 0.97, 0.85);
+  vFog = clamp((length(p - uCam) - uFogNear) / (uFogFar - uFogNear), 0.0, 1.0);
+}`;
+const ENT_FS = `#version 300 es
+precision mediump float;
+uniform vec3 uFogColor;
+uniform float uShadow;
+in vec3 vColor;
+in float vFog;
+out vec4 outColor;
+void main() {
+  if (uShadow > 0.5) { outColor = vec4(0.0, 0.0, 0.0, 0.22 * (1.0 - vFog)); return; }
+  outColor = vec4(mix(vColor, uFogColor, vFog), 1.0);
+}`;
+
 const LINE_VS = `#version 300 es
 layout(location=0) in vec3 aPos;
 uniform mat4 uMVP;
@@ -169,6 +220,8 @@ export class Renderer {
 
     this.sky = compile(gl, SKY_VS, SKY_FS);
     this.skyVao = gl.createVertexArray();
+    this.ent = compile(gl, ENT_VS, ENT_FS);
+    this.models = {};
 
     // block outline (12 edges, slightly inflated)
     const e = 0.004, a = -e, b = 1 + e;
@@ -189,6 +242,42 @@ export class Renderer {
     gl.cullFace(gl.BACK);
     gl.frontFace(gl.CCW);
     this.stats = { chunks: 0, tris: 0 };
+  }
+
+  // Registers a model ({verts, idx} from models.js) for instanced drawing.
+  addModel(name, mesh) {
+    const gl = this.gl;
+    const vao = gl.createVertexArray();
+    gl.bindVertexArray(vao);
+    const vb = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, vb);
+    gl.bufferData(gl.ARRAY_BUFFER, mesh.verts, gl.STATIC_DRAW);
+    const stride = 40;
+    gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 3, gl.FLOAT, false, stride, 0);
+    gl.enableVertexAttribArray(1); gl.vertexAttribPointer(1, 3, gl.FLOAT, false, stride, 12);
+    gl.enableVertexAttribArray(2); gl.vertexAttribPointer(2, 3, gl.FLOAT, false, stride, 24);
+    gl.enableVertexAttribArray(3); gl.vertexAttribPointer(3, 1, gl.FLOAT, false, stride, 36);
+    const ib = gl.createBuffer();
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ib);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, mesh.idx, gl.STATIC_DRAW);
+    const inst = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, inst);
+    gl.bufferData(gl.ARRAY_BUFFER, 4096, gl.DYNAMIC_DRAW);
+    gl.enableVertexAttribArray(4); gl.vertexAttribPointer(4, 4, gl.FLOAT, false, 32, 0); gl.vertexAttribDivisor(4, 1);
+    gl.enableVertexAttribArray(5); gl.vertexAttribPointer(5, 4, gl.FLOAT, false, 32, 16); gl.vertexAttribDivisor(5, 1);
+    gl.bindVertexArray(null);
+    this.models[name] = { vao, inst, instSize: 4096, count: mesh.idx.length };
+  }
+
+  drawModel(name, data, n) {
+    if (!n) return;
+    const gl = this.gl, m = this.models[name];
+    gl.bindVertexArray(m.vao);
+    gl.bindBuffer(gl.ARRAY_BUFFER, m.inst);
+    const bytes = n * 32;
+    if (bytes > m.instSize) { m.instSize = bytes * 2; gl.bufferData(gl.ARRAY_BUFFER, m.instSize, gl.DYNAMIC_DRAW); }
+    gl.bufferSubData(gl.ARRAY_BUFFER, 0, data, 0, n * 8);
+    gl.drawElementsInstanced(gl.TRIANGLES, m.count, gl.UNSIGNED_SHORT, 0, n);
   }
 
   resize(pixelRatio) {
@@ -232,7 +321,7 @@ export class Renderer {
     chunk.gpu = null;
   }
 
-  render(view, chunks, target, time) {
+  render(view, chunks, target, time, ents = null) {
     const gl = this.gl, { prog } = this;
     gl.viewport(0, 0, this.canvas.width, this.canvas.height);
     const fog = view.fogColor;
@@ -308,6 +397,34 @@ export class Renderer {
       gl.drawArrays(gl.LINES, 0, 24);
       gl.useProgram(prog.p);
     }
+
+    // chicks, seeds and their soft shadows
+    if (ents) {
+      const e = this.ent;
+      gl.useProgram(e.p);
+      gl.uniformMatrix4fv(e.u.uMVP, false, mvp);
+      gl.uniform3fv(e.u.uCam, view.eye);
+      gl.uniform1f(e.u.uFogNear, view.fogNear);
+      gl.uniform1f(e.u.uFogFar, view.fogFar);
+      gl.uniform3fv(e.u.uFogColor, fog);
+      gl.uniform1f(e.u.uShadow, 0);
+      this.drawModel('chick', ents.chicks, ents.chickCount);
+      this.drawModel('seed', ents.seeds, ents.seedCount);
+      gl.uniform1f(e.u.uShadow, 1);
+      gl.enable(gl.BLEND);
+      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+      gl.depthMask(false);
+      gl.enable(gl.POLYGON_OFFSET_FILL);
+      gl.polygonOffset(-2, -2);
+      gl.disable(gl.CULL_FACE);
+      this.drawModel('shadow', ents.shadows, ents.shadowCount);
+      gl.enable(gl.CULL_FACE);
+      gl.disable(gl.POLYGON_OFFSET_FILL);
+      gl.depthMask(true);
+      gl.disable(gl.BLEND);
+      gl.useProgram(prog.p);
+    }
+    this.mvp = mvp;
 
     // translucent water, back to front
     gl.uniform1i(prog.u.uPass, 1);

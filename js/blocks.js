@@ -56,4 +56,6 @@ for (const b of BLOCKS) {
 
 export const PLACEABLE = [B.GRASS, B.DIRT, B.PLANKS, B.LOG, B.HAY, B.ROOF, B.CREAM, B.BRICK,
   B.STONE, B.COBBLE, B.GLASS, B.LEAVES, B.SAND, B.SNOW, B.CLAY, B.LAMP, B.WATER];
-export const DEFAULT_HOTBAR = [B.GRASS, B.DIRT, B.PLANKS, B.LOG, B.HAY, B.ROOF, B.CREAM, B.GLASS, B.LAMP];
+// Non-block items share the hotbar with blocks; their ids sit above the block range.
+export const ITEM_SEEDS = 200;
+export const DEFAULT_HOTBAR = [ITEM_SEEDS, B.GRASS, B.DIRT, B.PLANKS, B.LOG, B.HAY, B.ROOF, B.CREAM, B.GLASS];
