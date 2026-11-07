@@ -1,7 +1,8 @@
 // Blockwild: bootstrap, game loop, streaming, interaction, UI and saving.
-import { B, BLOCKS, SOLID, PLACEABLE, TILE_COUNT } from './blocks.js';
+import { B, BLOCKS, SOLID, PLACEABLE, TILE_COUNT, DEFAULT_HOTBAR } from './blocks.js';
 import { buildTextures, blockIcon } from './textures.js';
-import { World, CS, CH, buildMesh } from './world.js';
+import { World, CS, CH } from './world.js';
+import { buildMesh } from './mesher.js';
 import { Renderer } from './renderer.js';
 import { Player, raycast } from './player.js';
 import { Input } from './input.js';
@@ -15,7 +16,8 @@ const store = {
 
 const coarse = matchMedia('(pointer: coarse)').matches;
 const settings = Object.assign({ view: coarse ? 5 : 7, sens: 1, autoJump: true, showFps: false }, store.get(SET_KEY) || {});
-const SKY = [0.62, 0.8, 0.98], WATER_FOG = [0.1, 0.24, 0.45];
+const SKY = [0.8, 0.9, 0.98], ZENITH = [0.3, 0.62, 0.93], WATER_FOG = [0.1, 0.24, 0.45];
+const SUN_DIR = [0.45, 0.55, -0.7];
 const REACH = 6;
 
 const canvas = $('#gl');
@@ -29,7 +31,7 @@ try {
 }
 
 let world = null, player = null, running = false;
-let hotbar = [B.GRASS, B.DIRT, B.STONE, B.COBBLE, B.PLANKS, B.LOG, B.GLASS, B.BRICK, B.LAMP];
+let hotbar = [...DEFAULT_HOTBAR];
 let selected = 0;
 let target = null, breakT = { key: '', p: 0 };
 
@@ -261,7 +263,7 @@ $('#btn-create').addEventListener('click', () => {
   let seed;
   if (raw) seed = /^\d+$/.test(raw) ? (+raw >>> 0) : [...raw].reduce((h, ch) => (Math.imul(h, 31) + ch.charCodeAt(0)) >>> 0, 7);
   enterFullscreen();
-  hotbar = [B.GRASS, B.DIRT, B.STONE, B.COBBLE, B.PLANKS, B.LOG, B.GLASS, B.BRICK, B.LAMP]; selected = 0;
+  hotbar = [...DEFAULT_HOTBAR]; selected = 0;
   startWorld(seed === undefined ? null : { seed });
   saveGame();
   if (coarse) input.setTouchMode(true);
@@ -327,7 +329,8 @@ function frame(now) {
   const far = settings.view * CS - 6;
   renderer.render({
     eye, forward: fwd, fov: 70 * Math.PI / 180,
-    fogColor: underwater ? WATER_FOG : SKY,
+    fogColor: underwater ? WATER_FOG : SKY, zenith: underwater ? WATER_FOG : ZENITH,
+    sunDir: SUN_DIR, clouds: underwater ? 0 : 1,
     fogNear: underwater ? 0 : far * 0.6, fogFar: underwater ? 22 : far,
     tint: underwater ? [0.6, 0.75, 1.0] : [1, 1, 1],
   }, world.chunks.values(), target, now / 1000);

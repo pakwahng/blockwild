@@ -41,6 +41,44 @@ void main() {
   outColor = vec4(col, uPass == 0 ? 1.0 : c.a);
 }`;
 
+// Full-screen sky: vertical gradient, warm glow toward the sun and soft drifting clouds.
+const SKY_VS = `#version 300 es
+out vec2 vNdc;
+void main() {
+  vec2 p = vec2((gl_VertexID << 1) & 2, gl_VertexID & 2) * 2.0 - 1.0;
+  vNdc = p;
+  gl_Position = vec4(p, 0.9999, 1.0);
+}`;
+const SKY_FS = `#version 300 es
+precision highp float;
+uniform vec3 uRight, uUp, uFwd, uZenith, uHorizon, uSunDir;
+uniform vec2 uTan;
+uniform float uTime, uClouds;
+in vec2 vNdc;
+out vec4 outColor;
+float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+float vnoise(vec2 p) {
+  vec2 i = floor(p), f = fract(p);
+  vec2 u = f * f * (3.0 - 2.0 * f);
+  return mix(mix(hash(i), hash(i + vec2(1, 0)), u.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), u.x), u.y);
+}
+void main() {
+  vec3 d = normalize(uFwd + vNdc.x * uTan.x * uRight + vNdc.y * uTan.y * uUp);
+  float h = clamp(d.y, 0.0, 1.0);
+  vec3 col = mix(uHorizon, uZenith, smoothstep(0.0, 0.55, h));
+  float sun = max(dot(d, uSunDir), 0.0);
+  col += vec3(1.0, 0.85, 0.6) * pow(sun, 12.0) * 0.25;
+  if (d.y > 0.0 && uClouds > 0.0) {
+    vec2 p = d.xz / (d.y + 0.12) * 1.6 + vec2(uTime * 0.02, uTime * 0.006);
+    float n = vnoise(p) * 0.55 + vnoise(p * 2.1 + 3.7) * 0.3 + vnoise(p * 4.3 - 1.3) * 0.15;
+    float c = smoothstep(0.52, 0.66, n) * smoothstep(0.02, 0.2, d.y);
+    float shade = smoothstep(0.52, 0.8, n);
+    vec3 cloud = mix(vec3(0.86, 0.9, 0.97), vec3(1.0), shade);
+    col = mix(col, cloud, c * 0.92 * uClouds);
+  }
+  outColor = vec4(col, 1.0);
+}`;
+
 const LINE_VS = `#version 300 es
 layout(location=0) in vec3 aPos;
 uniform mat4 uMVP;
@@ -124,10 +162,13 @@ export class Renderer {
     gl.bindTexture(gl.TEXTURE_2D_ARRAY, tex);
     gl.texImage3D(gl.TEXTURE_2D_ARRAY, 0, gl.RGBA, textures.size, textures.size, tileCount, 0, gl.RGBA, gl.UNSIGNED_BYTE, textures.strip);
     gl.generateMipmap(gl.TEXTURE_2D_ARRAY);
-    gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MIN_FILTER, gl.NEAREST_MIPMAP_LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-    gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MAX_LEVEL, 3);
+    gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MAX_LEVEL, 4);
     this.tex = tex;
+
+    this.sky = compile(gl, SKY_VS, SKY_FS);
+    this.skyVao = gl.createVertexArray();
 
     // block outline (12 edges, slightly inflated)
     const e = 0.004, a = -e, b = 1 + e;
@@ -200,8 +241,27 @@ export class Renderer {
 
     const aspect = this.canvas.width / this.canvas.height;
     const proj = perspective(view.fov, aspect, 0.08, view.fogFar + 32);
-    const mvp = mul(proj, lookDir(view.eye, view.forward));
+    const viewM = lookDir(view.eye, view.forward);
+    const mvp = mul(proj, viewM);
     const planes = frustumPlanes(mvp);
+
+    // sky
+    const sk = this.sky;
+    gl.useProgram(sk.p);
+    gl.disable(gl.DEPTH_TEST);
+    gl.uniform3f(sk.u.uRight, viewM[0], viewM[4], viewM[8]);
+    gl.uniform3f(sk.u.uUp, viewM[1], viewM[5], viewM[9]);
+    gl.uniform3fv(sk.u.uFwd, view.forward);
+    const ty = Math.tan(view.fov / 2);
+    gl.uniform2f(sk.u.uTan, ty * aspect, ty);
+    gl.uniform3fv(sk.u.uZenith, view.zenith);
+    gl.uniform3fv(sk.u.uHorizon, fog);
+    gl.uniform3fv(sk.u.uSunDir, view.sunDir);
+    gl.uniform1f(sk.u.uTime, time);
+    gl.uniform1f(sk.u.uClouds, view.clouds);
+    gl.bindVertexArray(this.skyVao);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+    gl.enable(gl.DEPTH_TEST);
 
     const visible = [];
     for (const c of chunks) {

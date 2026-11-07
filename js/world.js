@@ -1,5 +1,5 @@
 // World data: chunked block storage, terrain generation, player edits and meshing.
-import { B, BLOCKS, OPAQUE, KIND } from './blocks.js';
+import { B } from './blocks.js';
 import { makeNoise, hash3 } from './noise.js';
 
 export const CS = 16;   // chunk size (x/z)
@@ -41,7 +41,7 @@ export class World {
 
   forestDensity(x, z) {
     const f = this.n2.perlin2(x / 90, z / 90);
-    return f > 0.08 ? 0.6 : f > -0.15 ? 0.12 : 0.03;
+    return f > 0.15 ? 0.4 : f > -0.1 ? 0.07 : 0.025;
   }
 
   generate(cx, cz) {
@@ -106,14 +106,12 @@ export class World {
       if (onlyAir && data[i] !== B.AIR) return;
       data[i] = id;
     };
+    // round, puffy canopy like the trees in the video
     const topY = by + trunk;
-    for (let dy = -2; dy <= 1; dy++) {
-      const rad = dy <= -1 ? 2 : 1;
-      for (let dx = -rad; dx <= rad; dx++) for (let dz = -rad; dz <= rad; dz++) {
-        const corner = Math.abs(dx) === rad && Math.abs(dz) === rad;
-        if (corner && (rad === 1 ? dy === 1 : hash3(tx + dx, topY + dy, tz + dz, this.seed) < 0.5)) continue;
-        put(tx + dx, topY + dy, tz + dz, B.LEAVES, true);
-      }
+    const R = r < 0.4 ? 1.75 : 2.35, R2 = R * R;
+    for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) for (let dz = -2; dz <= 2; dz++) {
+      if (dx * dx + dz * dz + dy * dy * 1.25 > R2) continue;
+      put(tx + dx, topY + dy, tz + dz, B.LEAVES, true);
     }
     for (let y = by; y < topY; y++) put(tx, y, tz, B.LOG, false);
   }
@@ -175,110 +173,4 @@ export class World {
     }
     return edits;
   }
-}
-
-// ---------------- meshing ----------------
-const PX = CS + 2, PA = PX * PX;
-const pidx = (x, y, z) => (x + 1) + (z + 1) * PX + (y + 1) * PA;
-const padded = new Uint8Array(PA * (CH + 2));
-
-// Faces: +x -x +y -y +z -z. Corners wound counter-clockwise seen from outside.
-const FACES = [
-  { n: [1, 0, 0], c: [[1, 0, 0], [1, 1, 0], [1, 1, 1], [1, 0, 1]], shade: 0.8, uv: c => [1 - c[2], 1 - c[1]] },
-  { n: [-1, 0, 0], c: [[0, 0, 1], [0, 1, 1], [0, 1, 0], [0, 0, 0]], shade: 0.8, uv: c => [c[2], 1 - c[1]] },
-  { n: [0, 1, 0], c: [[0, 1, 1], [1, 1, 1], [1, 1, 0], [0, 1, 0]], shade: 1.0, uv: c => [c[0], c[2]] },
-  { n: [0, -1, 0], c: [[0, 0, 0], [1, 0, 0], [1, 0, 1], [0, 0, 1]], shade: 0.55, uv: c => [c[0], 1 - c[2]] },
-  { n: [0, 0, 1], c: [[1, 0, 1], [1, 1, 1], [0, 1, 1], [0, 0, 1]], shade: 0.68, uv: c => [c[0], 1 - c[1]] },
-  { n: [0, 0, -1], c: [[0, 0, 0], [0, 1, 0], [1, 1, 0], [1, 0, 0]], shade: 0.68, uv: c => [1 - c[0], 1 - c[1]] },
-];
-const pd = (x, y, z) => x + z * PX + y * PA; // padded index delta
-for (const f of FACES) {
-  const axis = f.n.findIndex(v => v !== 0);
-  const [t1, t2] = [0, 1, 2].filter(a => a !== axis);
-  f.nd = pd(f.n[0], f.n[1], f.n[2]);
-  f.uvs = f.c.map(f.uv);
-  f.ao = f.c.map(c => {
-    const s1 = [0, 0, 0], s2 = [0, 0, 0];
-    s1[t1] = c[t1] ? 1 : -1; s2[t2] = c[t2] ? 1 : -1;
-    const a = [f.n[0] + s1[0], f.n[1] + s1[1], f.n[2] + s1[2]];
-    const b = [f.n[0] + s2[0], f.n[1] + s2[1], f.n[2] + s2[2]];
-    const d = [f.n[0] + s1[0] + s2[0], f.n[1] + s1[1] + s2[1], f.n[2] + s1[2] + s2[2]];
-    return [pd(...a), pd(...b), pd(...d)];
-  });
-}
-const AO = [0.5, 0.68, 0.84, 1.0];
-
-class MeshBuf {
-  constructor() { this.v = new Float32Array(1 << 16); this.i = new Uint32Array(1 << 15); this.reset(); }
-  reset() { this.vn = 0; this.in = 0; this.vc = 0; }
-  reserve() {
-    if (this.vn + 28 > this.v.length) { const n = new Float32Array(this.v.length * 2); n.set(this.v); this.v = n; }
-    if (this.in + 6 > this.i.length) { const n = new Uint32Array(this.i.length * 2); n.set(this.i); this.i = n; }
-  }
-  out() { return { verts: this.v.slice(0, this.vn), idx: this.i.slice(0, this.in) }; }
-}
-const opaqueBuf = new MeshBuf(), liquidBuf = new MeshBuf();
-
-export function buildMesh(world, chunk) {
-  const { cx, cz } = chunk;
-  // copy chunk + border from neighbours into the padded array
-  for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) {
-    const src = world.getChunk(cx + dx, cz + dz).data;
-    const xs = dx === -1 ? CS - 1 : 0, xe = dx === 1 ? 0 : CS - 1;
-    const zs = dz === -1 ? CS - 1 : 0, ze = dz === 1 ? 0 : CS - 1;
-    for (let y = 0; y < CH; y++) for (let z = zs; z <= ze; z++) for (let x = xs; x <= xe; x++)
-      padded[pidx(x + dx * CS, y, z + dz * CS)] = src[index(x, y, z)];
-  }
-  padded.fill(B.STONE, 0, PA);                      // below the world
-  padded.fill(B.AIR, (CH + 1) * PA, (CH + 2) * PA); // above the world
-
-  opaqueBuf.reset(); liquidBuf.reset();
-  const ox = cx * CS, oz = cz * CS;
-  for (let y = 0; y < CH; y++) for (let z = 0; z < CS; z++) for (let x = 0; x < CS; x++) {
-    const p = pidx(x, y, z);
-    const id = padded[p];
-    if (id === B.AIR) continue;
-    const kind = KIND[id];
-    const blk = BLOCKS[id];
-    const liquid = kind === 3;
-    const buf = liquid ? liquidBuf : opaqueBuf;
-    const lowerTop = liquid && padded[p + PA] !== B.WATER ? 0.12 : 0;
-    for (let f = 0; f < 6; f++) {
-      const F = FACES[f];
-      const nb = padded[p + F.nd];
-      if (OPAQUE[nb] || nb === id) continue;
-      buf.reserve();
-      const layer = blk.tiles[f];
-      const ao = [3, 3, 3, 3];
-      if (!liquid && !blk.glow) {
-        for (let k = 0; k < 4; k++) {
-          const [a, b, d] = F.ao[k];
-          const s1 = OPAQUE[padded[p + a]], s2 = OPAQUE[padded[p + b]], cr = OPAQUE[padded[p + d]];
-          ao[k] = s1 && s2 ? 0 : 3 - (s1 + s2 + cr);
-        }
-      }
-      const base = blk.glow ? 1.0 : F.shade;
-      const v = buf.v;
-      for (let k = 0; k < 4; k++) {
-        const c = F.c[k], uv = F.uvs[k];
-        let o = buf.vn;
-        v[o++] = ox + x + c[0];
-        v[o++] = y + c[1] - (c[1] ? lowerTop : 0);
-        v[o++] = oz + z + c[2];
-        v[o++] = uv[0]; v[o++] = uv[1]; v[o++] = layer;
-        v[o++] = blk.glow ? 1.0 : base * AO[ao[k]];
-        buf.vn = o;
-      }
-      const s = buf.vc, I = buf.i;
-      if (ao[0] + ao[2] < ao[1] + ao[3]) {
-        I[buf.in++] = s + 1; I[buf.in++] = s + 2; I[buf.in++] = s + 3;
-        I[buf.in++] = s + 1; I[buf.in++] = s + 3; I[buf.in++] = s;
-      } else {
-        I[buf.in++] = s; I[buf.in++] = s + 1; I[buf.in++] = s + 2;
-        I[buf.in++] = s; I[buf.in++] = s + 2; I[buf.in++] = s + 3;
-      }
-      buf.vc += 4;
-    }
-  }
-  return { opaque: opaqueBuf.out(), liquid: liquidBuf.out() };
 }
