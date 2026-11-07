@@ -95,7 +95,8 @@ export class Nursery {
     if (this.treats.length > 150) this.treats.splice(0, this.treats.length - 150);
   }
 
-  update(dt, player, holding) {
+  // threats: positions of snake heads; night: animals doze off when they have nothing to do.
+  update(dt, player, holding, threats = [], night = false) {
     const world = this.world;
     this.updateTreats(dt);
     this.spawnWild(dt, player);
@@ -121,8 +122,17 @@ export class Nursery {
 
       // ---- decide where to go ----
       let goal = null, speed = 0;
-      const treat = this.nearestTreat(a, 10);
-      if (treat) {
+      a.flee = Math.max(0, (a.flee || 0) - dt);
+      let threat = null, td = 3.5 * 3.5;
+      for (const t of threats) { const d = dist2(a.p, t); if (d < td && Math.abs(t[1] - a.p[1]) < 4) { td = d; threat = t; } }
+      if (threat) { a.flee = Math.max(a.flee, 1.5); a.fleeFrom = threat; }
+      const treat = a.flee > 0 ? null : this.nearestTreat(a, 10);
+      if (a.flee > 0 && a.fleeFrom) {
+        // run away from the snake
+        const dx = a.p[0] - a.fleeFrom[0], dz = a.p[2] - a.fleeFrom[2], l = Math.hypot(dx, dz) || 1;
+        goal = [a.p[0] + dx / l * 3, a.p[1], a.p[2] + dz / l * 3]; speed = S.run * 0.85;
+        a.spot = null; a.enjoy = 0; a.sleep = false;
+      } else if (treat) {
         goal = treat.p; speed = S.run;
         if (dist2(a.p, treat.p) < (S.half + 0.3) ** 2 && Math.abs(a.p[1] - treat.p[1]) < 0.8) {
           treat.life = 0;
@@ -166,10 +176,14 @@ export class Nursery {
         if (a.enjoy === 0) { a.spot = null; a.t = 2 + Math.random() * 3; a.speed = 0; }
       }
 
+      if (goal) a.sleep = false;
       if (goal) {
         const dx = goal[0] - a.p[0], dz = goal[2] - a.p[2], l = Math.hypot(dx, dz) || 1;
         a.dir[0] = dx / l; a.dir[1] = dz / l; a.speed = l < 0.3 ? 0 : speed;
         a.mode = 'goal';
+      } else if (night && a.enjoy === 0) {
+        // night time: curl up and doze
+        a.speed = 0; a.mode = 'sleep'; a.sleep = true; a.spot = null;
       } else if (a.enjoy > 0) {
         a.speed = 0; a.mode = 'enjoy';
       } else {
@@ -203,7 +217,7 @@ export class Nursery {
       else v[1] = Math.max(v[1] - GRAVITY * dt, -30);
 
       // lambs bounce like fluffy little stones
-      if (S.bouncy && a.onGround && a.mode !== 'enjoy' && Math.random() < dt * (a.love > 0 || a.mode === 'goal' ? 1.4 : 0.35)) v[1] = 4.8 + Math.random() * 1.6;
+      if (S.bouncy && a.onGround && a.mode !== 'enjoy' && !a.sleep && Math.random() < dt * (a.love > 0 || a.mode === 'goal' ? 1.4 : 0.35)) v[1] = 4.8 + Math.random() * 1.6;
 
       // separation from close neighbours
       const gx = Math.floor(a.p[0]), gz = Math.floor(a.p[2]);
@@ -258,7 +272,8 @@ export class Nursery {
       } else a.wag += ((a.love > 0 || a.mode === 'goal' ? 0.5 : 0.15) - a.wag) * Math.min(1, dt * 3);
       a.wagT += dt * (4 + a.wag * 14);
 
-      a.call -= dt;
+      if (!night) a.sleep = false;
+      a.call -= a.sleep ? dt * 0.15 : dt;
       if (a.call <= 0) { a.call = (a.sp === 'chick' ? 3 : 6) + Math.random() * 10; this.events.push({ type: 'call', sp: a.sp, p: [...a.p] }); }
     }
 
@@ -414,7 +429,14 @@ export class Nursery {
         const peck = a.peck > 0 ? -0.1 * Math.sin(a.peck * 30) ** 2 : 0;
         squash = a.squash + (moving ? -0.05 * Math.cos(a.hop * 2) : 0) + peck;
       }
-      const wag = Math.sin(a.wagT) * (S.wags ? 0.75 : 0.35) * a.wag;
+      if (a.sleep && a.onGround) {
+        // dozing: settle down low, head drooping, slow breathing
+        squash = -0.13 + 0.025 * Math.sin(time * 1.6 + a.wagT);
+        hop = S.legs ? -0.06 : 0;
+        nod = S.legs ? 0.4 : 0;
+        if (!S.legs) flap = 0;
+      }
+      const wag = a.sleep ? 0 : Math.sin(a.wagT) * (S.wags ? 0.75 : 0.35) * a.wag;
       let yaw = a.yaw;
       if (enjoy && S.likes === B.MUD) yaw += 0.35 * Math.sin(time * 3.5 + a.wagT);
       const d = buf[a.sp];
@@ -439,7 +461,7 @@ export class Nursery {
       d[i++] = 1; d[i++] = 0; d[i++] = 0; d[i++] = 0; d[i++] = 0; d[i++] = 0; d[i++] = 0; d[i++] = 0;
     }
     for (const m of Object.values(TREAT_MODEL)) groups.push({ model: m, data: buf['t_' + m], count: tcnt[m] });
-    return { groups, shadows: sh, shadowCount: si / 12 };
+    return { groups, shadowGroups: [{ data: sh, count: si / 12 }] };
   }
 
   serialize() {

@@ -60,5 +60,6 @@ export const PLACEABLE = [B.GRASS, B.DIRT, B.PLANKS, B.LOG, B.HAY, B.MUD, B.ROOF
 // Non-block items (animal treats) share the hotbar with blocks; their ids sit above the block range.
 export const ITEM_SEEDS = 200, ITEM_WHEAT = 201, ITEM_APPLE = 202, ITEM_CLOVER = 203, ITEM_BONE = 204;
 export const TREATS = [ITEM_SEEDS, ITEM_WHEAT, ITEM_APPLE, ITEM_CLOVER, ITEM_BONE];
-export const ITEM_NAMES = { [ITEM_SEEDS]: 'Seeds', [ITEM_WHEAT]: 'Wheat', [ITEM_APPLE]: 'Apple', [ITEM_CLOVER]: 'Clover', [ITEM_BONE]: 'Bone' };
-export const DEFAULT_HOTBAR = [ITEM_SEEDS, ITEM_WHEAT, ITEM_APPLE, ITEM_CLOVER, ITEM_BONE, B.PLANKS, B.HAY, B.MUD, B.CREAM];
+export const ITEM_SWORD = 205;
+export const ITEM_NAMES = { [ITEM_SEEDS]: 'Seeds', [ITEM_WHEAT]: 'Wheat', [ITEM_APPLE]: 'Apple', [ITEM_CLOVER]: 'Clover', [ITEM_BONE]: 'Bone', [ITEM_SWORD]: 'Sword' };
+export const DEFAULT_HOTBAR = [ITEM_SEEDS, ITEM_WHEAT, ITEM_APPLE, ITEM_CLOVER, ITEM_BONE, ITEM_SWORD, B.PLANKS, B.HAY, B.MUD];

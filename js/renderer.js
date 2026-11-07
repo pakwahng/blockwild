@@ -29,6 +29,7 @@ uniform sampler2DArray uTex;
 uniform vec3 uFogColor;
 uniform vec3 uTint;
 uniform int uPass;
+uniform int uGlowLayer;
 in vec3 vUV;
 in float vShade;
 in float vFog;
@@ -36,7 +37,8 @@ out vec4 outColor;
 void main() {
   vec4 c = texture(uTex, vUV);
   if (uPass == 0 && c.a < 0.5) discard;
-  vec3 col = c.rgb * vShade * uTint;
+  bool glow = int(vUV.z + 0.5) == uGlowLayer;   // lamps stay bright at night
+  vec3 col = c.rgb * (glow ? 1.0 : vShade) * (glow ? vec3(1.0) : uTint);
   col = mix(col, uFogColor, vFog);
   outColor = vec4(col, uPass == 0 ? 1.0 : c.a);
 }`;
@@ -51,12 +53,13 @@ void main() {
 }`;
 const SKY_FS = `#version 300 es
 precision highp float;
-uniform vec3 uRight, uUp, uFwd, uZenith, uHorizon, uSunDir;
+uniform vec3 uRight, uUp, uFwd, uZenith, uHorizon, uSunDir, uMoonDir;
 uniform vec2 uTan;
-uniform float uTime, uClouds;
+uniform float uTime, uClouds, uNight;
 in vec2 vNdc;
 out vec4 outColor;
 float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+float hash2(vec2 p) { vec3 q = fract(vec3(p.xyx) * 0.1031); q += dot(q, q.yzx + 33.33); return fract((q.x + q.y) * q.z); }
 float vnoise(vec2 p) {
   vec2 i = floor(p), f = fract(p);
   vec2 u = f * f * (3.0 - 2.0 * f);
@@ -67,14 +70,43 @@ void main() {
   float h = clamp(d.y, 0.0, 1.0);
   vec3 col = mix(uHorizon, uZenith, smoothstep(0.0, 0.55, h));
   float sun = max(dot(d, uSunDir), 0.0);
-  col += vec3(1.0, 0.85, 0.6) * pow(sun, 12.0) * 0.25;
+  col += vec3(1.0, 0.85, 0.6) * pow(sun, 12.0) * 0.25 * (1.0 - uNight);
+  if (uNight > 0.01 && d.y > 0.0) {
+    // little square stars
+    vec2 s = d.xz / (1.0 + d.y) * 22.0;
+    vec2 cell = floor(s), f = fract(s) - 0.5;
+    float h = hash2(cell);
+    if (h > 0.955) {
+      vec2 off = (vec2(hash2(cell + 7.1), hash2(cell + 3.3)) - 0.5) * 0.5;
+      float size = 0.08 + 0.07 * hash2(cell + 1.7);
+      vec2 q = abs(f - off);
+      float star = 1.0 - smoothstep(size - 0.03, size, max(q.x, q.y));
+      float tw = 0.75 + 0.25 * sin(uTime * (1.5 + h * 3.0) + h * 40.0);
+      col += vec3(1.0, 0.93, 0.75) * star * tw * uNight * smoothstep(0.05, 0.3, d.y);
+    }
+  }
   if (d.y > 0.0 && uClouds > 0.0) {
     vec2 p = d.xz / (d.y + 0.12) * 1.6 + vec2(uTime * 0.02, uTime * 0.006);
     float n = vnoise(p) * 0.55 + vnoise(p * 2.1 + 3.7) * 0.3 + vnoise(p * 4.3 - 1.3) * 0.15;
     float c = smoothstep(0.52, 0.66, n) * smoothstep(0.02, 0.2, d.y);
     float shade = smoothstep(0.52, 0.8, n);
     vec3 cloud = mix(vec3(0.86, 0.9, 0.97), vec3(1.0), shade);
-    col = mix(col, cloud, c * 0.92 * uClouds);
+    cloud = mix(cloud, vec3(0.16, 0.2, 0.42), uNight);
+    col = mix(col, cloud, c * 0.92 * uClouds * (1.0 - 0.5 * uNight));
+  }
+  float md = dot(d, uMoonDir);
+  if (uNight > 0.01 && md > 0.0) {
+    // the square moon: a glowing rounded square in front of the clouds
+    vec3 r = normalize(cross(uMoonDir, vec3(0.0, 1.0, 0.0)));
+    vec3 u = cross(r, uMoonDir);
+    vec2 l = vec2(dot(d, r), dot(d, u)) / md;
+    vec2 q = abs(l) - vec2(0.06);
+    float dist = length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - 0.022;
+    float moon = 1.0 - smoothstep(-0.003, 0.003, dist);
+    float glow = exp(-max(dist, 0.0) * 14.0) * 0.5;
+    vec3 face = vec3(1.0, 0.95, 0.8) * (1.06 - 0.12 * smoothstep(-0.08, 0.0, dist));
+    col += vec3(0.95, 0.88, 0.7) * glow * uNight * (1.0 - moon);
+    col = mix(col, face, moon * uNight);
   }
   outColor = vec4(col, 1.0);
 }`;
@@ -139,13 +171,14 @@ void main() {
 const ENT_FS = `#version 300 es
 precision mediump float;
 uniform vec3 uFogColor;
+uniform vec3 uTint;
 uniform float uShadow;
 in vec3 vColor;
 in float vFog;
 out vec4 outColor;
 void main() {
   if (uShadow > 0.5) { outColor = vec4(0.0, 0.0, 0.0, 0.22 * (1.0 - vFog)); return; }
-  outColor = vec4(mix(vColor, uFogColor, vFog), 1.0);
+  outColor = vec4(mix(vColor * uTint, uFogColor, vFog), 1.0);
 }`;
 
 const LINE_VS = `#version 300 es
@@ -372,6 +405,8 @@ export class Renderer {
     gl.uniform3fv(sk.u.uSunDir, view.sunDir);
     gl.uniform1f(sk.u.uTime, time);
     gl.uniform1f(sk.u.uClouds, view.clouds);
+    gl.uniform1f(sk.u.uNight, view.night || 0);
+    gl.uniform3fv(sk.u.uMoonDir, view.moonDir || [0, -1, 0]);
     gl.bindVertexArray(this.skyVao);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
     gl.enable(gl.DEPTH_TEST);
@@ -396,6 +431,7 @@ export class Renderer {
     gl.uniform1f(prog.u.uTime, time);
     gl.uniform3fv(prog.u.uFogColor, fog);
     gl.uniform3fv(prog.u.uTint, view.tint);
+    gl.uniform1i(prog.u.uGlowLayer, view.glowLayer ?? -1);
     gl.uniform1i(prog.u.uTex, 0);
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D_ARRAY, this.tex);
@@ -431,6 +467,7 @@ export class Renderer {
       gl.uniform1f(e.u.uFogNear, view.fogNear);
       gl.uniform1f(e.u.uFogFar, view.fogFar);
       gl.uniform3fv(e.u.uFogColor, fog);
+      gl.uniform3fv(e.u.uTint, view.entTint || view.tint);
       gl.uniform1f(e.u.uShadow, 0);
       for (const g of ents.groups) this.drawModel(g.model, g.data, g.count);
       gl.uniform1f(e.u.uShadow, 1);
@@ -440,7 +477,7 @@ export class Renderer {
       gl.enable(gl.POLYGON_OFFSET_FILL);
       gl.polygonOffset(-2, -2);
       gl.disable(gl.CULL_FACE);
-      this.drawModel('shadow', ents.shadows, ents.shadowCount);
+      for (const s of ents.shadowGroups) this.drawModel('shadow', s.data, s.count);
       gl.enable(gl.CULL_FACE);
       gl.disable(gl.POLYGON_OFFSET_FILL);
       gl.depthMask(true);

@@ -96,6 +96,40 @@ export class Sfx {
     for (let k = 0; k < 3; k++) this.noise(t + k * 0.14, 0.06, 0.18, 1500);
   }
 
+  hiss(vol = 0.3) {
+    if (!this.ready || vol < 0.02) return;
+    const c = this.ctx, t = c.currentTime + 0.01, dur = 0.7, len = Math.ceil(c.sampleRate * dur);
+    const buf = c.createBuffer(1, len, c.sampleRate), d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) { const k = i / len; d[i] = (Math.random() * 2 - 1) * Math.min(1, k * 8) * (1 - k); }
+    const src = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain();
+    src.buffer = buf; f.type = 'highpass'; f.frequency.value = 3500; g.gain.value = vol;
+    src.connect(f).connect(g).connect(this.master);
+    src.start(t);
+  }
+
+  bonk() {
+    if (!this.ready) return;
+    const t = this.ctx.currentTime + 0.01;
+    this.tone('sine', 320, 110, t, 0.18, 0.5);
+    this.noise(t, 0.06, 0.3, 700);
+    this.tone('triangle', 500, 900, t + 0.05, 0.16, 0.18);   // a cartoony boing
+  }
+
+  poof() {
+    if (!this.ready) return;
+    const t = this.ctx.currentTime + 0.01;
+    this.noise(t, 0.3, 0.4, 1200);
+    [784, 988, 1175, 1568].forEach((f, k) => this.tone('sine', f, f * 1.02, t + 0.06 + k * 0.06, 0.14, 0.18));
+  }
+
+  whoosh() { if (this.ready) this.noise(this.ctx.currentTime + 0.01, 0.14, 0.2, 2200); }
+
+  nightfall() {
+    if (!this.ready) return;
+    const t = this.ctx.currentTime + 0.02;
+    [392, 311, 262, 196].forEach((f, k) => this.tone('triangle', f, f, t + k * 0.22, 0.5, 0.16));
+  }
+
   hatch() {
     if (!this.ready) return;
     const t = this.ctx.currentTime + 0.01;

@@ -211,6 +211,37 @@ export function pupModel() {
   return m.done({ wing: [0, 0], leg: [0.22, 0.13, -0.15], head: [0.48, 0.12], tail: [-0.24] });
 }
 
+// ---- the night snake: a goofy head and chunky striped body blocks ----
+const SNAKE_GREEN = '#5cb84a', SNAKE_LIGHT = '#74cc5e', SNAKE_PURPLE = '#6a2a6e';
+export function snakeHeadModel() {
+  const m = new ModelBuilder();
+  m.box([0, 0.24, -0.02], [0.5, 0.4, 0.46], 0.14, SNAKE_GREEN);
+  m.box([0, 0.17, 0.25], [0.42, 0.22, 0.2], 0.09, SNAKE_LIGHT);                  // snout
+  for (const sx of [-1, 1]) {
+    m.box([sx * 0.07, 0.23, 0.351], [0.04, 0.03, 0.02], 0.012, '#2a5a22', 0, false); // nostrils
+    m.box([sx * 0.12, 0.47, 0.1], [0.17, 0.19, 0.1], 0.07, '#ffe23a');              // big yellow eyes
+    m.box([sx * 0.11, 0.46, 0.152], [0.08, 0.1, 0.02], 0.03, '#7a2e14', 0, false);
+    m.box([sx * 0.11 - 0.02, 0.49, 0.164], [0.03, 0.03, 0.01], 0.01, '#ffffff', 0, false);
+    m.box([sx * 0.13, 0.6, 0.1], [0.14, 0.035, 0.05], 0.015, '#2e1a14', 0, false);  // cheeky brows
+  }
+  m.box([0, 0.09, 0.352], [0.26, 0.035, 0.02], 0.012, '#3a1a2a', 0, false);       // grin
+  m.box([0.03, 0.06, 0.4], [0.06, 0.02, 0.14], 0.01, '#f2637a', 8, false);        // flicking tongue
+  return m.done({ wing: [0, 0], leg: [0, 0, 0], head: [0, 0], tail: [0.33] });
+}
+export function snakeSegModel() {
+  const m = new ModelBuilder();
+  m.box([0, 0.2, 0], [0.42, 0.38, 0.42], 0.1, SNAKE_GREEN);
+  m.box([0, 0.2, 0], [0.43, 0.13, 0.43], 0.06, SNAKE_PURPLE, 0, false);
+  m.box([0.1, 0.391, 0.08], [0.08, 0.01, 0.06], 0.004, SNAKE_LIGHT, 0, false);   // clay speckles
+  m.box([-0.09, 0.391, -0.1], [0.06, 0.01, 0.05], 0.004, SNAKE_LIGHT, 0, false);
+  return m.done(NO_RIG_SNAKE);
+}
+const NO_RIG_SNAKE = { wing: [0, 0], leg: [0, 0, 0], head: [0, 0], tail: [0] };
+export const CONFETTI_COLORS = ['#ff5c7a', '#ffd23c', '#4cc25a', '#4aa8ff', '#b05cff'];
+export function confettiModel(color) {
+  return new ModelBuilder().box([0, 0, 0], [0.13, 0.13, 0.13], 0.03, color, 0, false).done(NO_RIG_SNAKE);
+}
+
 // ---- treats ----
 const NO_RIG = { wing: [0, 0], leg: [0, 0, 0], head: [0, 0], tail: [0] };
 export function seedModel() {
@@ -288,6 +319,15 @@ export function treatIcon(kind, px = 64) {
         g.fillStyle = '#4cc25a'; g.beginPath(); g.arc(x - 5, y, 9, 0, Math.PI * 2); g.arc(x + 5, y, 9, 0, Math.PI * 2); g.fill();
       }
       g.fillStyle = '#7fe08a'; g.beginPath(); g.arc(32, 28, 4, 0, Math.PI * 2); g.fill();
+    } else if (kind === 'sword') {
+      // wooden toy sword
+      g.translate(32, 32); g.rotate(Math.PI / 4);
+      rr(g, -6, -28, 12, 38, 5, '#8f5a2e');
+      rr(g, -4.5, -27, 9, 35, 4, '#e8c890');
+      rr(g, -1, -24, 2, 28, 1, '#d2a76a');
+      rr(g, -14, 9, 28, 7, 3, '#b5763a');
+      rr(g, -4, 15, 8, 12, 3, '#7a4a28');
+      g.fillStyle = '#e04a3c'; g.beginPath(); g.arc(0, 29, 4.5, 0, Math.PI * 2); g.fill();
     } else if (kind === 'bone') {
       g.translate(32, 32); g.rotate(-0.7);
       rr(g, -18, -6, 36, 12, 5, '#f4efe3');

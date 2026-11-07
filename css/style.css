@@ -72,6 +72,17 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .fx.heart::before { left: 10px; transform: rotate(-45deg); transform-origin: 0 100%; }
 .fx.heart::after { left: 0; transform: rotate(45deg); transform-origin: 100% 100%; }
 .fx.hatch { font-weight: 900; font-size: 22px; color: #fff3b0; text-shadow: 0 2px 0 #c98a00, 0 3px 6px rgba(0,0,0,.4); }
+.fx.bonk { font-weight: 900; font-size: 26px; color: #ffe23a; text-shadow: 0 2px 0 #6a2a6e, 0 3px 6px rgba(0,0,0,.5); }
+
+/* the toy sword, held in the bottom right */
+#held {
+  position: absolute; right: calc(16% + var(--safe-r)); bottom: calc(var(--slot) + 6px + var(--safe-b));
+  width: min(120px, 26vh); height: min(120px, 26vh); pointer-events: none;
+  transform-origin: 80% 90%; transform: rotate(-8deg);
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, .35));
+}
+#held.swing { animation: swing .3s ease-out; }
+@keyframes swing { 0% { transform: rotate(-8deg); } 35% { transform: rotate(-75deg) translate(-10px, -6px); } 100% { transform: rotate(-8deg); } }
 @keyframes floatUp { 0% { opacity: 0; margin-top: 0; } 15% { opacity: 1; } 100% { opacity: 0; margin-top: -60px; } }
 
 #info {

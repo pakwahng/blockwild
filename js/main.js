@@ -1,5 +1,7 @@
 // Blockwild: bootstrap, game loop, streaming, interaction, UI and saving.
-import { B, BLOCKS, SOLID, PLACEABLE, TILE_COUNT, DEFAULT_HOTBAR, ITEM_SEEDS, TREATS, ITEM_NAMES } from './blocks.js';
+import { B, T, BLOCKS, SOLID, PLACEABLE, TILE_COUNT, DEFAULT_HOTBAR, ITEM_SEEDS, ITEM_SWORD, TREATS, ITEM_NAMES } from './blocks.js';
+import { Snakes } from './snakes.js';
+import { skyAt, CYCLE } from './sky.js';
 import { buildTextures, blockIcon } from './textures.js';
 import * as M from './models.js';
 import { Nursery, SPECIES, SPECIES_ORDER, isTreat } from './animals.js';
@@ -19,8 +21,7 @@ const store = {
 
 const coarse = matchMedia('(pointer: coarse)').matches;
 const settings = Object.assign({ view: coarse ? 5 : 7, sens: 1, autoJump: true, showFps: false, sound: true }, store.get(SET_KEY) || {});
-const SKY = [0.8, 0.9, 0.98], ZENITH = [0.3, 0.62, 0.93], WATER_FOG = [0.1, 0.24, 0.45];
-const SUN_DIR = [0.45, 0.55, -0.7];
+const WATER_FOG = [0.1, 0.24, 0.45];
 const REACH = 6;
 
 const canvas = $('#gl');
@@ -39,12 +40,16 @@ try {
   renderer.addModel('clover', M.cloverModel());
   renderer.addModel('bone', M.boneModel());
   renderer.addModel('shadow', M.shadowModel());
+  renderer.addModel('snakeHead', M.snakeHeadModel());
+  renderer.addModel('snakeSeg', M.snakeSegModel());
+  M.CONFETTI_COLORS.forEach((c, k) => renderer.addModel('confetti' + k, M.confettiModel(c)));
 } catch (err) {
   console.error(err);
   showError('This device or browser cannot run Blockwild (WebGL2 is required). ' + err.message);
 }
 
-let world = null, player = null, flock = null, running = false, firsts = [];
+let world = null, player = null, flock = null, snakes = null, running = false, firsts = [];
+let clock = 0.08, nights = 0, swingCool = 0, wasBreaking = false;
 let hotbar = [...DEFAULT_HOTBAR];
 let selected = 0;
 let target = null, breakT = { key: '', p: 0 };
@@ -53,9 +58,10 @@ const sfx = new Sfx();
 
 const icons = {};
 if (textures) for (const id of PLACEABLE) icons[id] = blockIcon(BLOCKS[id], textures.tiles, 64).toDataURL();
-for (const id of TREATS) icons[id] = M.treatIcon(ITEM_NAMES[id].toLowerCase(), 64).toDataURL();
+for (const id of [...TREATS, ITEM_SWORD]) icons[id] = M.treatIcon(ITEM_NAMES[id].toLowerCase(), 64).toDataURL();
+$('#held').src = icons[ITEM_SWORD] || '';
 const itemName = id => ITEM_NAMES[id] || BLOCKS[id].name;
-const isItem = id => isTreat(id) || !!BLOCKS[id];
+const isItem = id => isTreat(id) || id === ITEM_SWORD || !!BLOCKS[id];
 
 // Lines from the song, shown as the nursery grows.
 const MILESTONES = [
@@ -118,6 +124,7 @@ function startWorld(save) {
     // older saves: hand out all the treats at the front of the hotbar
     hotbar = [...TREATS, ...hotbar.filter(id => !isTreat(id))].slice(0, 9);
   }
+  if (save && !(save.v >= 3) && !hotbar.includes(ITEM_SWORD)) hotbar[5] = ITEM_SWORD; // the toy sword arrives
   while (hotbar.length < 9) hotbar.push(B.STONE);
   player.autoJump = settings.autoJump;
   document.body.classList.toggle('flying', player.flying);
@@ -129,6 +136,9 @@ function startWorld(save) {
   if (save?.animals) flock.load(save.animals); else flock.loadChicks(save?.chicks);
   milestone = save?.milestone || 0;
   firsts = save?.firsts || [];
+  snakes = new Snakes(world);
+  clock = save?.clock ?? 0.08;
+  nights = save?.nights || 0;
   // a few wild babies of each kind close by, so there's someone to feed straight away
   for (const sp of SPECIES_ORDER) {
     if (flock.animals.some(a => a.sp === sp)) continue;
@@ -142,7 +152,7 @@ function startWorld(save) {
 function saveGame() {
   if (!world || !player) return;
   store.set(SAVE_KEY, {
-    v: 2, seed: world.seed, pos: player.pos.map(v => +v.toFixed(2)), yaw: player.yaw, pitch: player.pitch,
+    v: 3, seed: world.seed, clock: +clock.toFixed(4), nights, pos: player.pos.map(v => +v.toFixed(2)), yaw: player.yaw, pitch: player.pitch,
     flying: player.flying, hotbar, selected, edits: world.serializeEdits(),
     animals: flock ? flock.serialize() : [], milestone, firsts,
   });
@@ -199,7 +209,7 @@ function floatFx(p, kind) {
   if (sx < -40 || sy < -40 || sx > window.innerWidth + 40 || sy > window.innerHeight + 40) return;
   const el = document.createElement('div');
   el.className = 'fx ' + kind;
-  el.textContent = kind === 'hatch' ? '+1' : '';
+  el.textContent = kind === 'hatch' ? '+1' : kind === 'bonk' ? 'BONK!' : '';
   el.style.left = sx + 'px'; el.style.top = sy + 'px';
   $('#fx').appendChild(el);
   setTimeout(() => el.remove(), 1300);
@@ -217,8 +227,42 @@ function handleChickEvents() {
     else { sfx.happy(); floatFx(ev.p, 'heart'); }
   }
   flock.events.length = 0;
+
+  for (const ev of snakes.events) {
+    const d = ev.p ? Math.hypot(ev.p[0] - eye[0], ev.p[1] - eye[1], ev.p[2] - eye[2]) : 0;
+    if (ev.type === 'night') {
+      sfx.nightfall();
+      toast(nights === 0
+        ? 'Night falls under the square moon… a block snake is coming for the nursery! Grab your toy sword and guard the gate.'
+        : 'Night falls. Watch out for the block snake!');
+    } else if (ev.type === 'dawn') {
+      nights++;
+      sfx.fanfare();
+      toast(ev.spooked ? `Sunrise! The snake spooked ${ev.spooked} ${ev.spooked === 1 ? 'baby' : 'babies'}, but the nursery made it.`
+        : 'Sunrise! Every baby made it safely through the night.');
+    } else if (ev.type === 'hiss') { if (d < 24) sfx.hiss(0.25 * (1 - d / 24)); }
+    else if (ev.type === 'spook') {
+      sfx.hiss(0.4); sfx.call(ev.sp, 0.5);
+      toast(`The snake spooked a ${SPECIES[ev.sp].name} out of your nursery! Feed it again to bring it back.`);
+    } else if (ev.type === 'bonk') { sfx.bonk(); floatFx(ev.p, 'bonk'); buzz(30); }
+    else if (ev.type === 'poof') {
+      sfx.poof(); buzz(60);
+      if (!firsts.includes('poof')) { firsts.push('poof'); toast('Swung once, swung twice: bonk! The snake poofed into confetti cubes.'); }
+    }
+  }
+  snakes.events.length = 0;
   updateNursery();
 }
+
+// ---------- the toy sword ----------
+function swing() {
+  if (swingCool > 0) return;
+  swingCool = 0.35;
+  const held = $('#held');
+  held.classList.remove('swing'); void held.offsetWidth; held.classList.add('swing');
+  if (!snakes.swing(player.eye(), player.forward())) sfx.whoosh();
+}
+function updateHeld() { $('#held').hidden = hotbar[selected] !== ITEM_SWORD; }
 
 // ---------- chunk streaming ----------
 const OFFSETS = [];
@@ -266,6 +310,7 @@ function remeshAround(x, z) {
 function placeBlock() {
   if (!running) return;
   const id = hotbar[selected];
+  if (id === ITEM_SWORD) { swing(); return; }
   if (isTreat(id)) {
     if (throwCool > 0) return;
     throwCool = id === ITEM_SEEDS ? 0.2 : 0.3;
@@ -283,6 +328,14 @@ function placeBlock() {
 
 function updateBreaking(dt) {
   const ring = $('#crosshair');
+  if (hotbar[selected] === ITEM_SWORD) {
+    // with the sword, a click or press swings instead of digging
+    if (input.state.breaking && !wasBreaking) swing();
+    wasBreaking = input.state.breaking;
+    breakT.p = 0; breakT.key = ''; ring.style.setProperty('--p', 0);
+    return;
+  }
+  wasBreaking = input.state.breaking;
   if (!input.state.breaking || !target) { breakT.p = 0; breakT.key = ''; ring.style.setProperty('--p', 0); return; }
   const key = target.x + ',' + target.y + ',' + target.z;
   if (key !== breakT.key) { breakT.key = key; breakT.p = 0; }
@@ -323,10 +376,12 @@ function buildHotbar() {
     b.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); selectSlot(i); });
     bar.appendChild(b);
   });
+  updateHeld();
 }
 function selectSlot(i) {
   selected = i;
   [...$('#hotbar').children].forEach((el, k) => el.classList.toggle('sel', k === i));
+  updateHeld();
 }
 
 function openPicker() {
@@ -335,7 +390,7 @@ function openPicker() {
   if (document.pointerLockElement) { pickerOpenFromLock = true; document.exitPointerLock(); }
   const grid = $('#picker-grid');
   grid.innerHTML = '';
-  for (const id of [...TREATS, ...PLACEABLE]) {
+  for (const id of [...TREATS, ITEM_SWORD, ...PLACEABLE]) {
     const b = document.createElement('button');
     b.className = 'pick' + (hotbar[selected] === id ? ' cur' : '');
     b.innerHTML = `<img alt="" src="${icons[id]}"><span>${itemName(id)}</span>`;
@@ -457,9 +512,14 @@ function frame(now) {
     if (world.getChunk(Math.floor(player.pos[0] / CS), Math.floor(player.pos[2] / CS))) player.update(dt, input.state, world);
     if (player.pos[1] < -20) { player.pos[1] = CH; player.vel[1] = 0; }
     throwCool = Math.max(0, throwCool - dt);
-    flock.update(dt, player, hotbar[selected]);
+    swingCool = Math.max(0, swingCool - dt);
+    clock = (clock + dt / CYCLE) % 1;
+    const isNight = skyAt(clock).night > 0.5;
+    flock.update(dt, player, hotbar[selected], snakes.heads(), isNight);
+    snakes.update(dt, flock, player, isNight, nights);
     handleChickEvents();
   }
+  const sky = skyAt(clock);
   const pending = stream(running ? 5 : 10);
   $('#loading').hidden = pending === 0 || running;
 
@@ -469,13 +529,16 @@ function frame(now) {
 
   const underwater = world.getBlock(Math.floor(eye[0]), Math.floor(eye[1]), Math.floor(eye[2])) === B.WATER;
   const far = settings.view * CS - 6;
+  const waterFog = WATER_FOG.map((v, i) => v * sky.tint[i]);
+  const a = flock.instances(eye, far + 8, now / 1000), s = snakes.instances(eye, far + 8, now / 1000);
   renderer.render({
     eye, forward: fwd, fov: 70 * Math.PI / 180,
-    fogColor: underwater ? WATER_FOG : SKY, zenith: underwater ? WATER_FOG : ZENITH,
-    sunDir: SUN_DIR, clouds: underwater ? 0 : 1,
+    fogColor: underwater ? waterFog : sky.horizon, zenith: underwater ? waterFog : sky.zenith,
+    sunDir: sky.sunDir, moonDir: sky.moonDir, night: underwater ? 0 : sky.night, clouds: underwater ? 0 : 1,
     fogNear: underwater ? 0 : far * 0.6, fogFar: underwater ? 22 : far,
-    tint: underwater ? [0.6, 0.75, 1.0] : [1, 1, 1],
-  }, world.chunks.values(), target, now / 1000, flock.instances(eye, far + 8, now / 1000));
+    tint: underwater ? [0.6 * sky.tint[0], 0.75 * sky.tint[1], sky.tint[2]] : sky.tint,
+    entTint: sky.entTint, glowLayer: T.LAMP,
+  }, world.chunks.values(), target, now / 1000, { groups: [...a.groups, ...s.groups], shadowGroups: [...a.shadowGroups, ...s.shadowGroups] });
 
   if (settings.showFps) {
     const p = player.pos;
@@ -486,7 +549,8 @@ function frame(now) {
 requestAnimationFrame(loop);
 
 // handy for debugging from the console
-window.blockwild = { get world() { return world; }, get player() { return player; }, get target() { return target; }, get flock() { return flock; }, get nursery() { return flock; }, input, raycast,
+window.blockwild = { get world() { return world; }, get player() { return player; }, get target() { return target; }, get flock() { return flock; }, get nursery() { return flock; }, get snakes() { return snakes; }, input, raycast,
+  get clock() { return clock; }, setTime(t) { clock = t; }, swing: () => swing(),
   // advance n frames by hand (useful when the page is in a background tab)
   step(n = 1) { for (let i = 0; i < n; i++) { last = performance.now() - 33; frame(performance.now()); } } };
 

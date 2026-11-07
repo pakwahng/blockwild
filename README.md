@@ -35,6 +35,16 @@ Based on the music video *Baby Chicken Empire*: build a nursery for baby animals
 - Animals hop up natural steps, but can't climb **wood, logs, hay, walls, roof, glass or brick**. A one-block fence keeps them in.
 - Milestones at 10, 37, 67 and 100 chicks, the first of each other baby, and a full set of all five quote the song.
 
+## Night and the block snake
+
+A full day lasts 10 minutes: about 6 minutes of daylight, a pink dusk, roughly 3 minutes of night under the square moon, then sunrise.
+
+- At night the babies doze off, and a green and purple striped **block snake** slithers towards your nursery (one snake at first, up to four on later nights).
+- If it reaches a baby, the baby is spooked out of your nursery and runs off. Feed it again to bring it back. Babies run from a snake that gets close.
+- Snakes slither over a **one-block fence** but not a **two-block wall**.
+- Pick the **toy sword** and tap (or click) to swing. Two bonks and the snake poofs into confetti cubes.
+- At sunrise any remaining snakes leave. Lamps stay bright at night.
+
 ## Controls
 
 | Phone | Keyboard / mouse |
@@ -53,6 +63,8 @@ Based on the music video *Baby Chicken Empire*: build a nursery for baby animals
 | `js/world.js` | Chunk storage, terrain/caves/trees generation, player edits |
 | `js/mesher.js` | Turns chunks into triangles, with rounded block edges and ambient occlusion |
 | `js/animals.js` | Baby animal behaviour: species table, wandering, treats, taming, breeding, hay and mud habits, pens |
+| `js/snakes.js` | The night snake: spawning, slithering body, spooking babies, sword hits, confetti |
+| `js/sky.js` | Day/night clock: sky colours, light tint, sun and moon |
 | `js/models.js` | Rounded-box 3D models for the babies and treats (with leg, head and tail rigs), treat icons, counter faces |
 | `js/audio.js` | Synthesized cheeps, moos, oinks, baas, yips and sound effects |
 | `js/renderer.js` | WebGL2 shaders, texture array, frustum culling, water pass, block outline |
