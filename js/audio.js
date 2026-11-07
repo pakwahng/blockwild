@@ -47,6 +47,55 @@ export class Sfx {
     for (let k = 0; k < n; k++) this.tone('sine', 2500 * p, 3600 * p, t + k * 0.11, 0.07, vol * 0.5);
   }
 
+  // A filtered voice for the bigger babies: a waveform through a low-pass, with optional wobble.
+  voice(type, f0, f1, start, dur, vol, cutoff, vib = 0, vibRate = 0) {
+    const c = this.ctx, o = c.createOscillator(), f = c.createBiquadFilter(), g = c.createGain();
+    o.type = type;
+    o.frequency.setValueAtTime(f0, start);
+    o.frequency.exponentialRampToValueAtTime(f1, start + dur);
+    if (vib) {
+      const l = c.createOscillator(), lg = c.createGain();
+      l.frequency.value = vibRate; lg.gain.value = vib;
+      l.connect(lg).connect(o.frequency);
+      l.start(start); l.stop(start + dur + 0.02);
+    }
+    f.type = 'lowpass'; f.frequency.value = cutoff; f.Q.value = 2;
+    g.gain.setValueAtTime(0.0001, start);
+    g.gain.exponentialRampToValueAtTime(vol, start + Math.min(0.06, dur * 0.25));
+    g.gain.setValueAtTime(vol, start + dur * 0.6);
+    g.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+    o.connect(f).connect(g).connect(this.master);
+    o.start(start); o.stop(start + dur + 0.02);
+  }
+
+  // Each baby's call: cheep, moo, oink, baa or yip.
+  call(sp, vol = 0.3) {
+    if (!this.ready || vol < 0.02) return;
+    const t = this.ctx.currentTime + 0.01, p = 0.92 + Math.random() * 0.16;
+    if (sp === 'chick') return this.cheep(vol);
+    if (sp === 'calf') this.voice('sawtooth', 260 * p, 200 * p, t, 0.55, vol * 0.7, 900);
+    else if (sp === 'piglet') {
+      for (let k = 0; k < 2; k++) this.voice('square', 190 * p, 150 * p, t + k * 0.13, 0.09, vol * 0.55, 700);
+    } else if (sp === 'lamb') this.voice('sawtooth', 520 * p, 470 * p, t, 0.45, vol * 0.5, 1800, 28, 11);
+    else if (sp === 'pup') {
+      const n = 1 + (Math.random() * 2 | 0);
+      for (let k = 0; k < n; k++) this.voice('triangle', 900 * p, 1350 * p, t + k * 0.16, 0.1, vol * 0.8, 4000);
+    }
+  }
+
+  splash() {
+    if (!this.ready) return;
+    const t = this.ctx.currentTime + 0.01;
+    this.noise(t, 0.18, 0.3, 350);
+    this.noise(t + 0.08, 0.12, 0.2, 500);
+  }
+
+  munch() {
+    if (!this.ready) return;
+    const t = this.ctx.currentTime + 0.01;
+    for (let k = 0; k < 3; k++) this.noise(t + k * 0.14, 0.06, 0.18, 1500);
+  }
+
   hatch() {
     if (!this.ready) return;
     const t = this.ctx.currentTime + 0.01;

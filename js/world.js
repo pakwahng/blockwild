@@ -54,7 +54,9 @@ export class World {
       const wx = x0 + lx, wz = z0 + lz;
       const h = this.heightAt(wx, wz);
       heights[lx + lz * CS] = h;
-      const top = this.surfaceBlock(h);
+      let top = this.surfaceBlock(h);
+      // muddy patches in the lowlands, where piglets like to roll
+      if (top === B.GRASS && h <= SEA + 5 && n2.perlin2(wx / 13 + 100.5, wz / 13 - 40.5) > 0.3) top = B.MUD;
       const under = top === B.SAND ? B.SAND : B.DIRT;
       const shallow = h <= SEA + 2;
       for (let y = 0; y <= Math.max(h, SEA); y++) {

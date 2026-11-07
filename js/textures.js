@@ -223,6 +223,14 @@ const painters = {
     const grain = woodGrain(rnd, 3, false);
     return (u, v) => scale(mix(base, dark, grain(u, v) * 0.5), rim(u, v, 0.1, 0.16));
   },
+  [T.MUD]: rnd => {
+    const base = hex('#7a4a2e'), dark = hex('#5f3820'), wet = hex('#9a6a48');
+    const puddles = blobs(rnd, 5, 0.1, 0.2), shine = blobs(rnd, 6, 0.03, 0.06);
+    return (u, v) => {
+      const p = puddles(u, v)[0], s = shine(u, v)[0];
+      return scale(mix(mix(base, dark, p * 0.7), wet, s * 0.8), rim(u, v, 0.1, 0.2));
+    };
+  },
 };
 
 function makeTile(i) {

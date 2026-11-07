@@ -41,14 +41,17 @@ button { font: inherit; color: inherit; cursor: pointer; }
   filter: drop-shadow(0 0 2px rgba(0, 0, 0, .7));
 }
 
-#chick-count {
+#nursery {
   position: absolute; left: calc(10px + var(--safe-l)); top: calc(8px + var(--safe-t));
-  display: flex; align-items: center; gap: 6px; padding: 4px 12px 4px 6px; border-radius: 99px;
-  background: rgba(10, 14, 20, 0.5); border: 1px solid var(--panel-edge);
-  font-weight: 800; font-size: 18px; color: #fff3b0;
+  display: flex; flex-wrap: wrap; gap: 6px; max-width: calc(100vw - 140px);
 }
-#chick-count svg { width: 30px; height: 30px; }
-#chick-count.bump { animation: bump .45s ease-out; }
+#nursery .pill {
+  display: flex; align-items: center; gap: 4px; padding: 3px 10px 3px 4px; border-radius: 99px;
+  background: rgba(10, 14, 20, 0.5); border: 1px solid var(--panel-edge);
+  font-weight: 800; font-size: 16px; color: #fff3b0;
+}
+#nursery svg { width: 28px; height: 28px; }
+#nursery .pill.bump { animation: bump .45s ease-out; }
 @keyframes bump { 30% { transform: scale(1.25); } 100% { transform: scale(1); } }
 
 #toast {
@@ -121,9 +124,9 @@ body.touch #touch-ui { display: block; }
 body.flying #btn-down { display: grid; }
 #btn-fly { position: absolute; right: calc(34px + var(--safe-r)); bottom: calc(170px + var(--safe-b)); width: 48px; height: 48px; }
 #touch-hint {
-  position: absolute; left: 50%; top: calc(14px + var(--safe-t)); transform: translateX(-50%);
+  position: absolute; left: 50%; bottom: calc(var(--slot) + 28px + var(--safe-b)); transform: translateX(-50%);
   padding: 6px 12px; border-radius: 99px; background: rgba(10, 14, 20, 0.6); font-size: 13px;
-  white-space: nowrap; max-width: calc(100vw - 140px); overflow: hidden; text-overflow: ellipsis;
+  white-space: nowrap; max-width: calc(100vw - 230px); overflow: hidden; text-overflow: ellipsis;
   transition: opacity .6s;
 }
 #touch-hint.gone { opacity: 0; }

@@ -86,24 +86,42 @@ layout(location=1) in vec3 aNormal;
 layout(location=2) in vec3 aColor;
 layout(location=3) in float aPart;
 layout(location=4) in vec4 iPosYaw;
-layout(location=5) in vec4 iAnim; // scale, hop, flap, squash
+layout(location=5) in vec4 iAnim;  // scale, hop, flap (wings) or stride (legs), squash
+layout(location=6) in vec4 iExtra; // tail wag, head nod, -, -
 uniform mat4 uMVP;
 uniform vec3 uCam;
 uniform float uFogNear, uFogFar;
+uniform vec2 uWing;  // wing pivot x, y
+uniform vec3 uLeg;   // hip y, front leg z, back leg z
+uniform vec3 uRig;   // head pivot y, z; tail pivot z
 out vec3 vColor;
 out float vFog;
 vec2 rot(vec2 v, float a) { float c = cos(a), s = sin(a); return vec2(c * v.x - s * v.y, s * v.x + c * v.y); }
 void main() {
   vec3 p = aPos, n = aNormal;
-  if (aPart > 0.5 && aPart < 2.5) {           // wings flap around their top edge
-    float side = aPart < 1.5 ? 1.0 : -1.0;
-    vec2 piv = vec2(side * 0.24, 0.36);
+  int part = int(aPart + 0.5);
+  if (part == 1 || part == 2) {                // wings flap around their top edge
+    float side = part == 1 ? 1.0 : -1.0;
+    vec2 piv = vec2(side * uWing.x, uWing.y);
     float a = iAnim.z * side;
     p.xy = piv + rot(p.xy - piv, a);
     n.xy = rot(n.xy, a);
+  } else if (part >= 4 && part <= 7) {         // legs swing from the hip, diagonal pairs together
+    vec2 piv = vec2(uLeg.x, part <= 5 ? uLeg.y : uLeg.z);
+    float a = iAnim.z * ((part == 4 || part == 7) ? 1.0 : -1.0);
+    p.yz = piv + rot(p.yz - piv, a);
+    n.yz = rot(n.yz, a);
+  } else if (part == 8) {                      // tail wags side to side
+    vec2 piv = vec2(0.0, uRig.z);
+    p.xz = piv + rot(p.xz - piv, iExtra.x);
+    n.xz = rot(n.xz, iExtra.x);
+  } else if (part == 10) {                     // head nods (eating, sniffing)
+    vec2 piv = uRig.xy;
+    p.yz = piv + rot(p.yz - piv, iExtra.y);
+    n.yz = rot(n.yz, iExtra.y);
   }
   float sq = iAnim.w;
-  if (aPart < 2.5) { p.y *= 1.0 + sq; p.xz *= 1.0 - sq * 0.6; }
+  if (part != 3 && (part < 4 || part > 7)) { p.y *= 1.0 + sq; p.xz *= 1.0 - sq * 0.6; }
   p *= iAnim.x;
   float c = cos(iPosYaw.w), s = sin(iPosYaw.w);
   p = vec3(p.x * c + p.z * s, p.y, -p.x * s + p.z * c);
@@ -263,20 +281,26 @@ export class Renderer {
     const inst = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, inst);
     gl.bufferData(gl.ARRAY_BUFFER, 4096, gl.DYNAMIC_DRAW);
-    gl.enableVertexAttribArray(4); gl.vertexAttribPointer(4, 4, gl.FLOAT, false, 32, 0); gl.vertexAttribDivisor(4, 1);
-    gl.enableVertexAttribArray(5); gl.vertexAttribPointer(5, 4, gl.FLOAT, false, 32, 16); gl.vertexAttribDivisor(5, 1);
+    // per instance: [x, y, z, yaw] [scale, hop, flap, squash] [wag, nod, 0, 0]
+    gl.enableVertexAttribArray(4); gl.vertexAttribPointer(4, 4, gl.FLOAT, false, 48, 0); gl.vertexAttribDivisor(4, 1);
+    gl.enableVertexAttribArray(5); gl.vertexAttribPointer(5, 4, gl.FLOAT, false, 48, 16); gl.vertexAttribDivisor(5, 1);
+    gl.enableVertexAttribArray(6); gl.vertexAttribPointer(6, 4, gl.FLOAT, false, 48, 32); gl.vertexAttribDivisor(6, 1);
     gl.bindVertexArray(null);
-    this.models[name] = { vao, inst, instSize: 4096, count: mesh.idx.length };
+    const r = mesh.rig || { wing: [0, 0], leg: [0, 0, 0], head: [0, 0], tail: [0] };
+    this.models[name] = { vao, inst, instSize: 4096, count: mesh.idx.length, rig: { wing: r.wing, leg: r.leg, rig: [r.head[0], r.head[1], r.tail[0]] } };
   }
 
   drawModel(name, data, n) {
     if (!n) return;
-    const gl = this.gl, m = this.models[name];
+    const gl = this.gl, m = this.models[name], u = this.ent.u;
+    gl.uniform2fv(u.uWing, m.rig.wing);
+    gl.uniform3fv(u.uLeg, m.rig.leg);
+    gl.uniform3fv(u.uRig, m.rig.rig);
     gl.bindVertexArray(m.vao);
     gl.bindBuffer(gl.ARRAY_BUFFER, m.inst);
-    const bytes = n * 32;
+    const bytes = n * 48;
     if (bytes > m.instSize) { m.instSize = bytes * 2; gl.bufferData(gl.ARRAY_BUFFER, m.instSize, gl.DYNAMIC_DRAW); }
-    gl.bufferSubData(gl.ARRAY_BUFFER, 0, data, 0, n * 8);
+    gl.bufferSubData(gl.ARRAY_BUFFER, 0, data, 0, n * 12);
     gl.drawElementsInstanced(gl.TRIANGLES, m.count, gl.UNSIGNED_SHORT, 0, n);
   }
 
@@ -408,8 +432,7 @@ export class Renderer {
       gl.uniform1f(e.u.uFogFar, view.fogFar);
       gl.uniform3fv(e.u.uFogColor, fog);
       gl.uniform1f(e.u.uShadow, 0);
-      this.drawModel('chick', ents.chicks, ents.chickCount);
-      this.drawModel('seed', ents.seeds, ents.seedCount);
+      for (const g of ents.groups) this.drawModel(g.model, g.data, g.count);
       gl.uniform1f(e.u.uShadow, 1);
       gl.enable(gl.BLEND);
       gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);

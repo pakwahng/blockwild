@@ -17,15 +17,23 @@ The service worker and "Add to Home Screen" install need **HTTPS**, so the easie
 - **iPhone (Safari):** Share → Add to Home Screen. It opens full screen like an app.
 - **Android (Chrome):** menu → Install app.
 
-## The nursery (chicks)
+## The nursery
 
-Based on the music video *Baby Chicken Empire*: build a nursery for baby chicks.
+Based on the music video *Baby Chicken Empire*: build a nursery for baby animals.
 
-- Pick the **seed pouch** (first hotbar slot). Chicks within ~14 blocks follow you while you hold it.
-- **Tap** (right click on desktop) to throw seeds. A chick that eats a seed joins your nursery (the counter at top left).
-- Two fed chicks find each other and **hatch a baby chick**. Each chick needs about 25 seconds before it can do that again.
-- Chicks hop up natural steps, but can't climb **wood, logs, hay, walls, roof, glass or brick**. A one-block fence keeps them in.
-- Milestones at 10, 37, 67 and 100 chicks quote the song.
+| Baby | Favourite treat | Habit |
+|---|---|---|
+| Chick | Seeds | Pecks about, flaps when excited |
+| Calf | Wheat | Munches beside **hay** blocks |
+| Piglet | Apple | Rolls in **mud** (lowland mud patches, or place the Mud block) |
+| Lamb | Clover | Bounces like a fluffy little stone |
+| Wolf pup | Bone | Wags its tail when you're near or holding a bone |
+
+- Pick a treat on the hotbar. Babies of that kind within ~14 blocks follow you while you hold it.
+- **Tap** (right click on desktop) to throw it. A baby that eats its treat joins your nursery (the counters at top left).
+- Two fed babies of the same kind pair up and **make a new baby**. Each needs about 25 seconds before it can do that again.
+- Animals hop up natural steps, but can't climb **wood, logs, hay, walls, roof, glass or brick**. A one-block fence keeps them in.
+- Milestones at 10, 37, 67 and 100 chicks, the first of each other baby, and a full set of all five quote the song.
 
 ## Controls
 
@@ -44,9 +52,9 @@ Based on the music video *Baby Chicken Empire*: build a nursery for baby chicks.
 | `js/main.js` | Boot, game loop, chunk streaming, break/place, menus, saving |
 | `js/world.js` | Chunk storage, terrain/caves/trees generation, player edits |
 | `js/mesher.js` | Turns chunks into triangles, with rounded block edges and ambient occlusion |
-| `js/chicks.js` | Chick behaviour: wandering, following seeds, eating, hatching, pens |
-| `js/models.js` | Rounded-box 3D models for chicks and seeds, seed pouch icon |
-| `js/audio.js` | Synthesized cheeps and sound effects |
+| `js/animals.js` | Baby animal behaviour: species table, wandering, treats, taming, breeding, hay and mud habits, pens |
+| `js/models.js` | Rounded-box 3D models for the babies and treats (with leg, head and tail rigs), treat icons, counter faces |
+| `js/audio.js` | Synthesized cheeps, moos, oinks, baas, yips and sound effects |
 | `js/renderer.js` | WebGL2 shaders, texture array, frustum culling, water pass, block outline |
 | `js/player.js` | Movement, collision, swimming, flying, voxel raycast |
 | `js/input.js` | Touch joystick/look/tap/hold and keyboard/mouse |

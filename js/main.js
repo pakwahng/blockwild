@@ -1,8 +1,8 @@
 // Blockwild: bootstrap, game loop, streaming, interaction, UI and saving.
-import { B, BLOCKS, SOLID, PLACEABLE, TILE_COUNT, DEFAULT_HOTBAR, ITEM_SEEDS } from './blocks.js';
+import { B, BLOCKS, SOLID, PLACEABLE, TILE_COUNT, DEFAULT_HOTBAR, ITEM_SEEDS, TREATS, ITEM_NAMES } from './blocks.js';
 import { buildTextures, blockIcon } from './textures.js';
-import { chickModel, seedModel, shadowModel, seedIcon } from './models.js';
-import { Flock } from './chicks.js';
+import * as M from './models.js';
+import { Nursery, SPECIES, SPECIES_ORDER, isTreat } from './animals.js';
 import { Sfx } from './audio.js';
 import { World, CS, CH } from './world.js';
 import { buildMesh } from './mesher.js';
@@ -28,15 +28,23 @@ let textures, renderer;
 try {
   textures = buildTextures();
   renderer = new Renderer(canvas, textures, TILE_COUNT);
-  renderer.addModel('chick', chickModel());
-  renderer.addModel('seed', seedModel());
-  renderer.addModel('shadow', shadowModel());
+  renderer.addModel('chick', M.chickModel());
+  renderer.addModel('calf', M.calfModel());
+  renderer.addModel('piglet', M.pigletModel());
+  renderer.addModel('lamb', M.lambModel());
+  renderer.addModel('pup', M.pupModel());
+  renderer.addModel('seed', M.seedModel());
+  renderer.addModel('wheat', M.wheatModel());
+  renderer.addModel('apple', M.appleModel());
+  renderer.addModel('clover', M.cloverModel());
+  renderer.addModel('bone', M.boneModel());
+  renderer.addModel('shadow', M.shadowModel());
 } catch (err) {
   console.error(err);
   showError('This device or browser cannot run Blockwild (WebGL2 is required). ' + err.message);
 }
 
-let world = null, player = null, flock = null, running = false;
+let world = null, player = null, flock = null, running = false, firsts = [];
 let hotbar = [...DEFAULT_HOTBAR];
 let selected = 0;
 let target = null, breakT = { key: '', p: 0 };
@@ -45,18 +53,26 @@ const sfx = new Sfx();
 
 const icons = {};
 if (textures) for (const id of PLACEABLE) icons[id] = blockIcon(BLOCKS[id], textures.tiles, 64).toDataURL();
-icons[ITEM_SEEDS] = seedIcon(64).toDataURL();
-const itemName = id => id === ITEM_SEEDS ? 'Seeds' : BLOCKS[id].name;
-const isItem = id => id === ITEM_SEEDS || !!BLOCKS[id];
+for (const id of TREATS) icons[id] = M.treatIcon(ITEM_NAMES[id].toLowerCase(), 64).toDataURL();
+const itemName = id => ITEM_NAMES[id] || BLOCKS[id].name;
+const isItem = id => isTreat(id) || !!BLOCKS[id];
 
 // Lines from the song, shown as the nursery grows.
 const MILESTONES = [
-  [1, 'Your first chick! Feed two chicks and a baby hatches.'],
+  [1, 'Your first chick! Feed two of them and a baby hatches.'],
   [10, 'Ten chicks. The nursery is open!'],
   [37, 'Thirty-seven chickens, and they’re all your pride!'],
   [67, 'Sixty-seven chickens! The game’s starting to slide…'],
   [100, 'A hundred deep and wide. Chicken king!'],
 ];
+// The first of each other baby joins with its line from verse two.
+const FIRSTS = {
+  calf: 'A baby calf! Calves love to munch by the hay.',
+  piglet: 'A baby piglet! Piglets love rolling in the mud.',
+  lamb: 'A baby lamb, bouncing like a fluffy little stone!',
+  pup: 'A wolf pup! Pups wag their tails for a bone.',
+};
+const EVERYONE = 'Everyone’s invited! Chicks, calves, piglets, lambs and pups.';
 
 // ---------- input ----------
 const input = new Input(canvas, {
@@ -98,43 +114,69 @@ function startWorld(save) {
   player = new Player(sx, sy, sz);
   if (save) { player.yaw = save.yaw || 0; player.pitch = save.pitch || 0; player.flying = !!save.flying; }
   if (save?.hotbar?.length === 9) { hotbar = save.hotbar.filter(isItem); selected = save.selected || 0; }
+  if (save && !(save.v >= 2)) {
+    // older saves: hand out all the treats at the front of the hotbar
+    hotbar = [...TREATS, ...hotbar.filter(id => !isTreat(id))].slice(0, 9);
+  }
   while (hotbar.length < 9) hotbar.push(B.STONE);
-  if (!hotbar.includes(ITEM_SEEDS)) hotbar[0] = ITEM_SEEDS; // older saves: hand out the seed pouch
   player.autoJump = settings.autoJump;
   document.body.classList.toggle('flying', player.flying);
   $('#btn-fly').classList.toggle('on', player.flying);
   buildHotbar();
   stream(80);
 
-  flock = new Flock(world);
-  flock.load(save?.chicks);
+  flock = new Nursery(world);
+  if (save?.animals) flock.load(save.animals); else flock.loadChicks(save?.chicks);
   milestone = save?.milestone || 0;
-  // a few wild chicks close by, so there's someone to feed straight away
-  if (!flock.chicks.length) flock.spawnGroup(sx, sz, 6, 3, 9);
-  updateChickCount();
+  firsts = save?.firsts || [];
+  // a few wild babies of each kind close by, so there's someone to feed straight away
+  for (const sp of SPECIES_ORDER) {
+    if (flock.animals.some(a => a.sp === sp)) continue;
+    if (sp === 'chick') flock.spawnGroup(sp, sx, sz, 6, 3, 9);
+    else flock.spawnGroup(sp, sx, sz, 2, 7, 16);
+  }
+  shownCounts = null;
+  updateNursery();
 }
 
 function saveGame() {
   if (!world || !player) return;
   store.set(SAVE_KEY, {
-    v: 1, seed: world.seed, pos: player.pos.map(v => +v.toFixed(2)), yaw: player.yaw, pitch: player.pitch,
+    v: 2, seed: world.seed, pos: player.pos.map(v => +v.toFixed(2)), yaw: player.yaw, pitch: player.pitch,
     flying: player.flying, hotbar, selected, edits: world.serializeEdits(),
-    chicks: flock ? flock.serialize() : [], milestone,
+    animals: flock ? flock.serialize() : [], milestone, firsts,
   });
 }
 
-// ---------- chicks: counter, milestones, effects ----------
-let shownCount = -1;
-function updateChickCount() {
-  const n = flock ? flock.tameCount : 0;
-  if (n === shownCount) return;
-  const el = $('#chick-count');
-  el.querySelector('span').textContent = n;
-  if (shownCount >= 0 && n > shownCount) { el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); }
-  shownCount = n;
-  for (const [at, text] of MILESTONES) {
-    if (n >= at && milestone < at) { milestone = at; toast(text); if (at > 1) sfx.fanfare(); }
+// ---------- nursery: counters, milestones, effects ----------
+const nurseryEl = $('#nursery');
+const pills = {};
+for (const sp of SPECIES_ORDER) {
+  const el = document.createElement('div');
+  el.className = 'pill';
+  el.setAttribute('aria-label', SPECIES[sp].plural + ' in your nursery');
+  el.innerHTML = `<svg viewBox="0 0 32 32" aria-hidden="true">${M.FACE_SVG[sp]}</svg><span>0</span>`;
+  el.hidden = sp !== 'chick';
+  nurseryEl.appendChild(el);
+  pills[sp] = el;
+}
+let shownCounts = null;
+function updateNursery() {
+  const n = flock ? flock.counts() : {};
+  for (const sp of SPECIES_ORDER) {
+    const was = shownCounts ? shownCounts[sp] : -1;
+    if (n[sp] === was) continue;
+    const el = pills[sp];
+    el.querySelector('span').textContent = n[sp];
+    el.hidden = sp !== 'chick' && !n[sp];
+    if (was >= 0 && n[sp] > was) { el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); }
+    if (shownCounts && n[sp] > 0 && FIRSTS[sp] && !firsts.includes(sp)) { firsts.push(sp); toast(FIRSTS[sp]); sfx.fanfare(); }
   }
+  if (shownCounts && SPECIES_ORDER.every(sp => n[sp] > 0) && !firsts.includes('all')) { firsts.push('all'); toast(EVERYONE); sfx.fanfare(); }
+  for (const [at, text] of MILESTONES) {
+    if (n.chick >= at && milestone < at) { milestone = at; if (shownCounts) { toast(text); if (at > 1) sfx.fanfare(); } }
+  }
+  shownCounts = n;
 }
 
 let toastTimer = 0;
@@ -167,13 +209,15 @@ function handleChickEvents() {
   const eye = player.eye();
   for (const ev of flock.events) {
     const d = Math.hypot(ev.p[0] - eye[0], ev.p[1] - eye[1], ev.p[2] - eye[2]);
-    if (ev.type === 'cheep') { if (d < 18) sfx.cheep(0.35 * (1 - d / 18)); continue; }
+    if (ev.type === 'call') { if (d < 20) sfx.call(ev.sp, 0.35 * (1 - d / 20)); continue; }
     if (d > 40) continue;
-    if (ev.type === 'hatch') { sfx.hatch(); floatFx(ev.p, 'hatch'); buzz(20); }
+    if (ev.type === 'hatch') { sfx.hatch(); sfx.call(ev.sp, 0.45); floatFx(ev.p, 'hatch'); buzz(20); }
+    else if (ev.type === 'splash') { if (d < 16) sfx.splash(); }
+    else if (ev.type === 'munch') { if (d < 12) sfx.munch(); }
     else { sfx.happy(); floatFx(ev.p, 'heart'); }
   }
   flock.events.length = 0;
-  updateChickCount();
+  updateNursery();
 }
 
 // ---------- chunk streaming ----------
@@ -222,10 +266,10 @@ function remeshAround(x, z) {
 function placeBlock() {
   if (!running) return;
   const id = hotbar[selected];
-  if (id === ITEM_SEEDS) {
+  if (isTreat(id)) {
     if (throwCool > 0) return;
-    throwCool = 0.2;
-    flock.throwSeeds(player.eye(), player.forward());
+    throwCool = id === ITEM_SEEDS ? 0.2 : 0.3;
+    flock.throwTreat(id, player.eye(), player.forward());
     sfx.toss();
     return;
   }
@@ -291,7 +335,7 @@ function openPicker() {
   if (document.pointerLockElement) { pickerOpenFromLock = true; document.exitPointerLock(); }
   const grid = $('#picker-grid');
   grid.innerHTML = '';
-  for (const id of [ITEM_SEEDS, ...PLACEABLE]) {
+  for (const id of [...TREATS, ...PLACEABLE]) {
     const b = document.createElement('button');
     b.className = 'pick' + (hotbar[selected] === id ? ' cur' : '');
     b.innerHTML = `<img alt="" src="${icons[id]}"><span>${itemName(id)}</span>`;
@@ -413,7 +457,7 @@ function frame(now) {
     if (world.getChunk(Math.floor(player.pos[0] / CS), Math.floor(player.pos[2] / CS))) player.update(dt, input.state, world);
     if (player.pos[1] < -20) { player.pos[1] = CH; player.vel[1] = 0; }
     throwCool = Math.max(0, throwCool - dt);
-    flock.update(dt, player, hotbar[selected] === ITEM_SEEDS);
+    flock.update(dt, player, hotbar[selected]);
     handleChickEvents();
   }
   const pending = stream(running ? 5 : 10);
@@ -442,7 +486,7 @@ function frame(now) {
 requestAnimationFrame(loop);
 
 // handy for debugging from the console
-window.blockwild = { get world() { return world; }, get player() { return player; }, get target() { return target; }, get flock() { return flock; }, input, raycast,
+window.blockwild = { get world() { return world; }, get player() { return player; }, get target() { return target; }, get flock() { return flock; }, get nursery() { return flock; }, input, raycast,
   // advance n frames by hand (useful when the page is in a background tab)
   step(n = 1) { for (let i = 0; i < n; i++) { last = performance.now() - 33; frame(performance.now()); } } };
 
