@@ -1,4 +1,4 @@
-# Blockwild
+# Baby Chicken Empire
 
 An original voxel sandbox for phones (iOS and Android) and desktop browsers. Plain WebGL2 + ES modules, no build step, no dependencies.
 
@@ -39,7 +39,7 @@ Based on the music video *Baby Chicken Empire*: build a nursery for baby animals
 
 A full day lasts 10 minutes: about 6 minutes of daylight, a pink dusk, roughly 3 minutes of night under the square moon, then sunrise.
 
-- At night the babies doze off, and a green and purple striped **block snake** slithers towards your nursery (one snake at first, up to four on later nights).
+- At night the babies doze off, and a big green and purple striped **block snake** (taller than the babies) slithers towards your nursery (one snake at first, up to four on later nights).
 - If it reaches a baby, the baby is spooked out of your nursery and runs off. Feed it again to bring it back. Babies run from a snake that gets close.
 - Snakes slither over a **one-block fence** but not a **two-block wall**.
 - Pick the **toy sword** and tap (or click) to swing. Two bonks and the snake poofs into confetti cubes.

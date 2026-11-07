@@ -1,4 +1,4 @@
-# Draws the Blockwild app icon (an isometric grass block) at the sizes the PWA needs.
+# Draws the Baby Chicken Empire app icon (an isometric grass block) at the sizes the PWA needs.
 Add-Type -AssemblyName System.Drawing
 $root = Split-Path -Parent $PSScriptRoot
 $out = Join-Path $root 'icons'

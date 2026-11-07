@@ -5,7 +5,9 @@ import { B, SOLID } from './blocks.js';
 import { CS } from './world.js';
 import { CONFETTI_COLORS } from './models.js';
 
-const SEGMENTS = 9, SPACING = 0.4, SPEED = 1.7, HALF = 0.22, HEIGHT = 0.45, GRAVITY = 20;
+// SIZE scales the whole snake: its blocks, spacing, body and reach (3 = a big scary snake).
+const SIZE = 3;
+const SEGMENTS = 9, SPACING = 0.4 * SIZE, SPEED = 1.7, HALF = 0.45, HEIGHT = 0.9, GRAVITY = 20;
 const GROUND = new Set([B.GRASS, B.DIRT, B.SAND, B.MUD, B.SNOW]);
 const MAX_SNAKES = 4;
 
@@ -103,7 +105,7 @@ export class Snakes {
     }
     const goal = s.target ? s.target.p : player.pos;
     const gdx = goal[0] - s.p[0], gdz = goal[2] - s.p[2], gd = Math.hypot(gdx, gdz);
-    const lunge = s.target && gd < 3.5;
+    const lunge = s.target && gd < 4.5;
     let speed = s.pause > 0 || s.hit > 0 ? 0 : lunge ? SPEED * 1.6 : SPEED;
     if (!s.target && gd < 3) speed = 0;
 
@@ -137,7 +139,7 @@ export class Snakes {
 
     // reached a baby: it gets spooked and runs out of the nursery
     const t = s.target;
-    if (t && dist2(t.p, s.p) < (0.45 + t.S.half) ** 2 && Math.abs(t.p[1] - s.p[1]) < 1) {
+    if (t && dist2(t.p, s.p) < (0.45 * SIZE + t.S.half) ** 2 && Math.abs(t.p[1] - s.p[1]) < 1.5) {
       t.tame = false; t.love = 0; t.flee = 6; t.fleeFrom = [...s.p];
       s.pause = 2.5; s.target = null; s.retarget = 2.6;
       this.spooked++;
@@ -147,7 +149,7 @@ export class Snakes {
     const head = s.trail[0];
     if (Math.hypot(s.p[0] - head[0], s.p[1] - head[1], s.p[2] - head[2]) > 0.08) {
       s.trail.unshift([...s.p]);
-      if (s.trail.length > 120) s.trail.length = 120;
+      if (s.trail.length > 200) s.trail.length = 200;
     }
     this.layout(s);
 
@@ -180,10 +182,10 @@ export class Snakes {
     let best = null, bd = Infinity;
     for (const s of this.list) {
       for (const q of [s.p, ...s.segs.map(g => g.p)]) {
-        const vx = q[0] - eye[0], vy = q[1] + 0.2 - eye[1], vz = q[2] - eye[2], d = Math.hypot(vx, vy, vz);
-        if (d > 3.8) continue;
+        const vx = q[0] - eye[0], vy = q[1] + 0.2 * SIZE - eye[1], vz = q[2] - eye[2], d = Math.hypot(vx, vy, vz);
+        if (d > 3.4 + 0.4 * SIZE) continue;
         const dot = (vx * fwd[0] + vy * fwd[1] + vz * fwd[2]) / (d || 1);
-        if ((dot > 0.7 || d < 1.1) && d < bd) { bd = d; best = s; }
+        if ((dot > 0.7 || d < 0.6 + 0.4 * SIZE) && d < bd) { bd = d; best = s; }
       }
     }
     if (!best) return false;
@@ -203,15 +205,15 @@ export class Snakes {
   // Bursts a snake into confetti cubes.
   poof(s, big) {
     const parts = [s.p, ...s.segs.map(g => g.p)];
-    for (const q of parts) for (let k = 0; k < (big ? 5 : 2); k++) {
+    for (const q of parts) for (let k = 0; k < (big ? 12 : 4); k++) {
       this.confetti.push({
-        p: [q[0] + (Math.random() - 0.5) * 0.3, q[1] + 0.2 + Math.random() * 0.2, q[2] + (Math.random() - 0.5) * 0.3],
+        p: [q[0] + (Math.random() - 0.5) * 0.3 * SIZE, q[1] + (0.2 + Math.random() * 0.2) * SIZE, q[2] + (Math.random() - 0.5) * 0.3 * SIZE],
         v: [(Math.random() - 0.5) * 5, 3 + Math.random() * 4, (Math.random() - 0.5) * 5],
         c: Math.random() * CONFETTI_COLORS.length | 0, yaw: Math.random() * 6.28, spin: (Math.random() - 0.5) * 14,
         life: 1.6 + Math.random() * 1.2, rest: false,
       });
     }
-    if (this.confetti.length > 600) this.confetti.splice(0, this.confetti.length - 600);
+    if (this.confetti.length > 900) this.confetti.splice(0, this.confetti.length - 900);
   }
 
   // A celebration burst (gold, red and blue by default) around a point.
@@ -282,11 +284,11 @@ export class Snakes {
       if (dist2(s.p, eye) > md2) continue;
       const flash = s.hit > 0 ? Math.sin(s.hit / 0.55 * Math.PI) : 0;
       const tongue = Math.sin(time * 22) * 0.5 * (Math.sin(time * 1.7 + s.wig) > 0.2 ? 1 : 0);
-      put(head, hi, s.p, s.yaw, 1.25 + flash * 0.18, 0.02 * Math.sin(time * 6), -0.25 * flash, tongue); hi += 12;
-      put(sh, si, [s.p[0], s.p[1] + 0.015, s.p[2]], 0, 0.6, 0, 0, 0); si += 12;
+      put(head, hi, s.p, s.yaw, (1.25 + flash * 0.18) * SIZE, 0.02 * Math.sin(time * 6), -0.25 * flash, tongue); hi += 12;
+      put(sh, si, [s.p[0], s.p[1] + 0.015, s.p[2]], 0, 0.6 * SIZE, 0, 0, 0); si += 12;
       s.segs.forEach((g, k) => {
-        put(seg, gi, g.p, g.yaw, g.scale * (1 + flash * 0.1), 0.025 * Math.max(0, Math.sin(time * 6 - k * 0.9)), -0.2 * flash, 0); gi += 12;
-        put(sh, si, [g.p[0], g.p[1] + 0.015, g.p[2]], 0, 0.5 * g.scale, 0, 0, 0); si += 12;
+        put(seg, gi, g.p, g.yaw, g.scale * SIZE * (1 + flash * 0.1), 0.025 * Math.max(0, Math.sin(time * 6 - k * 0.9)), -0.2 * flash, 0); gi += 12;
+        put(sh, si, [g.p[0], g.p[1] + 0.015, g.p[2]], 0, 0.5 * SIZE * g.scale, 0, 0, 0); si += 12;
       });
     }
     const groups = [{ model: 'snakeHead', data: head, count: hi / 12 }, { model: 'snakeSeg', data: seg, count: gi / 12 }];

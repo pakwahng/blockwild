@@ -1,4 +1,4 @@
-// Blockwild: bootstrap, game loop, streaming, interaction, UI and saving.
+// Baby Chicken Empire: bootstrap, game loop, streaming, interaction, UI and saving.
 import { B, T, BLOCKS, SOLID, PLACEABLE, TILE_COUNT, DEFAULT_HOTBAR, ITEM_SEEDS, ITEM_SWORD, TREATS, ITEM_NAMES } from './blocks.js';
 import { Snakes } from './snakes.js';
 import { skyAt, CYCLE } from './sky.js';
@@ -20,6 +20,8 @@ const store = {
 };
 
 const coarse = matchMedia('(pointer: coarse)').matches;
+// iPads report themselves as Macs, so also check for a touch screen
+const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 const settings = Object.assign({ view: coarse ? 5 : 7, sens: 1, autoJump: true, showFps: false, sound: true }, store.get(SET_KEY) || {});
 const WATER_FOG = [0.1, 0.24, 0.45];
 const REACH = 6;
@@ -45,7 +47,7 @@ try {
   M.CONFETTI_COLORS.forEach((c, k) => renderer.addModel('confetti' + k, M.confettiModel(c)));
 } catch (err) {
   console.error(err);
-  showError('This device or browser cannot run Blockwild (WebGL2 is required). ' + err.message);
+  showError('This device or browser cannot run Baby Chicken Empire (WebGL2 is required). ' + err.message);
 }
 
 let world = null, player = null, flock = null, snakes = null, running = false, firsts = [];
@@ -495,7 +497,8 @@ function resume() {
 }
 
 function enterFullscreen() {
-  if (!coarse) return;
+  // iPad Safari's fullscreen mode can drop the HUD layer after a rotation, so iOS stays out of it
+  if (!coarse || isIOS) return;
   const el = document.documentElement;
   const req = el.requestFullscreen || el.webkitRequestFullscreen;
   if (req && !document.fullscreenElement) {
@@ -555,6 +558,16 @@ function showError(msg) { const e = $('#menu-error'); e.textContent = msg; e.hid
 
 document.addEventListener('visibilitychange', () => { if (document.hidden) { saveGame(); if (running) pause(); } });
 window.addEventListener('pagehide', saveGame);
+// After a rotation iOS can leave the page scrolled or the HUD layer unpainted: snap back and repaint it
+function relayout() {
+  window.scrollTo(0, 0);
+  const hud = $('#hud');
+  if (hud.hidden) return;
+  hud.style.display = 'none'; void hud.offsetHeight; hud.style.display = '';
+}
+window.addEventListener('orientationchange', () => setTimeout(relayout, 300));
+window.addEventListener('resize', relayout);
+screen.orientation?.addEventListener?.('change', () => setTimeout(relayout, 300));
 setInterval(() => { if (running && world?.editsChanged !== undefined) saveGame(); }, 10000);
 
 // ---------- main loop ----------

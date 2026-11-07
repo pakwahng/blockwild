@@ -1,7 +1,7 @@
 {
-  "name": "Blockwild",
-  "short_name": "Blockwild",
-  "description": "Dig, build and explore an endless block world.",
+  "name": "Baby Chicken Empire",
+  "short_name": "Chick Empire",
+  "description": "Build a nursery for baby animals, bonk the night snake and become the chicken king.",
   "start_url": "./",
   "scope": "./",
   "display": "fullscreen",

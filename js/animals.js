@@ -123,7 +123,7 @@ export class Nursery {
       // ---- decide where to go ----
       let goal = null, speed = 0;
       a.flee = Math.max(0, (a.flee || 0) - dt);
-      let threat = null, td = 3.5 * 3.5;
+      let threat = null, td = 4.5 * 4.5;
       for (const t of threats) { const d = dist2(a.p, t); if (d < td && Math.abs(t[1] - a.p[1]) < 4) { td = d; threat = t; } }
       if (threat) { a.flee = Math.max(a.flee, 1.5); a.fleeFrom = threat; }
       const treat = a.flee > 0 ? null : this.nearestTreat(a, 10);
