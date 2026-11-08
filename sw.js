@@ -1,9 +1,9 @@
 // Network-first service worker: always fresh when online, still playable offline.
-const CACHE = 'blockwild-v17';
+const CACHE = 'blockwild-v18';
 const ASSETS = [
   './', 'index.html', 'css/style.css', 'manifest.webmanifest',
   'js/main.js', 'js/blocks.js', 'js/textures.js', 'js/noise.js', 'js/world.js',
-  'js/renderer.js', 'js/player.js', 'js/input.js', 'js/mesher.js', 'js/models.js', 'js/animals.js', 'js/snakes.js', 'js/sky.js', 'js/net.js', 'js/raiders.js', 'js/crafting.js', 'js/goals.js', 'js/audio.js',
+  'js/renderer.js', 'js/player.js', 'js/input.js', 'js/mesher.js', 'js/models.js', 'js/animals.js', 'js/snakes.js', 'js/sky.js', 'js/net.js', 'js/raiders.js', 'js/crafting.js', 'js/goals.js', 'js/audio.js', 'js/version.js',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png',
 ];
 

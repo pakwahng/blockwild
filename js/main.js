@@ -1,5 +1,5 @@
 // Baby Chicken Empire: bootstrap, game loop, streaming, interaction, UI and saving.
-import { B, T, BLOCKS, SOLID, PLACEABLE, TILE_COUNT, ITEM_SEEDS, ITEM_SWORD, ITEM_BONE, ITEM_APPLE, ITEM_STICK, ITEM_EGG, ITEM_MILK, ITEM_HOUSE, IS_DOOR, DOOR_TOPS, TREATS, ITEM_NAMES, SHAPED, FEEDER_OF, FEEDER_TREAT, IS_FEEDER } from './blocks.js';
+import { B, T, BLOCKS, SOLID, PLACEABLE, TILE_COUNT, ITEM_SEEDS, ITEM_WHEAT, ITEM_SWORD, ITEM_BONE, ITEM_APPLE, ITEM_STICK, ITEM_EGG, ITEM_MILK, ITEM_HOUSE, IS_DOOR, DOOR_TOPS, TREATS, ITEM_NAMES, SHAPED, FEEDER_OF, FEEDER_TREAT, IS_FEEDER } from './blocks.js';
 import { Snakes } from './snakes.js';
 import { Raiders } from './raiders.js';
 import { GOALS, newStats, bump } from './goals.js';
@@ -15,6 +15,7 @@ import { Renderer } from './renderer.js';
 import { Player, raycast } from './player.js';
 import { Input } from './input.js';
 import { Net, cleanCode } from './net.js';
+import { VERSION, RELEASED, CHANGES } from './version.js';
 
 const $ = s => document.querySelector(s);
 const SAVE_KEY = 'blockwild.save.v1', SET_KEY = 'blockwild.settings.v1';
@@ -84,7 +85,7 @@ let myNetId = 0, netTimer = 0, poseTimer = 0, shownOthers = -1, pendingEdits = {
 const netEdits = [], netEvents = [];
 
 const icons = {};
-const SHAPE_ICON = { [B.FENCE]: 'fence', [B.GATE]: 'gate', [B.DOOR]: 'door', [B.TABLE]: 'table', [B.LADDER]: 'ladder', [B.FEEDER]: 'feeder',
+const SHAPE_ICON = { [B.FENCE]: 'fence', [B.GATE]: 'gate', [B.DOOR]: 'door', [B.PLANTER]: 'planter', [B.TABLE]: 'table', [B.LADDER]: 'ladder', [B.FEEDER]: 'feeder',
   [B.FLOWER_RED]: 'flower-red', [B.FLOWER_YELLOW]: 'flower-yellow', [B.FLOWER_WHITE]: 'flower-white' };
 if (textures) for (const id of [...PLACEABLE, B.THRONE]) {
   icons[id] = SHAPED[id] ? M.treatIcon(SHAPE_ICON[id], 64).toDataURL() : blockIcon(BLOCKS[id], textures.tiles, 64).toDataURL();
@@ -238,6 +239,45 @@ const input = new Input(canvas, {
 $('#btn-fly').addEventListener('pointerdown', e => { e.preventDefault(); toggleFly(); });
 $('#btn-menu').addEventListener('click', pause);
 $('#btn-blocks').addEventListener('click', openPicker);
+
+// ---------- photos ----------
+// Draws a fresh frame, copies it with a little label, then shares it (phones) or downloads it.
+let photoShot = null;
+$('#btn-photo').addEventListener('click', async () => {
+  if (!world || !renderer) return;
+  photoShot = null;
+  frame(performance.now(), true);             // renders and grabs the picture in the same moment
+  const shot = photoShot;
+  if (!shot) return;
+  const fl = $('#flash'); fl.classList.remove('go'); void fl.offsetWidth; fl.classList.add('go');
+  sfx.place(); buzz(20);
+  const blob = await new Promise(r => shot.toBlob(r, 'image/png'));
+  if (!blob) { toast('Couldn’t take a photo on this device.'); return; }
+  const name = `baby-chicken-empire-day-${nights + 1}.png`;
+  const file = new File([blob], name, { type: 'image/png' });
+  bump(stats, 'photos');
+  try {
+    if (navigator.canShare?.({ files: [file] })) { await navigator.share({ files: [file], title: 'Baby Chicken Empire' }); return; }
+  } catch (err) { if (err.name === 'AbortError') return; }
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  toast('Photo saved!');
+});
+function grabPhoto() {
+  const c = document.createElement('canvas');
+  c.width = canvas.width; c.height = canvas.height;
+  const g = c.getContext('2d');
+  g.drawImage(canvas, 0, 0);
+  const s = Math.max(1, c.height / 500);
+  g.font = `800 ${Math.round(16 * s)}px system-ui, sans-serif`;
+  const label = `Baby Chicken Empire · Day ${nights + 1}`;
+  const w = g.measureText(label).width + 22 * s, h = 30 * s, x = 12 * s, y = c.height - h - 12 * s;
+  g.fillStyle = 'rgba(20, 26, 34, 0.7)'; g.beginPath(); g.roundRect(x, y, w, h, h / 2); g.fill();
+  g.fillStyle = '#fff3b0'; g.textBaseline = 'middle'; g.fillText(label, x + 11 * s, y + h / 2 + s);
+  photoShot = c;
+}
 
 // ---------- world lifecycle ----------
 function freeWorld() {
@@ -562,7 +602,7 @@ function handleChickEvents() {
     } else if (ev.type === 'dawn') {
       if (ev.spooked === 0) bump(stats, 'nights');
       if (net.isGuest) {
-        toast(ev.spooked ? `Sunrise! The snake spooked ${ev.spooked} ${ev.spooked === 1 ? 'baby' : 'babies'}, but the nursery made it.` : 'Sunrise! Every baby made it safely through the night.');
+        toast(ev.spooked ? `Day ${nights + 1}. Sunrise! The snake spooked ${ev.spooked} ${ev.spooked === 1 ? 'baby' : 'babies'}, but the nursery made it.` : `Day ${nights + 1}. Sunrise! Every baby made it safely through the night.`);
         if (!(ev.spooked === 0 && !crown)) sfx.fanfare();
         continue;
       }
@@ -570,8 +610,8 @@ function handleChickEvents() {
       const babies = Object.values(flock.counts()).reduce((a, b) => a + b, 0);
       if (!ev.spooked && babies > 0 && !crown) { awardCrown(); continue; }
       sfx.fanfare();
-      toast(ev.spooked ? `Sunrise! The snake spooked ${ev.spooked} ${ev.spooked === 1 ? 'baby' : 'babies'}, but the nursery made it.`
-        : 'Sunrise! Every baby made it safely through the night.');
+      toast(ev.spooked ? `Day ${nights + 1}. Sunrise! The snake spooked ${ev.spooked} ${ev.spooked === 1 ? 'baby' : 'babies'}, but the nursery made it.`
+        : `Day ${nights + 1}. Sunrise! Every baby made it safely through the night.`);
     } else if (ev.type === 'hiss') { if (d < 24) sfx.hiss(0.25 * (1 - d / 24)); }
     else if (ev.type === 'spook') {
       sfx.hiss(0.4); sfx.call(ev.sp, 0.5);
@@ -696,6 +736,28 @@ function placeBlock() {
     remeshAround(target.x, target.z); sfx.place(); buzz(8);
     return;
   }
+  if (!isTreat(id) && id !== ITEM_SWORD && petBaby(!id || id >= 200)) return;
+  if (target && target.id === B.PLANTER_RIPE) {
+    // pick the golden wheat: some wheat and a few seeds to plant again
+    const got = [[ITEM_WHEAT, 2], [ITEM_SEEDS, 1 + (Math.random() * 2 | 0)]];
+    for (const [item, n] of got) { addItem(item, n); bump(stats, 'got', item, n); }
+    bump(stats, 'harvested');
+    pickupPop(target, got);
+    editBlock(target.x, target.y, target.z, B.PLANTER);
+    remeshAround(target.x, target.z); sfx.munch(); buzz(10);
+    return;
+  }
+  if (target && target.id === B.PLANTER && id === ITEM_SEEDS && have(id)) {
+    useItem(id); bump(stats, 'planted');
+    editBlock(target.x, target.y, target.z, B.PLANTER_SEEDED);
+    remeshAround(target.x, target.z); sfx.place(); buzz(8);
+    if (!firsts.includes('planter')) { firsts.push('planter'); toast('Seeds planted! Wheat grows in a couple of minutes. Tap it when it turns golden to pick it.'); }
+    return;
+  }
+  if (target && (target.id === B.PLANTER_SEEDED || target.id === B.PLANTER_GROWING) && id === ITEM_SEEDS) {
+    toast('That wheat is still growing. Tap it when it turns golden.');
+    return;
+  }
   if (target && IS_FEEDER(target.id) && FEEDER_OF[id]) {
     // fill a feeder with the treat you're holding
     if (FEEDER_TREAT[target.id] === id) { toast(`That feeder’s already full of ${itemName(id).toLowerCase()}.`); return; }
@@ -747,6 +809,32 @@ function placeBlock() {
     if (id === B.THRONE) buildThrone(x, y, z);
     remeshAround(x, z); buzz(8); sfx.place();
   }
+}
+
+// Tap a tame baby right in front of you (closer than the block you're pointing at) to pet it.
+function petBaby(wildHint) { // wildHint: say so when it's a wild baby (not when you're holding a block to build with)
+  const eye = player.eye(), fwd = player.forward();
+  let best = null, bd = 3.2;
+  for (const a of flock.animals) {
+    const h = a.S.height * 0.5;
+    const vx = a.p[0] - eye[0], vy = a.p[1] + h - eye[1], vz = a.p[2] - eye[2], d = Math.hypot(vx, vy, vz);
+    if (d > bd) continue;
+    const dot = (vx * fwd[0] + vy * fwd[1] + vz * fwd[2]) / (d || 1);
+    if (dot > (d < 1.2 ? 0.6 : 0.88)) { bd = d; best = a; }
+  }
+  if (!best) return false;
+  if (target && Math.hypot(target.x + 0.5 - eye[0], target.y + 0.5 - eye[1], target.z + 0.5 - eye[2]) < bd - 0.4) return false;
+  if (!best.tame) {
+    if (!wildHint) return false;
+    toast(`That ${SPECIES[best.sp].name} is shy. Give it some ${itemName(best.S.treat).toLowerCase()} first and it’ll join your nursery.`);
+    return true;
+  }
+  if (net.isGuest) net.toHost({ t: 'pet', id: best.id }); else flock.pet(best.id);
+  floatFx([best.p[0], best.p[1] + best.S.height * 0.4, best.p[2]], 'heart');
+  sfx.call(best.sp, 0.5); sfx.happy(); buzz(12);
+  bump(stats, 'petted');
+  if (!firsts.includes('pet')) { firsts.push('pet'); toast(`Aww! Your ${SPECIES[best.sp].name} loves a pat. Pets help babies grow up a little too.`); }
+  return true;
 }
 
 function updateBreaking(dt) {
@@ -1000,6 +1088,35 @@ function enterFullscreen() {
   }
 }
 
+// ---------- version and what's new ----------
+const esc = s => s.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+// Players from before version numbers (they have a saved world but no version noted) last saw version 17.
+const seenVersion = () => settings.seenVersion || (store.get(SAVE_KEY) ? 17 : 0);
+function buildVersion() {
+  const seen = seenVersion(), fresh = seen > 0 && seen < VERSION;
+  const pill = $('#version');
+  pill.innerHTML = `Version <b>${VERSION}</b> · ${RELEASED}`;
+  pill.classList.toggle('new', fresh);
+  $('#changelog').innerHTML = CHANGES.map(([v, date, head, list], k) =>
+    `<section class="${k === 0 ? 'latest' : ''}"><h3>${v}. ${esc(head)}<span>${esc(date)}</span></h3><ul>${list.map(t => `<li>${esc(t)}</li>`).join('')}</ul></section>`).join('');
+  if (fresh) $('#whats-new').open = true;
+}
+buildVersion();
+$('#version').addEventListener('click', () => {
+  const d = $('#whats-new');
+  d.open = true;
+  d.scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
+// After an update, say so once when you start playing.
+function noteUpdate() {
+  const seen = seenVersion();
+  if (seen === VERSION) return;
+  if (seen) setTimeout(() => toast(`Updated to version ${VERSION}: ${CHANGES[0][2]}! Open the pause menu and tap What’s new to see everything.`), 1200);
+  settings.seenVersion = VERSION;
+  store.set(SET_KEY, settings);
+  $('#version').classList.remove('new');
+}
+
 $('#btn-play').addEventListener('click', () => {
   if (!renderer) return;
   sfx.unlock();
@@ -1008,6 +1125,7 @@ $('#btn-play').addEventListener('click', () => {
   if (coarse) input.setTouchMode(true);
   resume();
   hideHintLater();
+  noteUpdate();
 });
 $('#btn-new').addEventListener('click', () => { $('#new-world').hidden = !$('#new-world').hidden; });
 $('#btn-create').addEventListener('click', () => {
@@ -1224,6 +1342,7 @@ function hostMessage(from, msg) {
       break;
     case 'throw': if (isTreat(msg.item)) flock.throwTreat(msg.item, msg.eye, msg.fwd); break;
     case 'swing': if (!snakes.swing(msg.eye, msg.fwd)) raiders.swing(msg.eye, msg.fwd, from); break;
+    case 'pet': if (typeof msg.id === 'number') flock.pet(msg.id); break;
     case 'sit': flock.gatherAt(msg.seat, msg.front); break;
     case 'stand': flock.endGather(); break;
   }
@@ -1359,7 +1478,7 @@ let last = performance.now(), fpsAcc = 0, fpsN = 0, fps = 0;
 const pixelRatio = Math.min(window.devicePixelRatio || 1, coarse ? 1.5 : 2);
 
 function loop(now) { requestAnimationFrame(loop); frame(now); }
-function frame(now) {
+function frame(now, photo = false) {
   const dt = Math.min(0.05, (now - last) / 1000);
   last = now;
   fpsAcc += dt; fpsN++;
@@ -1410,6 +1529,14 @@ function frame(now) {
           const k = f.slice(0, 3).join(); if (!seen.has(k)) { seen.add(k); feeders.push(f); }
         }
         for (const [x, y, z] of flock.feedersStep(feeders, FEEDER_TREAT)) { editBlock(x, y, z, B.FEEDER); remeshAround(x, z); }
+        // wheat in the planters grows a stage now and then (about two minutes from seed to golden)
+        const grows = new Set();
+        for (const q of players) for (const [x, y, z, id] of world.placedNear(q.pos[0], q.pos[2], 48, id => id === B.PLANTER_SEEDED || id === B.PLANTER_GROWING)) {
+          const k = x + ',' + y + ',' + z;
+          if (grows.has(k) || Math.random() > 0.035) continue;
+          grows.add(k);
+          editBlock(x, y, z, id + 1); remeshAround(x, z);
+        }
       }
       snakes.update(dt, flock, player, isNight, nights);
     }
@@ -1440,6 +1567,7 @@ function frame(now) {
     tint: underwater ? [0.6 * sky.tint[0], 0.75 * sky.tint[1], sky.tint[2]] : sky.tint,
     entTint: sky.entTint, glowLayer: T.LAMP,
   }, world.chunks.values(), target, now / 1000, { groups: [...a.groups, ...s.groups], shadowGroups: [...a.shadowGroups, ...s.shadowGroups] });
+  if (photo) grabPhoto();
 
   if (net.active) updateTags();
   if (settings.showFps) {

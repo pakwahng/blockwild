@@ -294,6 +294,26 @@ function shapeMesh(buf, id, p, wx, wy, wz) {
     pb(middle, 0.42, 0.6, 0.42, 0.58, 0.76, 0.58);
     return;
   }
+  if (BLOCKS[id].shape === 'planter') {
+    const { soil, stalk, ear, stage } = BLOCKS[id];
+    const pb = (l, ...a) => shapeBox(buf, wx, wy, wz, l, ...a, false);
+    box(0.02, 0, 0.02, 0.98, 0.1, 0.98);                                       // bottom
+    box(0.02, 0.1, 0.02, 0.98, 0.5, 0.12); box(0.02, 0.1, 0.88, 0.98, 0.5, 0.98); // sides
+    box(0.02, 0.1, 0.12, 0.12, 0.5, 0.88); box(0.88, 0.1, 0.12, 0.98, 0.5, 0.88);
+    pb(soil, 0.12, 0.1, 0.12, 0.88, 0.42, 0.88);                               // soil
+    if (stage) {
+      // a little grid of wheat plants that get taller, then turn golden with fat ears on top
+      const h = stage === 1 ? 0.14 : stage === 2 ? 0.42 : 0.62, w = stage === 1 ? 0.05 : 0.04;
+      for (const x of [0.28, 0.5, 0.72]) for (const z of [0.28, 0.5, 0.72]) {
+        const j = ((x * 7 + z * 13) % 0.1) - 0.05, hh = h * (0.85 + ((x * 31 + z * 17) % 0.3));
+        pb(stalk, x - w / 2 + j, 0.42, z - w / 2, x + w / 2 + j, 0.42 + hh, z + w / 2);
+        if (stage === 1) pb(stalk, x - 0.06 + j, 0.5, z - 0.02, x + 0.06 + j, 0.53, z + 0.02); // two tiny leaves
+        if (stage >= 2) pb(stalk, x - 0.09 + j, 0.42 + hh * 0.45, z - 0.015, x + 0.09 + j, 0.42 + hh * 0.45 + 0.04, z + 0.015);
+        if (stage === 3) pb(ear, x - 0.045 + j, 0.42 + hh, z - 0.045, x + 0.045 + j, 0.42 + hh + 0.16, z + 0.045);
+      }
+    }
+    return;
+  }
   if (BLOCKS[id].shape === 'feeder') {
     box(0.05, 0, 0.2, 0.95, 0.1, 0.8);                                         // floor
     box(0.05, 0.1, 0.2, 0.95, 0.46, 0.28); box(0.05, 0.1, 0.72, 0.95, 0.46, 0.8); // long sides

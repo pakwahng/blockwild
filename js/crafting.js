@@ -18,6 +18,8 @@ export function drops(id) {
     case B.LEAVES: add(B.LEAVES); if (chance(0.22)) add(ITEM_APPLE); if (chance(0.15)) add(ITEM_STICK); break;
     case B.GATE_OPEN: add(B.GATE); break;
     case B.DOOR: case B.DOOR_TOP: case B.DOOR_OPEN: case B.DOOR_OPEN_TOP: add(B.DOOR); break;
+    case B.PLANTER_SEEDED: case B.PLANTER_GROWING: add(B.PLANTER); break;
+    case B.PLANTER_RIPE: add(B.PLANTER); add(ITEM_WHEAT, 2); break;
     case B.FEEDER_SEEDS: case B.FEEDER_WHEAT: case B.FEEDER_APPLE: case B.FEEDER_CLOVER: case B.FEEDER_BONE: add(B.FEEDER); break;
     case B.BEDROCK: case B.WATER: case B.AIR: break;
     default: add(id);
@@ -40,6 +42,7 @@ export const RECIPES = [
   R(B.FEEDER, 1, [[B.PLANKS, 3]], 'farm', true),
   R(B.HAY, 1, [[ITEM_WHEAT, 4]], 'farm'),
   R(ITEM_SEEDS, 3, [[ITEM_WHEAT, 1]], 'farm'),
+  R(B.PLANTER, 1, [[B.PLANKS, 3], [B.DIRT, 2]], 'farm', true),
   R(B.GLASS, 1, [[B.SAND, 2]], 'build'),
   R(B.BRICK, 1, [[B.CLAY, 2]], 'build'),
   R(B.CREAM, 2, [[B.SAND, 1], [B.CLAY, 1]], 'build'),

@@ -36,6 +36,9 @@
 
     <div id="top-buttons">
       <div id="room-pill" hidden></div>
+      <button id="btn-photo" class="hud-btn" aria-label="Take a photo">
+        <svg viewBox="0 0 24 24"><path d="M8.5 5l1.5-2h4l1.5 2H20a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zM12 17.5a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0-2.2a2.8 2.8 0 1 1 0-5.6 2.8 2.8 0 0 1 0 5.6z"/></svg>
+      </button>
       <button id="btn-blocks" class="hud-btn" aria-label="Open your bag">
         <svg viewBox="0 0 24 24"><path d="M9 6V5a3 3 0 0 1 6 0v1h3.5l1.5 15H4L5.5 6zm2 0h2V5a1 1 0 0 0-2 0z"/></svg>
       </button>
@@ -77,6 +80,7 @@
       <div class="menu-card">
         <h1 class="logo">Baby Chicken Empire</h1>
         <p class="tagline">Raise baby animals, bonk the night snake, become the chicken king.</p>
+        <button type="button" id="version" class="version-pill" aria-label="Version. Tap to see what’s new."></button>
         <div id="menu-error" class="error" hidden></div>
         <div class="menu-actions">
           <button id="btn-play" class="primary">Play</button>
@@ -87,6 +91,10 @@
           <p class="warn">Starting a new world replaces your saved one.</p>
           <button id="btn-create" class="primary">Create world</button>
         </div>
+        <details class="settings" id="whats-new">
+          <summary>What’s new</summary>
+          <div id="changelog" class="changelog"></div>
+        </details>
         <details class="settings" id="together">
           <summary>Play together</summary>
           <p class="note">Host your world and friends join it with the room code. Everyone needs the internet, and the host keeps the game open.</p>
@@ -124,6 +132,8 @@
             <p><b>Growing up:</b> babies in your nursery slowly grow up (about seven minutes) into a hen, cow, pig, sheep or wolf. Grown-ups leave gifts on the ground: walk over them to pick them up. Hens lay eggs (throw one and a chick hatches where it lands), cows give milk (throw it near a baby and it drinks it to grow up faster), sheep leave wool for building and pigs dig up apples. Grown wolves guard the nursery and chase off foxes and snakes.</p>
             <p><b>Goals:</b> the star line under your nursery counters shows your next goal. Tap it to see them all. Each goal you finish gives you a reward. Wild flowers grow on the grass: dig them to pick them and place them to plant them.</p>
             <p><b>Collect and make:</b> you start with seeds and the toy sword. Dig blocks to collect them (grass can turn up seeds, wheat and clover, leaves can drop apples and sticks, dirt sometimes hides a bone). Open your bag (top right) to pick what to hold, and use its tabs to make new things: tap Make, hold it to keep making, or tap All. Wood comes from logs, sticks from wood. Fences, gates, ladders, feeders and the sword need a crafting table close by (make one from 4 wood). Tap a gate to open or shut it. Walk into a ladder to climb it. Tap a feeder while holding a treat to fill it, and it puts treats out for the babies.</p>
+            <p><b>Planters and pets:</b> make a planter box (3 wood and 2 dirt at the table) and tap it while holding seeds to plant wheat. In a couple of minutes it turns golden: tap it to pick wheat and get some seeds back. Tap a baby in your nursery to pet it (not while holding a treat or the sword). Babies love a pat, and it helps them grow up a little.</p>
+            <p><b>Photos:</b> tap the camera button at the top to take a picture of your world. On a phone you can save it or send it to someone.</p>
             <p><b>Doors and houses:</b> make a door at the crafting table (3 wood and a stick). Doors are two blocks tall: tap one to open or shut it. Make a house kit (20 wood, 2 glass and a lamp) and put it down on the ground: a cosy cottage builds itself with its door facing you. Shut your babies in a house at night and the snake can’t get them.</p>
             <p><b>Day raiders:</b> by day a sneaky fox creeps up on your nursery to spook a baby, and crows swoop down to pinch treats lying on the ground. Foxes can’t climb fences, so pen your babies in. Bonk a fox twice with the sword for 2 bones, or a crow once for some seeds.</p>
             <p><b>Night:</b> when the square moon comes up, the babies doze off and a block snake slithers towards your nursery. If it reaches a baby, the baby gets spooked and runs off. Snakes can slither over a one-block fence, but not a two-block wall. Pick the toy sword and tap the snake twice to bonk it into confetti.</p>
@@ -138,6 +148,7 @@
     </div>
   </div>
 
+  <div id="flash"></div>
   <div id="loading">Generating world…</div>
 
   <script type="module" src="js/main.js"></script>

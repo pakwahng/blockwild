@@ -408,6 +408,13 @@ export function treatIcon(kind, px = 64) {
       rr(g, -14, 9, 28, 7, 3, '#b5763a');
       rr(g, -4, 15, 8, 12, 3, '#7a4a28');
       g.fillStyle = '#e04a3c'; g.beginPath(); g.arc(0, 29, 4.5, 0, Math.PI * 2); g.fill();
+    } else if (kind === 'planter') {
+      for (const x of [16, 26, 36, 46]) {                                               // golden wheat
+        rr(g, x, 10, 3, 26, 1.5, '#d9a53e');
+        rr(g, x - 2.5, 4, 8, 12, 3, '#f2c35a');
+      }
+      rr(g, 6, 32, 52, 26, 4, '#9a6a3c'); rr(g, 9, 30, 46, 8, 3, '#7a4a2e');           // box and soil
+      rr(g, 6, 40, 52, 4, 2, '#c08850'); rr(g, 6, 50, 52, 4, 2, '#c08850');
     } else if (kind === 'door') {
       rr(g, 14, 2, 36, 60, 4, '#8f5f34'); rr(g, 17, 5, 30, 55, 3, '#d8924e');
       for (const x of [26, 36]) rr(g, x, 5, 2, 55, 1, '#b8743c');                       // plank lines

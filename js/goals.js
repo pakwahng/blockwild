@@ -11,6 +11,7 @@ const FLOWERS = [B.FLOWER_RED, B.FLOWER_YELLOW, B.FLOWER_WHITE];
 export const GOALS = [
   ['dig', 'Dig 5 blocks', 5, s => Object.values(s.dug || {}).reduce((a, b) => a + b, 0), [[ITEM_SEEDS, 5]]],
   ['tame', 'Feed a wild baby to bring it into your nursery', 1, s => s.tamed || 0, [[ITEM_WHEAT, 3]]],
+  ['pet', 'Pet a baby in your nursery: tap it (not holding a treat)', 1, s => s.petted || 0, [[ITEM_CLOVER, 3]]],
   ['log', 'Chop a tree to get a log', 1, s => n(s.got, B.LOG), [[ITEM_APPLE, 3]]],
   ['wood', 'Make wood from a log in your bag', 1, s => n(s.made, B.PLANKS), [[ITEM_STICK, 4]]],
   ['table', 'Make a crafting table and place it', 1, s => n(s.placed, B.TABLE), [[B.PLANKS, 4]]],
@@ -20,6 +21,7 @@ export const GOALS = [
   ['flowers', 'Pick 3 flowers', 3, s => sum(s.got, FLOWERS), [[ITEM_SEEDS, 6]]],
   ['hatch', 'Hatch 3 new babies', 3, s => s.hatched || 0, [[B.HAY, 2]]],
   ['feeder', 'Make a feeder and fill it with treats', 1, s => s.filled || 0, [[ITEM_WHEAT, 5]]],
+  ['wheat', 'Grow wheat in a planter box and pick it', 1, s => s.harvested || 0, [[B.PLANTER, 2]]],
   ['bonk', 'Bonk a fox, crow or snake with the sword', 1, s => s.bonked || 0, [[ITEM_BONE, 3]]],
   ['ladder', 'Climb a ladder', 1, s => s.climbed || 0, [[B.LAMP, 2]]],
   ['house', 'Build a house: put down a house kit, or a door in your own walls', 1, s => n(s.placed, ITEM_HOUSE) + n(s.placed, B.DOOR), [[B.GLASS, 2], [ITEM_APPLE, 4]]],

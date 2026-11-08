@@ -75,6 +75,7 @@ Foxes and snakes don't go after grown wolves. Growth, gifts lying on the ground 
 | 2 Wall | 1 Sand + 1 Clay |
 | 2 Roof | 1 Brick + 1 Wood |
 | Lamp * | 1 Glass + 1 Stick + 1 Apple |
+| Planter * | 3 Wood + 2 Dirt |
 | Door * | 3 Wood + 1 Stick |
 | House kit * | 20 Wood + 2 Glass + 1 Lamp |
 | Water | 2 Snow |
@@ -95,6 +96,17 @@ Foxes and snakes don't go after grown wolves. Growth, gifts lying on the ground 
 ## Flowers
 
 - Red, yellow and white **wild flowers** grow in clumps on the grass. Dig one to pick it, and place it anywhere to plant it. You can walk through them.
+
+## Planters, pets and photos
+
+- A **planter box** grows wheat: tap it while holding seeds to plant them. The wheat sprouts, grows and turns golden over about two minutes (the host's game grows it). Tap it when it's golden for 2 wheat and 1–2 seeds.
+- **Pet** a baby in your nursery by tapping it (not while holding a treat or the sword): hearts, a happy hop, and a small push towards growing up (once every 20 seconds per baby).
+- The **camera** button takes a photo of your world with a "Day N" label, and shares it (phones) or downloads it.
+- Each sunrise says which day it is.
+
+## Version and what's new
+
+The front screen shows the version number. Tap it, or open **What’s new**, for the change log. It lives in `js/version.js` (and [CHANGELOG.md](CHANGELOG.md)). To release: bump `VERSION`, add an entry at the top of `CHANGES` and in CHANGELOG.md, and set `CACHE` in `sw.js` to the same number.
 
 ## Doors and houses
 
@@ -153,6 +165,7 @@ A full day lasts 10 minutes: about 6 minutes of daylight, a pink dusk, roughly 3
 | `js/animals.js` | Baby animal behaviour: species table, wandering, treats, taming, breeding, hay and mud habits, pens, growing up, gifts, wolf guards |
 | `js/raiders.js` | Daytime foxes and crows: sneaking, stealing treats, fences, sword hits |
 | `js/goals.js` | The goals list, progress and rewards |
+| `js/version.js` | Version number and the change log shown in What’s new |
 | `js/crafting.js` | What digging gives you, crafting recipes, starter bag |
 | `js/snakes.js` | The night snake: spawning, slithering body, spooking babies, sword hits, confetti |
 | `js/sky.js` | Day/night clock: sky colours, light tint, sun and moon |

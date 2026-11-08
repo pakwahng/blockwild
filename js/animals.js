@@ -29,7 +29,7 @@ export const isTreat = id => id in TREAT_MODEL;
 
 // Built blocks animals can't hop onto, so a one-block fence keeps them in.
 const NO_CLIMB = new Uint8Array(256);
-for (const id of [B.PLANKS, B.LOG, B.HAY, B.ROOF, B.CREAM, B.GLASS, B.BRICK, B.COBBLE, B.LAMP, B.CLAY, B.LEAVES, B.FENCE, B.GATE, B.TABLE, B.FEEDER, B.FEEDER_SEEDS, B.FEEDER_WHEAT, B.FEEDER_APPLE, B.FEEDER_CLOVER, B.FEEDER_BONE, B.WOOL, B.DOOR, B.DOOR_TOP]) NO_CLIMB[id] = 1;
+for (const id of [B.PLANKS, B.LOG, B.HAY, B.ROOF, B.CREAM, B.GLASS, B.BRICK, B.COBBLE, B.LAMP, B.CLAY, B.LEAVES, B.FENCE, B.GATE, B.TABLE, B.FEEDER, B.FEEDER_SEEDS, B.FEEDER_WHEAT, B.FEEDER_APPLE, B.FEEDER_CLOVER, B.FEEDER_BONE, B.WOOL, B.DOOR, B.DOOR_TOP, B.PLANTER, B.PLANTER_SEEDED, B.PLANTER_GROWING, B.PLANTER_RIPE]) NO_CLIMB[id] = 1;
 
 export class Nursery {
   constructor(world) {
@@ -135,6 +135,16 @@ export class Nursery {
     if (a.grow === 1) { a.gift = GIFT_TIME[0] * (0.3 + Math.random() * 0.4); this.events.push({ type: 'grown', sp: a.sp, p: [...a.p] }); }
   }
 
+  // A pat from a player: a happy hop and a wag, and now and then a little push towards growing up.
+  pet(id) {
+    const a = this.animals.find(q => q.id === id);
+    if (!a || !a.tame) return false;
+    a.wag = 1; a.peck = 0.6; a.enjoy = 0; a.sleep = false;
+    if (a.onGround) a.v[1] = 3.2;
+    if (!(a.petCool > this.clock)) { a.petCool = (this.clock || 0) + 20; this.growBy(a, 0.02); }
+    return true;
+  }
+
   // Grown-ups' gifts: anyone who walks over one picks it up.
   updateGifts(dt, players) {
     for (const g of this.gifts) {
@@ -156,6 +166,7 @@ export class Nursery {
   // foes: [{ kind, p, ref }] foxes and snakes, for grown wolves to chase off.
   update(dt, players, threats = [], night = false, foes = []) {
     const world = this.world;
+    this.clock = (this.clock || 0) + dt;
     this.updateTreats(dt, true);
     this.updateGifts(dt, players);
     this.spawnWild(dt, players);

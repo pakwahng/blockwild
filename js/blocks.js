@@ -14,6 +14,7 @@ export const B = {
   TABLE: 24, LADDER: 25, FEEDER: 26, FEEDER_SEEDS: 27, FEEDER_WHEAT: 28, FEEDER_APPLE: 29, FEEDER_CLOVER: 30, FEEDER_BONE: 31,
   FLOWER_RED: 32, FLOWER_YELLOW: 33, FLOWER_WHITE: 34, WOOL: 35,
   DOOR: 36, DOOR_TOP: 37, DOOR_OPEN: 38, DOOR_OPEN_TOP: 39,
+  PLANTER: 40, PLANTER_SEEDED: 41, PLANTER_GROWING: 42, PLANTER_RIPE: 43,
 };
 
 // kind: 'opaque' | 'cutout' (alpha-tested, e.g. leaves) | 'liquid' (translucent pass)
@@ -65,6 +66,11 @@ const defs = [
   { id: B.DOOR_TOP, name: 'Door', kind: 'cutout', all: T.PLANKS, knob: T.THRONE_TOP, pane: T.GLASS, hard: 0.5, shape: 'door' },
   { id: B.DOOR_OPEN, name: 'Door', kind: 'cutout', all: T.PLANKS, knob: T.THRONE_TOP, pane: T.GLASS, hard: 0.5, shape: 'door', passable: true },
   { id: B.DOOR_OPEN_TOP, name: 'Door', kind: 'cutout', all: T.PLANKS, knob: T.THRONE_TOP, pane: T.GLASS, hard: 0.5, shape: 'door', passable: true },
+  // planter boxes: plant seeds in one and wheat grows (sprout → growing → ripe and golden)
+  { id: B.PLANTER, name: 'Planter', kind: 'cutout', all: T.PLANKS, soil: T.DIRT, stalk: T.LEAVES, ear: T.HAY_TOP, stage: 0, hard: 0.45, shape: 'planter' },
+  { id: B.PLANTER_SEEDED, name: 'Planter', kind: 'cutout', all: T.PLANKS, soil: T.DIRT, stalk: T.LEAVES, ear: T.HAY_TOP, stage: 1, hard: 0.45, shape: 'planter' },
+  { id: B.PLANTER_GROWING, name: 'Planter', kind: 'cutout', all: T.PLANKS, soil: T.DIRT, stalk: T.LEAVES, ear: T.HAY_TOP, stage: 2, hard: 0.45, shape: 'planter' },
+  { id: B.PLANTER_RIPE, name: 'Planter', kind: 'cutout', all: T.PLANKS, soil: T.DIRT, stalk: T.HAY_SIDE, ear: T.HAY_TOP, stage: 3, hard: 0.45, shape: 'planter' },
 ];
 
 export const BLOCKS = [];
@@ -85,7 +91,7 @@ for (const b of BLOCKS) {
   KIND[b.id] = { air: 0, opaque: 1, cutout: 2, liquid: 3 }[b.kind];
 }
 
-export const PLACEABLE = [B.FENCE, B.GATE, B.DOOR, B.TABLE, B.LADDER, B.FEEDER, B.FLOWER_RED, B.FLOWER_YELLOW, B.FLOWER_WHITE, B.GRASS, B.DIRT, B.PLANKS, B.WOOL, B.LOG, B.HAY, B.MUD, B.ROOF, B.CREAM, B.BRICK,
+export const PLACEABLE = [B.FENCE, B.GATE, B.DOOR, B.PLANTER, B.TABLE, B.LADDER, B.FEEDER, B.FLOWER_RED, B.FLOWER_YELLOW, B.FLOWER_WHITE, B.GRASS, B.DIRT, B.PLANKS, B.WOOL, B.LOG, B.HAY, B.MUD, B.ROOF, B.CREAM, B.BRICK,
   B.STONE, B.COBBLE, B.GLASS, B.LEAVES, B.SAND, B.SNOW, B.CLAY, B.LAMP, B.WATER];
 // Non-block items (animal treats) share the hotbar with blocks; their ids sit above the block range.
 export const ITEM_SEEDS = 200, ITEM_WHEAT = 201, ITEM_APPLE = 202, ITEM_CLOVER = 203, ITEM_BONE = 204;
