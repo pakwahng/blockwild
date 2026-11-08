@@ -255,6 +255,41 @@ const painters = {
       return scale(mix(mix(base, dark, p * 0.7), wet, s * 0.8), rim(u, v, 0.1, 0.2));
     };
   },
+  [T.CHEST_SIDE]: rnd => {
+    // a treasure chest: dark wood with gold straps, a lid seam and a big gold latch
+    const wood = hex('#a8642e'), dark = hex('#7a4420'), gold = hex('#ffcf3a'), goldDark = hex('#c98a12');
+    const grain = woodGrain(rnd, 4, false);
+    return (u, v) => {
+      let c = mix(wood, dark, grain(u, v) * 0.6);
+      if (Math.abs(v - 0.38) < 0.035) c = dark;                                        // where the lid closes
+      if (Math.abs(u - 0.17) < 0.06 || Math.abs(u - 0.83) < 0.06) c = mix(gold, goldDark, sstep(0.02, 0.06, Math.abs(Math.abs(u - 0.5) - 0.33))); // straps
+      if (Math.abs(u - 0.5) < 0.09 && v > 0.3 && v < 0.56) {                            // latch with a keyhole
+        c = mix(gold, goldDark, sstep(0.3, 0.56, v) * 0.6);
+        if (Math.abs(u - 0.5) < 0.022 && v > 0.42 && v < 0.5) c = hex('#3a2410');
+      }
+      return scale(c, rim(u, v, 0.09, 0.22));
+    };
+  },
+  [T.CHEST_TOP]: rnd => {
+    const wood = hex('#b26c32'), dark = hex('#7a4420'), gold = hex('#ffcf3a');
+    const grain = woodGrain(rnd, 4, true);
+    return (u, v) => {
+      let c = mix(wood, dark, grain(u, v) * 0.6);
+      if (Math.abs(u - 0.17) < 0.06 || Math.abs(u - 0.83) < 0.06) c = gold;
+      const d = Math.min(u, 1 - u, v, 1 - v);
+      if (d < 0.1 && (Math.min(u, 1 - u) < 0.16 && Math.min(v, 1 - v) < 0.16)) c = gold; // gold corners
+      return scale(c, rim(u, v, 0.09, 0.22));
+    };
+  },
+  [T.CHEST_OPEN]: () => {
+    // looking into an opened, empty chest: a wooden rim round a dark inside
+    const wood = hex('#a8642e'), inside = hex('#3a2410'), shade = hex('#25170a');
+    return (u, v) => {
+      const d = Math.min(u, 1 - u, v, 1 - v);
+      if (d < 0.13) return scale(wood, rim(u, v, 0.09, 0.22));
+      return mix(inside, shade, sstep(0.13, 0.3, 0.5 - Math.abs(v - 0.5)) * 0.5 + (v < 0.35 ? 0.4 : 0));
+    };
+  },
   [T.WOOL]: rnd => {
     // fluffy cream wool: lots of little round curls with soft shadows between them
     const base = hex('#fbf6ec'), shade = hex('#e6dccb');

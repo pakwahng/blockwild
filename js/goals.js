@@ -31,6 +31,7 @@ export const GOALS = [
   ['job', 'Teach a grown-up a job: tap it and pick one', 1, s => s.trained || 0, [[ITEM_BONE, 2], [ITEM_SEEDS, 6]]],
   ['sew', 'Sew something new in the Wardrobe (pause menu)', 1, s => s.sewn || 0, [[B.WOOL, 3], [ITEM_APPLE, 3]]],
   ['fish', 'Catch something with a fishing rod: cast into water, tap when the float bobs', 1, s => s.fished || 0, [[ITEM_FISH, 2], [ITEM_BONE, 3]]],
+  ['chest', 'Find a treasure chest and open it: look for the gold Treasure tag', 1, s => s.chests || 0, [[ITEM_APPLE, 4], [B.LAMP, 1]]],
   ['chicks', 'Grow your nursery to 37 chickens', 37, s => s.chicks || 0, [[B.HAY, 4], [ITEM_APPLE, 5]]],
 ];
 export const GOAL_IDS = GOALS.map(g => g[0]);

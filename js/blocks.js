@@ -4,8 +4,9 @@ export const T = {
   GRASS_TOP: 0, GRASS_SIDE: 1, DIRT: 2, STONE: 3, SAND: 4, LOG_SIDE: 5, LOG_TOP: 6,
   LEAVES: 7, PLANKS: 8, GLASS: 9, WATER: 10, COBBLE: 11, BRICK: 12, SNOW: 13,
   SNOW_SIDE: 14, BEDROCK: 15, LAMP: 16, CLAY: 17, HAY_SIDE: 18, HAY_TOP: 19, ROOF: 20, CREAM: 21, MUD: 22, THRONE_TOP: 23, THRONE_SIDE: 24, WOOL: 25,
+  CHEST_SIDE: 26, CHEST_TOP: 27, CHEST_OPEN: 28,
 };
-export const TILE_COUNT = 26;
+export const TILE_COUNT = 29;
 
 export const B = {
   AIR: 0, GRASS: 1, DIRT: 2, STONE: 3, SAND: 4, LOG: 5, LEAVES: 6, PLANKS: 7,
@@ -15,6 +16,7 @@ export const B = {
   FLOWER_RED: 32, FLOWER_YELLOW: 33, FLOWER_WHITE: 34, WOOL: 35,
   DOOR: 36, DOOR_TOP: 37, DOOR_OPEN: 38, DOOR_OPEN_TOP: 39,
   PLANTER: 40, PLANTER_SEEDED: 41, PLANTER_GROWING: 42, PLANTER_RIPE: 43,
+  CHEST: 44, CHEST_OPEN: 45,
 };
 
 // kind: 'opaque' | 'cutout' (alpha-tested, e.g. leaves) | 'liquid' (translucent pass)
@@ -71,6 +73,9 @@ const defs = [
   { id: B.PLANTER_SEEDED, name: 'Planter', kind: 'cutout', all: T.PLANKS, soil: T.DIRT, stalk: T.LEAVES, ear: T.HAY_TOP, stage: 1, hard: 0.45, shape: 'planter' },
   { id: B.PLANTER_GROWING, name: 'Planter', kind: 'cutout', all: T.PLANKS, soil: T.DIRT, stalk: T.LEAVES, ear: T.HAY_TOP, stage: 2, hard: 0.45, shape: 'planter' },
   { id: B.PLANTER_RIPE, name: 'Planter', kind: 'cutout', all: T.PLANKS, soil: T.DIRT, stalk: T.HAY_SIDE, ear: T.HAY_TOP, stage: 3, hard: 0.45, shape: 'planter' },
+  // treasure chests hidden about the world: tap one to open it and see what's inside
+  { id: B.CHEST, name: 'Treasure chest', kind: 'opaque', top: T.CHEST_TOP, side: T.CHEST_SIDE, bottom: T.PLANKS, hard: 0.7, round: 0.14 },
+  { id: B.CHEST_OPEN, name: 'Treasure chest', kind: 'opaque', top: T.CHEST_OPEN, side: T.CHEST_SIDE, bottom: T.PLANKS, hard: 0.7, round: 0.14 },
 ];
 
 export const BLOCKS = [];

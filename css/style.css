@@ -244,6 +244,7 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
 .tag.lachie { box-shadow: inset 0 -3px 0 #d8392b; }
 .tag.charli { box-shadow: inset 0 -3px 0 #8fd3c3; }
 .tag.home { box-shadow: inset 0 -3px 0 #f2c94c; }
+.tag.treasure { box-shadow: inset 0 -3px 0 #ffcf3a; color: #ffe08a; }
 .tag[hidden] { display: none; }
 #host-box { display: grid; }
 .tag .arrow { display: none; }

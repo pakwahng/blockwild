@@ -75,6 +75,7 @@ Tap a grown-up (hen, cow, pig, sheep or wolf) to pet it and open **Teach a job**
 - Things marked * need a **crafting table** within 4 blocks. Make the table from 4 wood and place it.
 - **Learning recipes:** a new world knows only how to make wood, sticks, the crafting table, fences, seeds and hay. Everything else you learn first:
   - **Recipe pages** turn up now and then when you dig (leaves 3%, clay 3%, stone 2.5%, sand and snow 2%, grass 1.5%, dirt 0.8%). A page teaches something you don't know yet, usually something you've already found all the bits for. It could be a crafting recipe or a sewing pattern.
+  - **Treasure chests** and **fishing** turn up recipe pages too.
   - **Goals** teach you what the next goals need: the fence goal teaches the gate, the pen the feeder, hatching the planter box, the feeder the ladder, wheat the door, and so on.
   - Recipes you haven't learned show in the bag as grey **Not learned yet** cards. Known recipes are kept with your bag (`stats.known`), so they come along when you visit a friend. Worlds from before v26 keep every recipe they've made, picked up or placed. Code: `js/recipes.js`.
 
@@ -120,6 +121,12 @@ Tap a grown-up (hen, cow, pig, sheep or wolf) to pet it and open **Teach a job**
 - Hold it and tap (or click) to cast: the line lands on the first water you're looking at, up to about 17 blocks away. After 4–13 seconds (sooner in rain or at night) the float bobs under with a splash. Tap within about 1.3 seconds to catch something. Tap too soon and the line comes back empty. Switch item or walk more than 22 blocks away and it reels itself in.
 - A catch is a fish (75%, sometimes two), a treat or sticks, or a recipe page (10%, if there's anything left to learn).
 - **Fish** pay for teaching a grown-up a job when you've none of its favourite treat. Code: the fishing section of `js/main.js`, the float is `bobberModel()` in `js/models.js`.
+
+## Treasure chests
+
+- About one chunk in ten gets a treasure chest out in the open, on grass, sand or snow above the sea (placed by the world generator from the seed, so every world has its own; `generate()` in `js/world.js` remembers it as `chunk.chest`).
+- When a shut chest is within 30 blocks, a gold **✨ Treasure** tag points to it, like the Nursery tag.
+- Tap it to open it (it stays open, with an empty dark inside). You get two different goodies from `CHEST_LOOT` in `js/main.js` and, 85% of the time, a recipe page. Digging a shut chest gives you the treasure too, plus 3 wood.
 
 ## Flowers
 

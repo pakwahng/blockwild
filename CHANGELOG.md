@@ -2,6 +2,11 @@
 
 The same list is in the game: tap the version number on the front screen, or open **What’s new**.
 
+## 28. Treasure chests (8 Nov 2026)
+- Treasure chests are hidden about the world, out on the grass, sand and snow. When one is close by, a gold Treasure tag shows you the way.
+- Tap a chest to open it: inside are two goodies (apples, wool, eggs, fish, a lamp…) and, most of the time, a recipe page.
+- New goal: find a treasure chest and open it.
+
 ## 27. Gone fishing (8 Nov 2026)
 - New: the fishing rod. Learn it from a recipe page (or the sewing goal), then make it at a crafting table from 3 sticks and 1 wool.
 - Hold the rod and tap to cast into a pond, river or the sea. When the float bobs under, tap quickly to reel it in!

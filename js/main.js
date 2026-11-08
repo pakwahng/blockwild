@@ -813,6 +813,39 @@ function updateHeld() {
   if (!el.hidden && el.dataset.id !== String(id)) { el.src = icons[id]; el.dataset.id = id; }
 }
 
+// ---------- treasure chests ----------
+// Chests sit out in the open here and there. Inside: a couple of goodies and, most of the time, a recipe page.
+const CHEST_LOOT = [[ITEM_APPLE, 3], [ITEM_BONE, 2], [ITEM_CLOVER, 3], [B.WOOL, 2], [ITEM_EGG, 1], [B.GLASS, 2], [B.LAMP, 1], [ITEM_FISH, 2], [ITEM_WHEAT, 3], [B.FLOWER_RED, 2], [ITEM_MILK, 1]];
+function lootChest(t) {
+  const pool = [...CHEST_LOOT], got = [];
+  for (let k = 0; k < 2; k++) got.push(pool.splice(Math.random() * pool.length | 0, 1)[0]);
+  for (const [item, n] of got) { addItem(item, n); bump(stats, 'got', item, n); }
+  const page = Math.random() < 0.85 ? pickPage(knownList(), settings.patterns || [], foundEver) : null;
+  const learnt = page ? learn(page, 'chest') : '';
+  bump(stats, 'chests');
+  pickupPop(t, got);
+  sfx.royal(); buzz(30);
+  toast(`✨ Treasure! You found ${rewardText(got)}` + (learnt ? `, and a recipe page: ${learnt}${page.kind === 's' ? ' (sewing pattern)' : ''}!` : '!'), learnt ? 4500 : 3000);
+}
+function openChest(t) {
+  editBlock(t.x, t.y, t.z, B.CHEST_OPEN);
+  remeshAround(t.x, t.z);
+  lootChest(t);
+}
+// The nearest chest still shut, within 30 blocks: [x, y, z] or null.
+function nearestChest(eye) {
+  const pcx = Math.floor(eye[0] / CS), pcz = Math.floor(eye[2] / CS);
+  let best = null, bd = 30 * 30;
+  for (let dz = -2; dz <= 2; dz++) for (let dx = -2; dx <= 2; dx++) {
+    const c = world.getChunk(pcx + dx, pcz + dz)?.chest;
+    if (!c || world.getBlock(c[0], c[1], c[2]) !== B.CHEST) continue;
+    const d = (c[0] + 0.5 - eye[0]) ** 2 + (c[2] + 0.5 - eye[2]) ** 2;
+    if (d < bd) { bd = d; best = c; }
+  }
+  return best;
+}
+let chestEl = null;
+
 // ---------- fishing ----------
 // Hold the rod and tap to cast into water. Wait for the float to bob under, then tap straight away to reel it in.
 let fishing = null; // { p: where the float sits, wait: time until a bite, bite: time left to catch it, t }
@@ -938,6 +971,7 @@ function placeBlock() {
     remeshAround(target.x, target.z); sfx.place(); buzz(8);
     return;
   }
+  if (target && target.id === B.CHEST) { openChest(target); return; }
   if (target && IS_DOOR(target.id)) {
     // tap either half of a door to open or shut the whole thing
     const by = DOOR_TOPS.has(target.id) ? target.y - 1 : target.y;
@@ -1173,7 +1207,7 @@ function updateBreaking(dt) {
   if (breakT.p >= 1) {
     bump(stats, 'dug', target.id);
     const got = drops(target.id);
-    maybePage(target.id);
+    if (target.id === B.CHEST) lootChest(target); else maybePage(target.id);
     for (const [item, n] of got) { addItem(item, n); bump(stats, 'got', item, n); }
     pickupPop(target, got);
     // let water flow back into a hole next to water
@@ -1750,6 +1784,20 @@ function updateTags() {
     const name = nameOf(o) + (d > 12 ? ` · ${Math.round(d)} m` : '');
     if (el.lastName !== name) { el.querySelector('.name').textContent = name; el.lastName = name; }
     pinTag(el, 'tag ' + o.char, tx, ty, tz, W, H, eye, f, r, u);
+  }
+  // Treasure: a gold tag points to a shut chest close by.
+  const tc = nearestChest(eye);
+  if (!chestEl) {
+    chestEl = document.createElement('div');
+    chestEl.innerHTML = '<span class="arrow" aria-hidden="true"></span><span class="name"></span>';
+    box.appendChild(chestEl);
+  }
+  const td = tc && Math.hypot(tc[0] + 0.5 - eye[0], tc[2] + 0.5 - eye[2]);
+  chestEl.hidden = !(td > 2.5);
+  if (!chestEl.hidden) {
+    const label = `✨ Treasure · ${Math.round(td)} m`;
+    if (chestEl.lastName !== label) { chestEl.querySelector('.name').textContent = label; chestEl.lastName = label; }
+    pinTag(chestEl, 'tag treasure', tc[0] + 0.5, tc[1] + 1.4, tc[2] + 0.5, W, H, eye, f, r, u);
   }
   // The home arrow: when you wander far from your tame babies, it points the way back to them.
   let n = 0, hx = 0, hy = 0, hz = 0;

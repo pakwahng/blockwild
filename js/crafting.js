@@ -21,6 +21,7 @@ export function drops(id) {
     case B.PLANTER_SEEDED: case B.PLANTER_GROWING: add(B.PLANTER); break;
     case B.PLANTER_RIPE: add(B.PLANTER); add(ITEM_WHEAT, 2); break;
     case B.FEEDER_SEEDS: case B.FEEDER_WHEAT: case B.FEEDER_APPLE: case B.FEEDER_CLOVER: case B.FEEDER_BONE: add(B.FEEDER); break;
+    case B.CHEST: case B.CHEST_OPEN: add(B.PLANKS, 3); break; // the treasure inside is handled where you dig it
     case B.BEDROCK: case B.WATER: case B.AIR: break;
     default: add(id);
   }

@@ -102,7 +102,19 @@ export class World {
       data[index(lx, h + 1, lz)] = kind < -0.15 ? B.FLOWER_RED : kind < 0.15 ? B.FLOWER_YELLOW : B.FLOWER_WHITE;
     }
 
-    const chunk = { cx, cz, data, dirty: true, gpu: null };
+    // now and then a treasure chest sits out in the open (about one every 8 chunks), on grass, sand or snow
+    let chest = null;
+    if (hash3(cx, 11, cz, this.seed) < 0.13) {
+      const lx = 2 + Math.floor(hash3(cx, 12, cz, this.seed) * (CS - 4)), lz = 2 + Math.floor(hash3(cx, 13, cz, this.seed) * (CS - 4));
+      const h = heights[lx + lz * CS], ground = data[index(lx, h, lz)];
+      if (h >= SEA && h + 2 < CH && (ground === B.GRASS || ground === B.SAND || ground === B.SNOW) && data[index(lx, h + 2, lz)] === B.AIR
+        && (data[index(lx, h + 1, lz)] === B.AIR || (data[index(lx, h + 1, lz)] >= B.FLOWER_RED && data[index(lx, h + 1, lz)] <= B.FLOWER_WHITE))) {
+        data[index(lx, h + 1, lz)] = B.CHEST;
+        chest = [x0 + lx, h + 1, z0 + lz];
+      }
+    }
+
+    const chunk = { cx, cz, data, dirty: true, gpu: null, chest };
     const edits = this.edits.get(World.key(cx, cz));
     if (edits) for (const [i, id] of edits) data[i] = id;
     this.chunks.set(World.key(cx, cz), chunk);

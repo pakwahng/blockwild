@@ -1,11 +1,16 @@
 // The game's version and what changed in each one. Shown on the front screen ("What's new")
 // and in CHANGELOG.md. When you release: bump VERSION, add an entry at the top of CHANGES,
 // and set the same number in sw.js (CACHE = 'blockwild-v<VERSION>') so phones pick it up.
-export const VERSION = 27;
+export const VERSION = 28;
 export const RELEASED = '8 Nov 2026';
 
 // [version, date, headline, [details]]
 export const CHANGES = [
+  [28, '8 Nov 2026', 'Treasure chests', [
+    'Treasure chests are hidden about the world, out on the grass, sand and snow. When one is close by, a gold Treasure tag shows you the way.',
+    'Tap a chest to open it: inside are two goodies (apples, wool, eggs, fish, a lamp…) and, most of the time, a recipe page.',
+    'New goal: find a treasure chest and open it.',
+  ]],
   [27, '8 Nov 2026', 'Gone fishing', [
     'New: the fishing rod. Learn it from a recipe page (or the sewing goal), then make it at a crafting table from 3 sticks and 1 wool.',
     'Hold the rod and tap to cast into a pond, river or the sea. When the float bobs under, tap quickly to reel it in!',
