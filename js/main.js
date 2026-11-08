@@ -90,7 +90,9 @@ try {
 
 let world = null, player = null, flock = null, snakes = null, raiders = null, weather = null, critters = null, running = false, firsts = [];
 let clock = 0.08, nights = 0, swingCool = 0, wasBreaking = false;
-let crown = false, seat = null;
+let crown = 0, seat = null; // crown: 0 none, 1 gold, 2 ruby, 3 diamond
+let streak = 0;              // perfect nights in a row (no baby spooked)
+let sleptNight = false;      // slept through tonight: it doesn't count towards a crown
 // hotbar: nine slots holding item ids (0 = empty); inv: how many of each item you're carrying
 const NEW_HOTBAR = [ITEM_SEEDS, ITEM_SWORD, 0, 0, 0, 0, 0, 0, 0];
 let hotbar = [...NEW_HOTBAR];
@@ -418,7 +420,8 @@ function startWorld(save) {
   critters = new Critters(world);
   clock = save?.clock ?? 0.08;
   nights = save?.nights || 0;
-  crown = !!save?.crown;
+  crown = save?.crown === true ? 1 : (save?.crown | 0);
+  streak = save?.streak | 0; sleptNight = false;
   loadSigns(save?.signs);
   snackT = 0; boostEl.hidden = true;
   trader.here = false; trader.day = -1; trader.look = 0;
@@ -443,7 +446,7 @@ function saveGame() {
     return;
   }
   store.set(SAVE_KEY, {
-    v: 4, inv, stats, goals: goalsDone, seed: world.seed, clock: +clock.toFixed(4), nights, crown, pos: player.pos.map(v => +v.toFixed(2)), yaw: player.yaw, pitch: player.pitch,
+    v: 4, inv, stats, goals: goalsDone, seed: world.seed, clock: +clock.toFixed(4), nights, crown, streak, pos: player.pos.map(v => +v.toFixed(2)), yaw: player.yaw, pitch: player.pitch,
     flying: player.flying, hotbar, selected, edits: world.serializeEdits(),
     animals: flock ? flock.serialize() : [], gifts: flock ? flock.serializeGifts() : [], milestone, firsts,
     signs: signsOut(),
@@ -478,7 +481,7 @@ function updateNursery() {
   for (const [at, text] of MILESTONES) {
     if (n.chick >= at && milestone < at) { milestone = at; if (shownCounts) { toast(text); if (at > 1) sfx.fanfare(); } }
   }
-  if (shownCounts && n.chick >= 100 && !crown && !net.isGuest) awardCrown();
+  if (shownCounts && n.chick >= 100 && !crown && !net.isGuest) awardCrown(1);
   stats.chicks = Math.max(stats.chicks || 0, n.chick || 0);
   shownCounts = n;
 }
@@ -490,18 +493,51 @@ crownEl.setAttribute('aria-label', 'Chicken king crown');
 crownEl.innerHTML = `<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M4 11l6 6 6-10 6 10 6-6-2 15H6z" fill="#ffcf3a" stroke="#c98a00" stroke-width="1.6" stroke-linejoin="round"/><rect x="6" y="23" width="20" height="4" rx="1.5" fill="#ffb800"/><circle cx="16" cy="18" r="2.4" fill="#e8443a"/><circle cx="10" cy="20" r="1.6" fill="#4aa8ff"/><circle cx="22" cy="20" r="1.6" fill="#4cc25a"/><circle cx="4" cy="10" r="1.8" fill="#ffcf3a"/><circle cx="16" cy="6" r="1.8" fill="#ffcf3a"/><circle cx="28" cy="10" r="1.8" fill="#ffcf3a"/></svg>`;
 nurseryEl.prepend(crownEl);
 { const br = document.createElement('div'); br.className = 'break'; nurseryEl.append(br, $('#goal')); }
-function showCrown() { crownEl.hidden = !crown; }
+// Crowns get harder: each needs more perfect nights in a row (no baby spooked) and a bigger nursery.
+// The snakes grow in number and kind every night too, so a long streak is a real feat.
+const CROWNS = [
+  null,
+  { name: 'gold crown', nights: 3, flock: 8 },
+  { name: 'ruby crown', nights: 5, flock: 20 },
+  { name: 'diamond crown', nights: 8, flock: 40 },
+];
+function showCrown() {
+  crownEl.hidden = !crown;
+  crownEl.dataset.level = crown;
+  crownEl.setAttribute('aria-label', crown ? `Chicken king: ${CROWNS[crown].name}` : 'Chicken king crown');
+  crownEl.title = crown ? CROWNS[crown].name[0].toUpperCase() + CROWNS[crown].name.slice(1) : '';
+}
 
-function awardCrown() {
-  crown = true;
+function awardCrown(level = crown + 1) {
+  level = Math.min(CROWNS.length - 1, Math.max(1, level));
+  if (level <= crown) return;
+  const first = !crown;
+  crown = level;
   showCrown();
   crownEl.classList.remove('bump'); void crownEl.offsetWidth; crownEl.classList.add('bump');
   if (!have(B.THRONE)) addItem(B.THRONE, 1);
   sfx.royal();
-  snakes.burst(player.pos, 90, undefined, false);
-  if (net.isHost) netEvents.push({ type: 'crown' });
-  toast('Chicken king! You earned the gold crown and a hay bale throne. Place the throne and tap it to sit.');
+  snakes.burst(player.pos, 90 + level * 40, undefined, false);
+  if (net.isHost) netEvents.push({ type: 'crown', level });
+  const name = CROWNS[level].name;
+  toast(first ? `Chicken king! You earned the ${name} and a hay bale throne. Place the throne and tap it to sit.`
+    : level < CROWNS.length - 1 ? `Your crown grew into the ${name}! Next: the ${CROWNS[level + 1].name}.`
+    : `The ${name}! The grandest crown in the land. Long live the chicken king!`);
   saveGame();
+}
+
+// At sunrise: counts the streak and says how close the next crown is.
+function crownDawn(spooked, babies) {
+  const slept = sleptNight; sleptNight = false;
+  if (babies <= 0) return '';                 // nobody to keep safe: the streak waits
+  if (slept && !spooked) return CROWNS[crown + 1] ? ' (A night slept through doesn’t count towards a crown: stay up and guard it!)' : '';
+  if (spooked) { const lost = streak; streak = 0; return lost >= 2 ? ` That ends your run of ${lost} perfect nights.` : ''; }
+  streak++;
+  const next = CROWNS[crown + 1];
+  if (!next) return streak > 1 ? ` ${streak} perfect nights in a row!` : '';
+  if (streak >= next.nights && babies >= next.flock) { awardCrown(crown + 1); return null; }
+  if (streak >= next.nights) return ` ${streak} perfect nights in a row! Grow your nursery to ${next.flock} animals for the ${next.name}.`;
+  return ` Perfect night ${streak} of ${next.nights} in a row for the ${next.name}.`;
 }
 
 // Places the throne seat with a hay back (away from the player) and hay arms.
@@ -728,15 +764,16 @@ function handleChickEvents() {
       if (ev.spooked === 0) bump(stats, 'nights');
       if (net.isGuest) {
         toast(ev.spooked ? `Day ${nights + 1}. Sunrise! The snake spooked ${ev.spooked} ${ev.spooked === 1 ? 'baby' : 'babies'}, but the nursery made it.` : `Day ${nights + 1}. Sunrise! Every baby made it safely through the night.`);
-        if (!(ev.spooked === 0 && !crown)) sfx.fanfare();
+        sfx.fanfare();
         continue;
       }
       nights++;
       const babies = Object.values(flock.counts()).reduce((a, b) => a + b, 0);
-      if (!ev.spooked && babies > 0 && !crown) { awardCrown(); continue; }
+      const more = crownDawn(ev.spooked, babies);
+      if (more === null) continue;
       sfx.fanfare();
-      toast(ev.spooked ? `Day ${nights + 1}. Sunrise! The snake spooked ${ev.spooked} ${ev.spooked === 1 ? 'baby' : 'babies'}, but the nursery made it.`
-        : `Day ${nights + 1}. Sunrise! Every baby made it safely through the night.`);
+      toast((ev.spooked ? `Day ${nights + 1}. Sunrise! The snake spooked ${ev.spooked} ${ev.spooked === 1 ? 'baby' : 'babies'}, but the nursery made it.`
+        : `Day ${nights + 1}. Sunrise! Every baby made it safely through the night.`) + more);
     } else if (ev.type === 'hiss') { if (d < 24) sfx.hiss(0.25 * (1 - d / 24)); }
     else if (ev.type === 'spawn') {
       const k = ev.kind | 0;
@@ -2284,6 +2321,7 @@ function sleepInBed(guest) {
   if (net.isGuest) { net.toHost({ t: 'sleep' }); return; } // the host sends 'slept' back to everyone
   if (net.isHost) net.broadcast({ t: 'slept' });
   if (guest) toast(`${nameOf(guest)} went to bed. Sleeping till morning…`);
+  sleptNight = true;
   sleepFade();
   setTimeout(() => { clock = MORNING; }, 900);
 }
@@ -2602,7 +2640,7 @@ function guestMessage(msg) {
       flock.applyGifts(msg.gf || []);
       // events first, so a snake that just poofed is still here to burst into confetti
       for (const ev of msg.ev || []) {
-        if (ev.type === 'crown') { if (!crown) awardCrown(); continue; }
+        if (ev.type === 'crown') { if ((ev.level || 1) > crown) awardCrown(ev.level || 1); continue; }
         if (ev.f) flock.events.push(ev);
         else if (ev.w) weather.events.push(ev);
         else if (ev.r) { raiders.remoteEvent(ev); raiders.events.push(ev); }
@@ -2622,7 +2660,7 @@ function guestMessage(msg) {
       }
       for (const id of [...others.keys()]) if (!seen.has(id)) others.delete(id);
       if (others.size !== shownOthers) { shownOthers = others.size; updateRoomUi(); }
-      if (msg.crown && !crown) { crown = true; showCrown(); }
+      if ((msg.crown | 0) > crown) { crown = msg.crown | 0; showCrown(); }
       break;
     }
   }
@@ -2630,7 +2668,7 @@ function guestMessage(msg) {
 
 function startGuestWorld(w) {
   myNetId = w.id;
-  startWorld({ v: 3, guest: true, seed: w.seed, edits: w.edits, pos: w.pos, yaw: w.yaw, pitch: 0, clock: w.clock, nights: w.nights, crown: w.crown, signs: w.signs });
+  startWorld({ v: 3, guest: true, seed: w.seed, edits: w.edits, pos: w.pos, yaw: w.yaw, pitch: 0, clock: w.clock, nights: w.nights, crown: w.crown | 0, signs: w.signs });
   setNetStatus(`Playing in a friend’s world (room ${net.code}).`);
   updateRoomUi();
   if (coarse) input.setTouchMode(true);
@@ -2847,7 +2885,7 @@ requestAnimationFrame(loop);
 window.blockwild = { fishTap, get fishing() { return fishing; }, selectSlot, get hotbar() { return hotbar; }, get known() { return knownList(); }, learn, unlearned: () => unlearned(knownList(), settings.patterns || []), get settings() { return settings; }, get world() { return world; }, get player() { return player; }, get target() { return target; }, get flock() { return flock; }, get nursery() { return flock; }, get snakes() { return snakes; }, get raiders() { return raiders; }, get weather() { return weather; }, get critters() { return critters; }, music, trader, openMap, get nights() { return nights; }, set nights(n) { nights = n; }, wardrobe, selfieCam, petBaby, openJobs, get inv() { return inv; }, addItem, RECIPES, craft, input, raycast,
   get clock() { return clock; }, setTime(t) { clock = t; }, swing: () => swing(),
   net, others, get myNetId() { return myNetId; },
-  get seat() { return seat; }, awardCrown: () => awardCrown(), sit: (x, y, z) => sit(x, y, z), standUp: () => standUp(),
+  get seat() { return seat; }, awardCrown: l => awardCrown(l), get streak() { return streak; }, set streak(v) { streak = v; }, sit: (x, y, z) => sit(x, y, z), standUp: () => standUp(),
   // advance n frames by hand (useful when the page is in a background tab)
   step(n = 1) { for (let i = 0; i < n; i++) { last = performance.now() - 33; frame(performance.now()); } } };
 

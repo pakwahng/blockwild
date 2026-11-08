@@ -262,7 +262,16 @@ A full day lasts 10 minutes: about 6 minutes of daylight, a pink dusk, roughly 3
 
 ## Chicken king
 
-- Keep every baby safe through a whole night (or raise 100 chicks) and at sunrise you earn the **gold crown** (shown at top left) and a **hay bale throne** on your hotbar.
+- Keep every baby safe for **perfect nights in a row** to earn crowns. Each crown needs a longer run and a bigger nursery:
+
+  | Crown | Perfect nights in a row | Animals in the nursery |
+  |---|---|---|
+  | Gold | 3 | 8 |
+  | Ruby | 5 | 20 |
+  | Diamond | 8 | 40 |
+
+- One spooked baby starts the run again, and a night slept through in a bed doesn't count (but doesn't break the run either). Each sunrise says how close you are. Snakes get more numerous and trickier every night, so the later crowns are hard.
+- Raising 100 chicks also earns the gold crown. The first crown comes with a **hay bale throne** on your hotbar. The crown shows at top left and changes colour as it grows.
 - Place the throne: it builds a red-cushioned seat with a hay back (facing you) and arms.
 - Tap the throne to sit. Every baby in your nursery nearby gathers in rows in front of it, hopping and wagging. Walk or jump to stand up.
 

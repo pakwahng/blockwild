@@ -2,6 +2,12 @@
 
 The same list is in the game: tap the version number on the front screen, or open **What’s new**.
 
+## 34. Crowns you have to earn (9 Nov 2026)
+- The gold crown is harder now: keep every baby safe for 3 nights in a row, with at least 8 animals in your nursery (raising 100 chicks still works too).
+- Keep the run going for two new crowns: the ruby crown (5 nights in a row, 20 animals) and the diamond crown (8 nights, 40 animals). Your crown changes colour as it grows.
+- One spooked baby starts the run again, and a night slept through in bed doesn’t count. Every sunrise tells you how close the next crown is.
+- Crowns you already earned stay yours.
+
 ## 33. A map, and Pip the travelling goose (9 Nov 2026)
 - New map button (top right, or press M): see the land around you from above, with your nursery, signs, beds, campfires, treasure chests and friends marked on it. Zoom out to see further.
 - Every other day, Pip the travelling goose pulls her market cart up near your nursery. Follow the 🛒 tag and tap her to swap things.

@@ -1,11 +1,17 @@
 // The game's version and what changed in each one. Shown on the front screen ("What's new")
 // and in CHANGELOG.md. When you release: bump VERSION, add an entry at the top of CHANGES,
 // and set the same number in sw.js (CACHE = 'blockwild-v<VERSION>') so phones pick it up.
-export const VERSION = 33;
+export const VERSION = 34;
 export const RELEASED = '9 Nov 2026';
 
 // [version, date, headline, [details]]
 export const CHANGES = [
+  [34, '9 Nov 2026', 'Crowns you have to earn', [
+    'The gold crown is harder now: keep every baby safe for 3 nights in a row, with at least 8 animals in your nursery (raising 100 chicks still works too).',
+    'Keep the run going for two new crowns: the ruby crown (5 nights in a row, 20 animals) and the diamond crown (8 nights, 40 animals). Your crown changes colour as it grows.',
+    'One spooked baby starts the run again, and a night slept through in bed doesn’t count. Every sunrise tells you how close the next crown is.',
+    'Crowns you already earned stay yours.',
+  ]],
   [33, '9 Nov 2026', 'A map, and Pip the travelling goose', [
     'New map button (top right, or press M): see the land around you from above, with your nursery, signs, beds, campfires, treasure chests and friends marked on it. Zoom out to see further.',
     'Every other day, Pip the travelling goose pulls her market cart up near your nursery. Follow the 🛒 tag and tap her to swap things.',
