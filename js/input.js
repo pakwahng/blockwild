@@ -5,7 +5,7 @@ const TAP_MS = 260, HOLD_MS = 300, TAP_SLOP = 14, STICK_R = 56;
 export class Input {
   constructor(surface, ui) {
     this.surface = surface;
-    this.ui = ui; // { stick, knob, jump, down, fly, onFly, onPlace, onHotbarScroll, onHotbarKey, onPicker, onPause }
+    this.ui = ui; // { stick, knob, jump, down, onPlace, onHotbarScroll, onHotbarKey, onPicker, onPause }
     this.state = { moveX: 0, moveZ: 0, jump: false, down: false, sprint: false, breaking: false };
     this.look = { dx: 0, dy: 0 };
     this.touchSens = 1; this.mouseSens = 1;
@@ -125,7 +125,6 @@ export class Input {
       if (!this.enabled || e.target.tagName === 'INPUT') return;
       this.keys.add(e.code);
       this.setTouchMode(false);
-      if (e.code === 'KeyF' && !e.repeat) ui.onFly();
       if (e.code === 'KeyE' && !e.repeat) ui.onPicker();
       if (/^Digit[1-9]$/.test(e.code)) ui.onHotbarKey(+e.code.slice(5) - 1);
       if (e.code === 'Space') e.preventDefault();

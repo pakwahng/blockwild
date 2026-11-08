@@ -237,11 +237,10 @@ const EVERYONE = 'Everyone’s invited! Chicks, calves, piglets, lambs and pups.
 // ---------- input ----------
 const input = new Input(canvas, {
   stick: $('#stick'), knob: $('#knob'), jump: $('#btn-jump'), down: $('#btn-down'),
-  onFly: toggleFly, onPlace: placeBlock, onPicker: openPicker, onPause: pause,
+  onPlace: placeBlock, onPicker: openPicker, onPause: pause,
   onHotbarScroll: d => selectSlot((selected + d + 9) % 9),
   onHotbarKey: selectSlot,
 });
-$('#btn-fly').addEventListener('pointerdown', e => { e.preventDefault(); toggleFly(); });
 $('#btn-menu').addEventListener('click', pause);
 $('#btn-blocks').addEventListener('click', openPicker);
 
@@ -317,7 +316,7 @@ function startWorld(save) {
     while (sy > 1 && !SOLID[world.getBlock(Math.floor(sx), sy - 1, Math.floor(sz))]) sy--;
   }
   player = new Player(sx, sy, sz);
-  if (save) { player.yaw = save.yaw || 0; player.pitch = save.pitch || 0; player.flying = !!save.flying; }
+  if (save) { player.yaw = save.yaw || 0; player.pitch = save.pitch || 0; player.flying = false; } // no flying (older saves may have been mid-air: you drop to the ground)
   const guest = !!save?.guest;
   // a guest brings their own bag along on the visit, so it stays as it is
   if (!guest) {
@@ -338,7 +337,6 @@ function startWorld(save) {
   while (hotbar.length < 9) hotbar.push(0);
   player.autoJump = settings.autoJump;
   document.body.classList.toggle('flying', player.flying);
-  $('#btn-fly').classList.toggle('on', player.flying);
   buildHotbar();
   stream(80);
 
@@ -505,7 +503,6 @@ function sit(x, y, z) {
   const front = throneFront(x, y, z);
   seat = { x, y, z, front };
   player.flying = false;
-  document.body.classList.remove('flying'); $('#btn-fly').classList.remove('on');
   player.pos = [x + 0.5, y + 1, z + 0.5]; player.vel = [0, 0, 0];
   player.yaw = Math.atan2(-front[0], -front[1]); player.pitch = -0.42;
   let n = flock.gatherAt([x + 0.5, y, z + 0.5], front);
@@ -942,15 +939,6 @@ function updateBreaking(dt) {
 
 function buzz(ms) { if (input.usingTouch) navigator.vibrate?.(ms); }
 
-function toggleFly() {
-  if (!player) return;
-  player.flying = !player.flying;
-  player.vel[1] = 0;
-  document.body.classList.toggle('flying', player.flying);
-  $('#btn-fly').classList.toggle('on', player.flying);
-}
-
-// ---------- hotbar & picker ----------
 function buildHotbar() {
   const bar = $('#hotbar');
   bar.innerHTML = '';

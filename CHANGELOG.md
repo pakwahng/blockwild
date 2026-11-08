@@ -2,6 +2,10 @@
 
 The same list is in the game: tap the version number on the front screen, or open **What’s new**.
 
+## 21.1. No more flying (8 Nov 2026)
+- You can’t fly any more: the Fly button and the F key are gone. Walk, jump, swim and climb ladders instead.
+- If you were up in the air, you drop back down to the ground.
+
 ## 21. New kinds of snake (8 Nov 2026)
 - A new kind of snake joins each night.
 - Poison snake: leaves a trail of green poison goo that lasts 5 seconds. Babies run from it, and it makes you slow.

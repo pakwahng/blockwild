@@ -136,7 +136,6 @@ body.touch #touch-ui { display: block; }
 #btn-jump { position: absolute; right: calc(24px + var(--safe-r)); bottom: calc(84px + var(--safe-b)); }
 #btn-down { position: absolute; right: calc(110px + var(--safe-r)); bottom: calc(88px + var(--safe-b)); display: none; }
 body.flying #btn-down { display: grid; }
-#btn-fly { position: absolute; right: calc(34px + var(--safe-r)); bottom: calc(170px + var(--safe-b)); width: 48px; height: 48px; }
 #touch-hint {
   position: absolute; left: 50%; bottom: calc(var(--slot) + 28px + var(--safe-b)); transform: translateX(-50%);
   padding: 6px 12px; border-radius: 99px; background: rgba(10, 14, 20, 0.6); font-size: 13px;

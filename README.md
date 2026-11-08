@@ -171,7 +171,7 @@ A full day lasts 10 minutes: about 6 minutes of daylight, a pink dusk, roughly 3
 | Drag left side: walk (push far to sprint) | WASD, Ctrl to sprint |
 | Drag right side: look | Mouse (click to capture) |
 | Tap: place block / open gate · Hold: dig | Right click: place · Left hold: break |
-| ⬆ jump / fly up, ⬇ fly down, **Fly** toggle | Space, Shift, F |
+| ⬆ jump (you can't fly) | Space; Shift climbs down a ladder |
 | Hotbar tap, bag button | 1–9, wheel, E |
 
 ## Code map
@@ -193,7 +193,7 @@ A full day lasts 10 minutes: about 6 minutes of daylight, a pink dusk, roughly 3
 | `js/models.js` | Rounded-box 3D models for the babies, Lachie and Charli in their outfits (clothes list and `kidModel`), and treats (with leg, head and tail rigs), treat icons, counter faces |
 | `js/audio.js` | Synthesized cheeps, moos, oinks, baas, yips and sound effects |
 | `js/renderer.js` | WebGL2 shaders, texture array, frustum culling, water pass, block outline |
-| `js/player.js` | Movement, collision, swimming, flying, voxel raycast |
+| `js/player.js` | Movement, collision, swimming, ladders, voxel raycast |
 | `js/input.js` | Touch joystick/look/tap/hold and keyboard/mouse |
 | `js/textures.js` | Procedurally painted 16×16 block textures and hotbar icons |
 | `js/blocks.js` | Block definitions |

@@ -1,11 +1,15 @@
 // The game's version and what changed in each one. Shown on the front screen ("What's new")
 // and in CHANGELOG.md. When you release: bump VERSION, add an entry at the top of CHANGES,
 // and set the same number in sw.js (CACHE = 'blockwild-v<VERSION>') so phones pick it up.
-export const VERSION = 21;
+export const VERSION = 21.1;
 export const RELEASED = '8 Nov 2026';
 
 // [version, date, headline, [details]]
 export const CHANGES = [
+  [21.1, '8 Nov 2026', 'No more flying', [
+    'You can’t fly any more: the Fly button and the F key are gone. Walk, jump, swim and climb ladders instead.',
+    'If you were up in the air, you drop back down to the ground.',
+  ]],
   [21, '8 Nov 2026', 'New kinds of snake', [
     'A new kind of snake joins each night.',
     'Poison snake: leaves a trail of green poison goo that lasts 5 seconds. Babies run from it, and it makes you slow.',
