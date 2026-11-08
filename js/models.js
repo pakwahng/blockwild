@@ -468,23 +468,62 @@ export const FACE_SVG = {
 // ---- the kids: Lachie and Charli, the two players from the video (the cute chibi look) ----
 // Parts: 4/5 legs swing from the hip, 6/7 arms swing from the shoulder (opposite the leg on the same side),
 // 10 is the big round head, which tilts with where the player is looking.
-const SKIN = '#f3c9a6', SKIN_DARK = '#e8ae8c', HAIR = '#1b1818', SHORTS = '#cfa978', SOCK = '#f6f4ef', SHOE = '#f1f1ee';
+const SKIN = '#f3c9a6', SKIN_DARK = '#e8ae8c', HAIR = '#1b1818', SOCK = '#f6f4ef';
 const HIP = 0.46, SHOULDER = 0.78, NECK = 0.8;
-function kidBody(m, shirt, sleeve) {
+
+// ---- clothes: what each kid can wear (the wardrobe) ----
+export const CLOTH_COLORS = ['#d83a2c', '#f08a3c', '#f2c94c', '#5fae4e', '#7fd0c0', '#4a8fe0', '#2c3e74', '#9b7fd8', '#f28bb3', '#cfa978', '#f1efe8', '#2a2a2e'];
+export const CLOTH_COLOR_NAMES = ['Red', 'Orange', 'Yellow', 'Green', 'Mint', 'Blue', 'Navy', 'Purple', 'Pink', 'Sand', 'White', 'Black'];
+export const TOPS = ['T-shirt', 'Stripes', 'Hoodie', 'Dress'];
+export const BOTTOMS = ['Shorts', 'Trousers', 'Skirt'];
+export const HATS = ['No hat', 'Cap', 'Beanie', 'Bow', 'Flower'];
+// An outfit is 8 small numbers: [top, top colour, bottoms, bottoms colour, hat, hat colour, shoe colour, bag (0/1)].
+export const DEFAULT_FIT = { lachie: [0, 0, 0, 9, 0, 5, 10, 1], charli: [0, 4, 0, 9, 0, 8, 10, 1] };
+const FIT_LIMITS = [TOPS.length, CLOTH_COLORS.length, BOTTOMS.length, CLOTH_COLORS.length, HATS.length, CLOTH_COLORS.length, CLOTH_COLORS.length, 2];
+// Any outfit from a save or another player, made safe (bad or missing parts fall back to the default).
+export function cleanFit(f, char) {
+  const d = DEFAULT_FIT[char] || DEFAULT_FIT.lachie;
+  return d.map((v, i) => Array.isArray(f) && Number.isInteger(f[i]) && f[i] >= 0 && f[i] < FIT_LIMITS[i] ? f[i] : v);
+}
+const shade = (c, k) => '#' + [1, 3, 5].map(i => Math.round(Math.min(255, parseInt(c.slice(i, i + 2), 16) * k)).toString(16).padStart(2, '0')).join('');
+
+function kidBody(m, fit) {
   const legX = 0.085, legW = 0.14, armX = 0.215, armW = 0.1, chest = 0.34, chestD = 0.26;
+  const [top, tc, bot, bc, , , sc] = fit;
+  const shirt = CLOTH_COLORS[tc], sleeve = shade(shirt, 0.95), pants = CLOTH_COLORS[bc], shoe = CLOTH_COLORS[sc];
+  const dress = top === 3, hoodie = top === 2, trousers = bot === 1 && !dress, skirt = bot === 2 && !dress;
+  const stripe = tc === 10 ? CLOTH_COLORS[6] : '#f6f4ef';
   for (const [sx, part] of [[1, 4], [-1, 5]]) {
     const x = sx * legX;
-    m.box([x, 0.05, 0.03], [legW + 0.035, 0.1, legW + 0.11], 0.045, SHOE, part, false);         // chunky sneakers
-    m.box([x, 0.135, 0], [legW + 0.01, 0.08, legW + 0.01], 0.03, SOCK, part, false);             // socks
-    m.box([x, 0.24, 0], [legW, 0.14, legW], 0.03, SKIN, part, false);
-    m.box([x, HIP - 0.07, 0], [legW + 0.035, 0.16, legW + 0.035], 0.04, SHORTS, part, false);     // shorts legs
+    m.box([x, 0.05, 0.03], [legW + 0.035, 0.1, legW + 0.11], 0.045, shoe, part, false);          // chunky sneakers
+    m.box([x, 0.095, 0.1], [legW + 0.04, 0.02, 0.03], 0.008, shade(shoe, 0.8), part, false);      // toe stripe
+    if (trousers) {
+      m.box([x, (0.12 + HIP + 0.03) / 2, 0], [legW + 0.03, HIP + 0.03 - 0.12, legW + 0.03], 0.04, pants, part, false);
+      m.box([x, 0.135, 0], [legW + 0.04, 0.04, legW + 0.04], 0.02, shade(pants, 0.85), part, false); // turn-ups
+      continue;
+    }
+    m.box([x, 0.135, 0], [legW + 0.01, 0.08, legW + 0.01], 0.03, SOCK, part, false);              // socks
+    m.box([x, 0.27, 0], [legW, 0.2, legW], 0.03, SKIN, part, false);
+    if (!dress && !skirt) m.box([x, HIP - 0.07, 0], [legW + 0.035, 0.16, legW + 0.035], 0.04, pants, part, false); // shorts legs
   }
-  m.box([0, HIP + 0.02, 0], [legX * 2 + legW + 0.035, 0.1, chestD], 0.04, SHORTS);
+  m.box([0, HIP + 0.02, 0], [legX * 2 + legW + 0.035, 0.1, chestD], 0.04, dress ? shirt : pants);
+  if (skirt) m.box([0, HIP - 0.06, 0], [0.42, 0.2, chestD + 0.1], 0.06, pants);                   // flared skirt
+  if (dress) {
+    m.box([0, HIP - 0.07, 0], [0.45, 0.24, chestD + 0.12], 0.07, shirt);                           // full skirt of the dress
+    m.box([0, HIP - 0.18, 0], [0.46, 0.03, chestD + 0.13], 0.012, '#f6f4ef', 0, false);            // white hem
+  }
   m.box([0, (HIP + 0.05 + NECK) / 2, 0], [chest, NECK - HIP - 0.05, chestD], 0.07, shirt);
+  if (top === 1) for (const y of [0.56, 0.65, 0.74]) m.box([0, y, 0], [chest + 0.014, 0.035, chestD + 0.014], 0.02, stripe, 0, false);
+  if (hoodie) {
+    m.box([0, NECK - 0.03, -chestD / 2 - 0.03], [0.3, 0.16, 0.1], 0.05, sleeve, 0, false);          // hood down at the back
+    m.box([0, 0.57, chestD / 2 + 0.01], [0.22, 0.09, 0.02], 0.02, sleeve, 0, false);               // front pocket
+    for (const sx of [-1, 1]) m.box([sx * 0.05, 0.72, chestD / 2 + 0.012], [0.015, 0.1, 0.01], 0.005, '#f6f4ef', 0, false); // cords
+  }
   for (const [sx, part] of [[1, 6], [-1, 7]]) {
     const x = sx * armX;
-    m.box([x, SHOULDER - 0.06, 0], [armW + 0.04, 0.13, armW + 0.04], 0.05, sleeve, part, false);  // puffy short sleeves
-    m.box([x, 0.56, 0], [armW, 0.16, armW], 0.035, SKIN, part, false);
+    m.box([x, SHOULDER - 0.06, 0], [armW + 0.04, 0.13, armW + 0.04], 0.05, sleeve, part, false);  // puffy sleeves
+    if (top === 1) m.box([x, SHOULDER - 0.07, 0], [armW + 0.05, 0.03, armW + 0.05], 0.012, stripe, part, false);
+    m.box([x, 0.56, 0], [armW + (hoodie ? 0.02 : 0), 0.16, armW + (hoodie ? 0.02 : 0)], 0.035, hoodie ? sleeve : SKIN, part, false);
     m.box([x, 0.47, 0.01], [armW + 0.015, 0.08, armW + 0.02], 0.04, SKIN, part, false);           // little hands
   }
   return chestD;
@@ -512,47 +551,74 @@ function kidHead(m, w, h, d, girl) {
   m.box([0, cy - 0.155, zf + 0.012], [0.07, 0.025, 0.01], 0.012, '#f07a80', H, false);           // tongue
   return { y0, top: y0 + h };
 }
-export function lachieModel() {
-  const m = new ModelBuilder(), H = 10;
-  const chestD = kidBody(m, '#d83a2c', '#cf3527');
-  // black bum bag slung across the chest
-  for (let k = 0; k < 6; k++) m.box([-0.13 + k * 0.05, 0.77 - k * 0.045, chestD / 2 + 0.008], [0.06, 0.035, 0.016], 0.008, '#1f1f22', 0, false);
-  m.box([0.05, 0.56, chestD / 2 + 0.04], [0.21, 0.1, 0.08], 0.045, '#2f3034', 0, false);
-  m.box([0.05, 0.58, chestD / 2 + 0.082], [0.17, 0.012, 0.01], 0.004, '#c8c8c8', 0, false);      // zip
-  // round head with spiky black hair on top and a choppy fringe
-  const w = 0.62, h = 0.6, d = 0.56, { y0, top } = kidHead(m, w, h, d, false);
-  m.box([0, top - 0.02, -0.02], [w + 0.06, 0.16, d + 0.06], 0.08, HAIR, H);
-  m.box([0, y0 + h * 0.58, -d / 2 - 0.02], [w + 0.05, h * 0.8, 0.08], 0.06, HAIR, H, false);
-  for (const sx of [-1, 1]) m.box([sx * (w / 2 + 0.02), y0 + h * 0.74, -0.06], [0.06, h * 0.42, d - 0.1], 0.03, HAIR, H, false);
-  for (let k = 0; k < 5; k++) {                                                                   // fringe points
-    const x = -0.24 + k * 0.12;
-    m.box([x, top - 0.11 - (k % 2) * 0.03, d / 2 + 0.02], [0.13, 0.1 + (k % 2) * 0.04, 0.06], 0.04, HAIR, H, false);
+// A hat on top of the head (part 10, so it nods along).
+function kidHat(m, fit, w, h, d, top) {
+  const H = 10, c = CLOTH_COLORS[fit[5]];
+  if (fit[4] === 1) {                                                                              // cap
+    m.box([0, top + 0.04, -0.01], [w + 0.08, 0.2, d + 0.08], 0.09, c, H);
+    m.box([0, top - 0.04, d / 2 + 0.1], [w * 0.75, 0.035, 0.24], 0.015, c, H, false);              // peak
+    m.box([0, top + 0.14, 0], [0.06, 0.03, 0.06], 0.015, shade(c, 0.85), H, false);
+  } else if (fit[4] === 2) {                                                                       // woolly beanie with a pompom
+    m.box([0, top + 0.03, -0.01], [w + 0.1, 0.26, d + 0.1], 0.12, c, H);
+    m.box([0, top - 0.08, -0.01], [w + 0.12, 0.08, d + 0.12], 0.04, shade(c, 0.85), H, false);
+    m.box([0, top + 0.19, 0], [0.13, 0.13, 0.13], 0.065, '#f6f4ef', H, false);
+  } else if (fit[4] === 3) {                                                                       // big bow
+    const x = 0.17, y = top + 0.04, z = 0.04;
+    m.box([x, y, z], [0.07, 0.08, 0.07], 0.03, shade(c, 0.85), H, false);
+    for (const sx of [-1, 1]) m.box([x + sx * 0.1, y + 0.01, z], [0.13, 0.13, 0.06], 0.05, c, H, false);
+  } else if (fit[4] === 4) {                                                                       // a flower behind the ear
+    const x = w / 2 - 0.02, y = top - 0.08, z = 0.14, mid = fit[5] === 2 ? '#f08a3c' : '#ffd23c';
+    for (const [dy, dz] of [[0.06, 0], [-0.06, 0], [0, 0.06], [0, -0.06]]) m.box([x + 0.02, y + dy, z + dz], [0.05, 0.08, 0.08], 0.035, c, H, false);
+    m.box([x + 0.04, y, z], [0.05, 0.06, 0.06], 0.025, mid, H, false);
   }
-  for (const [x, z, s] of [[-0.18, 0.12, 0.1], [0.02, 0.18, 0.12], [0.2, 0.08, 0.1], [-0.08, -0.08, 0.12], [0.14, -0.16, 0.1], [-0.22, -0.18, 0.09]])
-    m.box([x, top + 0.07, z], [s, 0.1, s], 0.04, HAIR, H, false);                                  // spikes
+}
+// A kid in an outfit. char picks the face and hair (Lachie or Charli); fit is what they're wearing.
+export function kidModel(char, fit) {
+  const m = new ModelBuilder(), H = 10;
+  fit = cleanFit(fit, char);
+  const chestD = kidBody(m, fit);
+  if (char === 'charli') {
+    if (fit[0] === 0) m.box([0, NECK - 0.02, 0], [0.32, 0.06, chestD + 0.02], 0.03, '#d9466e', 0, false); // pink collar
+    if (fit[7]) {                                                                                  // little black bag on a thin strap
+      for (let k = 0; k < 7; k++) m.box([0.12 - k * 0.04, 0.76 - k * 0.04, chestD / 2 + 0.008], [0.03, 0.04, 0.014], 0.006, '#26252a', 0, false);
+      m.box([-0.17, 0.5, chestD / 2 + 0.02], [0.1, 0.12, 0.07], 0.03, '#2a292e', 0, false);
+      m.box([-0.17, 0.52, chestD / 2 + 0.058], [0.02, 0.025, 0.01], 0.006, '#9a9aa0', 0, false);
+    }
+    // round head with smooth hair, a middle part, side strands and a ponytail
+    const w = 0.6, h = 0.62, d = 0.56, { y0, top } = kidHead(m, w, h, d, true);
+    m.box([0, top - 0.02, -0.02], [w + 0.05, 0.13, d + 0.05], 0.07, HAIR, H);
+    m.box([0, y0 + h * 0.55, -d / 2 - 0.02], [w + 0.05, h * 0.9, 0.08], 0.06, HAIR, H, false);
+    for (const sx of [-1, 1]) {
+      m.box([sx * (w / 2 + 0.018), y0 + h * 0.6, -0.04], [0.05, h * 0.7, d - 0.08], 0.03, HAIR, H, false);
+      m.box([sx * 0.15, top - 0.08, d / 2 + 0.015], [0.27, 0.1, 0.05], 0.045, HAIR, H, false);          // swept either side of the part
+      m.box([sx * (w / 2 - 0.03), y0 + h * 0.62, d / 2 + 0.01], [0.06, h * 0.42, 0.04], 0.025, HAIR, H, false); // framing strands
+    }
+    m.box([-0.12, y0 + h * 0.35, -d / 2 - 0.08], [0.1, 0.1, 0.08], 0.04, '#2b2626', H, false);       // hair tie
+    m.box([-0.14, y0 + h * 0.05, -d / 2 - 0.07], [0.12, 0.34, 0.1], 0.05, HAIR, H, false);           // ponytail
+    kidHat(m, fit, w, h, d, top);
+  } else {
+    if (fit[7]) {                                                                                  // black bum bag slung across the chest
+      for (let k = 0; k < 6; k++) m.box([-0.13 + k * 0.05, 0.77 - k * 0.045, chestD / 2 + 0.008], [0.06, 0.035, 0.016], 0.008, '#1f1f22', 0, false);
+      m.box([0.05, 0.56, chestD / 2 + 0.04], [0.21, 0.1, 0.08], 0.045, '#2f3034', 0, false);
+      m.box([0.05, 0.58, chestD / 2 + 0.082], [0.17, 0.012, 0.01], 0.004, '#c8c8c8', 0, false);      // zip
+    }
+    // round head with spiky black hair on top and a choppy fringe
+    const w = 0.62, h = 0.6, d = 0.56, { y0, top } = kidHead(m, w, h, d, false);
+    m.box([0, top - 0.02, -0.02], [w + 0.06, 0.16, d + 0.06], 0.08, HAIR, H);
+    m.box([0, y0 + h * 0.58, -d / 2 - 0.02], [w + 0.05, h * 0.8, 0.08], 0.06, HAIR, H, false);
+    for (const sx of [-1, 1]) m.box([sx * (w / 2 + 0.02), y0 + h * 0.74, -0.06], [0.06, h * 0.42, d - 0.1], 0.03, HAIR, H, false);
+    for (let k = 0; k < 5; k++) {                                                                   // fringe points
+      const x = -0.24 + k * 0.12;
+      m.box([x, top - 0.11 - (k % 2) * 0.03, d / 2 + 0.02], [0.13, 0.1 + (k % 2) * 0.04, 0.06], 0.04, HAIR, H, false);
+    }
+    if (fit[4] !== 1 && fit[4] !== 2) for (const [x, z, s] of [[-0.18, 0.12, 0.1], [0.02, 0.18, 0.12], [0.2, 0.08, 0.1], [-0.08, -0.08, 0.12], [0.14, -0.16, 0.1], [-0.22, -0.18, 0.09]])
+      m.box([x, top + 0.07, z], [s, 0.1, s], 0.04, HAIR, H, false);                                  // spikes (tucked under a cap or beanie)
+    kidHat(m, fit, w, h, d, top);
+  }
   return m.done({ wing: [0, 0], leg: [HIP, 0, 0], head: [NECK, 0], tail: [0], arm: SHOULDER - 0.02 });
 }
-export function charliModel() {
-  const m = new ModelBuilder(), H = 10;
-  const chestD = kidBody(m, '#7fd0c0', '#76c6b6');
-  m.box([0, NECK - 0.02, 0], [0.32, 0.06, chestD + 0.02], 0.03, '#d9466e', 0, false);              // pink collar
-  // little black bag on a thin strap
-  for (let k = 0; k < 7; k++) m.box([0.12 - k * 0.04, 0.76 - k * 0.04, chestD / 2 + 0.008], [0.03, 0.04, 0.014], 0.006, '#26252a', 0, false);
-  m.box([-0.17, 0.5, chestD / 2 + 0.02], [0.1, 0.12, 0.07], 0.03, '#2a292e', 0, false);
-  m.box([-0.17, 0.52, chestD / 2 + 0.058], [0.02, 0.025, 0.01], 0.006, '#9a9aa0', 0, false);
-  // round head with smooth hair, a middle part, side strands and a ponytail
-  const w = 0.6, h = 0.62, d = 0.56, { y0, top } = kidHead(m, w, h, d, true);
-  m.box([0, top - 0.02, -0.02], [w + 0.05, 0.13, d + 0.05], 0.07, HAIR, H);
-  m.box([0, y0 + h * 0.55, -d / 2 - 0.02], [w + 0.05, h * 0.9, 0.08], 0.06, HAIR, H, false);
-  for (const sx of [-1, 1]) {
-    m.box([sx * (w / 2 + 0.018), y0 + h * 0.6, -0.04], [0.05, h * 0.7, d - 0.08], 0.03, HAIR, H, false);
-    m.box([sx * 0.15, top - 0.08, d / 2 + 0.015], [0.27, 0.1, 0.05], 0.045, HAIR, H, false);          // swept either side of the part
-    m.box([sx * (w / 2 - 0.03), y0 + h * 0.62, d / 2 + 0.01], [0.06, h * 0.42, 0.04], 0.025, HAIR, H, false); // framing strands
-  }
-  m.box([-0.12, y0 + h * 0.35, -d / 2 - 0.08], [0.1, 0.1, 0.08], 0.04, '#2b2626', H, false);       // hair tie
-  m.box([-0.14, y0 + h * 0.05, -d / 2 - 0.07], [0.12, 0.34, 0.1], 0.05, HAIR, H, false);           // ponytail
-  return m.done({ wing: [0, 0], leg: [HIP, 0, 0], head: [NECK, 0], tail: [0], arm: SHOULDER - 0.02 });
-}
+export const lachieModel = () => kidModel('lachie');
+export const charliModel = () => kidModel('charli');
 // Little faces for the character choice buttons.
 const FACE_EYES = '<circle cx="11" cy="19" r="3.4" fill="#2a160e"/><circle cx="21" cy="19" r="3.4" fill="#2a160e"/><circle cx="10" cy="17.8" r="1.1" fill="#fff"/><circle cx="20" cy="17.8" r="1.1" fill="#fff"/><ellipse cx="7.5" cy="23.5" rx="2.2" ry="1.3" fill="#f6a3a0"/><ellipse cx="24.5" cy="23.5" rx="2.2" ry="1.3" fill="#f6a3a0"/><path d="M13 25q3 3.5 6 0z" fill="#a8323a"/>';
 export const KID_FACE_SVG = {

@@ -75,9 +75,32 @@
     </div>
   </div>
 
+  <div id="wardrobe" hidden>
+    <div id="ward-view" aria-hidden="true"></div>
+    <div class="ward-panel">
+      <div class="panel-head"><h2>Wardrobe</h2>
+        <span class="ward-head-btns"><button type="button" id="ward-photo" class="text-btn">Photo</button><button type="button" id="ward-done" class="text-btn">Done</button></span>
+      </div>
+      <div class="ward-body menu-scroll-y">
+        <label class="ward-row"><span class="ward-label">Name</span>
+          <input id="ward-name" type="text" maxlength="14" autocomplete="off" spellcheck="false" enterkeyhint="done"></label>
+        <div class="ward-row"><span class="ward-label">Who</span>
+          <div id="ward-char" class="chips">
+            <button type="button" class="chip kid" data-char="lachie"><svg viewBox="0 0 32 32" aria-hidden="true"></svg>Lachie</button>
+            <button type="button" class="chip kid" data-char="charli"><svg viewBox="0 0 32 32" aria-hidden="true"></svg>Charli</button>
+          </div>
+        </div>
+        <div id="ward-rows"></div>
+        <button type="button" id="ward-random" class="secondary">Surprise me!</button>
+        <p class="note">Friends you play with see your name and clothes. Drag across yourself to turn round.</p>
+      </div>
+    </div>
+  </div>
+
   <div id="menu">
     <div class="menu-scroll">
       <div class="menu-card">
+        <p class="paused-label">Paused</p>
         <h1 class="logo">Baby Chicken Empire</h1>
         <p class="tagline">Raise baby animals, bonk the night snake, become the chicken king.</p>
         <button type="button" id="version" class="version-pill" aria-label="Version. Tap to see what’s new."></button>
@@ -85,6 +108,7 @@
         <div class="menu-actions">
           <button id="btn-play" class="primary">Play</button>
           <button id="btn-new" class="secondary">New world</button>
+          <button id="btn-wardrobe" class="secondary wardrobe-btn">Wardrobe: your name and clothes</button>
         </div>
         <div id="new-world" hidden>
           <label class="field">Seed <input id="seed-input" type="text" inputmode="numeric" placeholder="Random"></label>
@@ -111,12 +135,6 @@
         </details>
         <details class="settings">
           <summary>Settings</summary>
-          <div class="field">Character
-            <div id="set-char" class="chars" role="radiogroup" aria-label="Character">
-              <button type="button" class="char" role="radio" data-char="lachie"><svg viewBox="0 0 32 32" aria-hidden="true"></svg>Lachie</button>
-              <button type="button" class="char" role="radio" data-char="charli"><svg viewBox="0 0 32 32" aria-hidden="true"></svg>Charli</button>
-            </div>
-          </div>
           <label class="field">View distance <span id="view-val"></span>
             <input id="set-view" type="range" min="3" max="10" step="1"></label>
           <label class="field">Look sensitivity <span id="sens-val"></span>
@@ -136,6 +154,7 @@
             <p><b>Photos:</b> tap the camera button at the top to take a picture of your world. On a phone you can save it or send it to someone.</p>
             <p><b>Doors and houses:</b> make a door at the crafting table (3 wood and a stick). Doors are two blocks tall: tap one to open or shut it. Make a house kit (20 wood, 2 glass and a lamp) and put it down on the ground: a cosy cottage builds itself with its door facing you. Shut your babies in a house at night and the snake can’t get them.</p>
             <p><b>Names, rain and rainbows:</b> every baby has its own name. Now and then it rains: wheat grows faster, and it’s dry under a roof. When a shower ends on a sunny day, look away from the sun for a rainbow. If you wander far from your babies, an arrow at the edge of the screen points the way back to them.</p>
+            <p><b>Wardrobe:</b> open it from the front screen or the pause menu. Give yourself a name, pick Lachie or Charli, and choose your top, bottoms, hat, shoes and bag in lots of colours. Drag to turn round and see yourself, or tap Photo. Friends you play with see your name and clothes.</p>
             <p><b>Day raiders:</b> by day a sneaky fox creeps up on your nursery to spook a baby, and crows swoop down to pinch treats lying on the ground. Foxes can’t climb fences, so pen your babies in. Bonk a fox twice with the sword for 2 bones, or a crow once for some seeds.</p>
             <p><b>Night:</b> when the square moon comes up, the babies doze off and a block snake slithers towards your nursery. If it reaches a baby, the baby gets spooked and runs off. Snakes can slither over a one-block fence, but not a two-block wall. Pick the toy sword and tap the snake twice to bonk it into confetti.</p>
             <p><b>Chicken king:</b> keep every baby safe through a night (or raise 100 chicks) to earn the gold crown and a hay bale throne. Place the throne, then tap it to sit: your babies gather round to cheer. Walk or jump to stand up.</p>

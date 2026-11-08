@@ -28,9 +28,14 @@ const store = {
 const coarse = matchMedia('(pointer: coarse)').matches;
 // iPads report themselves as Macs, so also check for a touch screen
 const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-const settings = Object.assign({ view: coarse ? 5 : 7, sens: 1, autoJump: true, showFps: false, sound: true, char: 'lachie' }, store.get(SET_KEY) || {});
+const settings = Object.assign({ view: coarse ? 5 : 7, sens: 1, autoJump: true, showFps: false, sound: true, char: 'lachie', nick: '', fits: {} }, store.get(SET_KEY) || {});
 const CHARS = ['lachie', 'charli'], CHAR_NAMES = { lachie: 'Lachie', charli: 'Charli' };
 const charOf = c => CHARS.includes(c) ? c : 'lachie';
+// Your own name (blank means the character's name) and outfit; other players' names come over the network.
+const cleanNick = s => typeof s === 'string' ? s.replace(/[\u0000-\u001f]/g, '').trim().slice(0, 14) : '';
+const myName = () => cleanNick(settings.nick) || CHAR_NAMES[settings.char];
+const myFit = () => M.cleanFit(settings.fits && settings.fits[settings.char], settings.char);
+const nameOf = o => o.nick || CHAR_NAMES[o.char];
 const WATER_FOG = [0.1, 0.24, 0.45];
 const REACH = 6;
 
@@ -53,8 +58,6 @@ try {
   renderer.addModel('snakeHead', M.snakeHeadModel());
   renderer.addModel('snakeSeg', M.snakeSegModel());
   M.CONFETTI_COLORS.forEach((c, k) => renderer.addModel('confetti' + k, M.confettiModel(c)));
-  renderer.addModel('lachie', M.lachieModel());
-  renderer.addModel('charli', M.charliModel());
   renderer.addModel('fox', M.foxModel());
   renderer.addModel('crow', M.crowModel());
   renderer.addModel('hen', M.henModel());
@@ -269,12 +272,18 @@ $('#btn-photo').addEventListener('click', async () => {
 });
 function grabPhoto() {
   const c = document.createElement('canvas');
-  c.width = canvas.width; c.height = canvas.height;
+  // in the wardrobe it's a portrait: just the clear part of the screen where you're standing
+  let sx = 0, sy = 0, sw = canvas.width, sh = canvas.height;
+  if (wardrobe.open) {
+    const v = $('#ward-view').getBoundingClientRect(), k = canvas.width / window.innerWidth;
+    sx = Math.round(v.left * k); sy = Math.round(v.top * k); sw = Math.round(v.width * k); sh = Math.round(v.height * k);
+  }
+  c.width = sw; c.height = sh;
   const g = c.getContext('2d');
-  g.drawImage(canvas, 0, 0);
-  const s = Math.max(1, c.height / 500);
+  g.drawImage(canvas, sx, sy, sw, sh, 0, 0, sw, sh);
+  const s = Math.max(1, Math.max(c.height, c.width * 0.6) / 500);
   g.font = `800 ${Math.round(16 * s)}px system-ui, sans-serif`;
-  const label = `Baby Chicken Empire · Day ${nights + 1}`;
+  const label = wardrobe.open ? `${myName()} · Baby Chicken Empire` : `Baby Chicken Empire · Day ${nights + 1}`;
   const w = g.measureText(label).width + 22 * s, h = 30 * s, x = 12 * s, y = c.height - h - 12 * s;
   g.fillStyle = 'rgba(20, 26, 34, 0.7)'; g.beginPath(); g.roundRect(x, y, w, h, h / 2); g.fill();
   g.fillStyle = '#fff3b0'; g.textBaseline = 'middle'; g.fillText(label, x + 11 * s, y + h / 2 + s);
@@ -1085,6 +1094,7 @@ function pause() {
   $('#hud').hidden = true;
   $('#menu').hidden = false;
   $('#btn-play').textContent = 'Resume';
+  $('#menu').classList.add('paused');
 }
 
 function resume() {
@@ -1095,6 +1105,134 @@ function resume() {
   input.look.dx = input.look.dy = 0;
   if (!input.usingTouch && !coarse) canvas.requestPointerLock?.();
 }
+
+// ---------- wardrobe: your name, your character and what you wear ----------
+// While it's open the camera swings round to look at you, so you can see your outfit change.
+const wardrobe = { open: false, spin: 0, drag: null, idle: 0 };
+const WARD_ROWS = [
+  { label: 'Top', style: 0, opts: M.TOPS, colour: 1 },
+  { label: 'Bottoms', style: 2, opts: M.BOTTOMS, colour: 3, hide: f => f[0] === 3 },  // a dress has its own skirt
+  { label: 'Hat', style: 4, opts: M.HATS, colour: 5, hideColour: f => f[4] === 0 },
+  { label: 'Shoes', colour: 6 },
+  { label: 'Bag', style: 7, opts: ['No bag', 'Bag'] },
+];
+function setFit(i, v) {
+  const f = myFit(); f[i] = v;
+  settings.fits = { ...(settings.fits || {}), [settings.char]: f };
+  store.set(SET_KEY, settings);
+  buildWardrobe();
+}
+function buildWardrobe() {
+  const f = myFit(), body = $('#ward-rows');
+  $('#ward-name').placeholder = CHAR_NAMES[settings.char];
+  if (document.activeElement !== $('#ward-name')) $('#ward-name').value = cleanNick(settings.nick);
+  for (const b of document.querySelectorAll('#ward-char .chip')) b.classList.toggle('on', b.dataset.char === settings.char);
+  body.textContent = '';
+  for (const r of WARD_ROWS) {
+    if (r.hide && r.hide(f)) continue;
+    const row = document.createElement('div');
+    row.className = 'ward-row';
+    row.innerHTML = `<span class="ward-label">${r.label}</span>`;
+    if (r.opts) {
+      const chips = document.createElement('div'); chips.className = 'chips';
+      r.opts.forEach((name, v) => {
+        const b = document.createElement('button');
+        b.type = 'button'; b.className = 'chip' + (f[r.style] === v ? ' on' : ''); b.textContent = name;
+        b.addEventListener('click', () => setFit(r.style, v));
+        chips.appendChild(b);
+      });
+      row.appendChild(chips);
+    }
+    if (r.colour !== undefined && !(r.hideColour && r.hideColour(f))) {
+      const sw = document.createElement('div'); sw.className = 'swatches';
+      M.CLOTH_COLORS.forEach((c, v) => {
+        const b = document.createElement('button');
+        b.type = 'button'; b.className = 'swatch' + (f[r.colour] === v ? ' on' : '');
+        b.style.background = c; b.setAttribute('aria-label', `${r.label}: ${M.CLOTH_COLOR_NAMES[v]}`);
+        b.addEventListener('click', () => setFit(r.colour, v));
+        sw.appendChild(b);
+      });
+      row.appendChild(sw);
+    }
+    body.appendChild(row);
+  }
+}
+function openWardrobe() {
+  if (!world || !player) return;
+  wardrobe.open = true; wardrobe.spin = 0; wardrobe.idle = 0; wardrobe.camAngle = undefined;
+  $('#menu').hidden = true;
+  $('#wardrobe').hidden = false;
+  document.body.classList.add('in-wardrobe');
+  buildWardrobe();
+}
+function closeWardrobe() {
+  settings.nick = cleanNick($('#ward-name').value);
+  store.set(SET_KEY, settings);
+  applySettings();
+  wardrobe.open = false;
+  $('#wardrobe').hidden = true;
+  document.body.classList.remove('in-wardrobe');
+  $('#menu').hidden = false;
+}
+// Camera in front of you looking back, framed so you sit in the clear part of the screen above the wardrobe.
+function selfieCam(dt) {
+  if (!wardrobe.drag) { wardrobe.idle += dt; if (wardrobe.idle > 2) wardrobe.spin += dt * 0.5; }
+  const W = window.innerWidth, H = window.innerHeight, v = $('#ward-view').getBoundingClientRect();
+  const tanY = Math.tan(35 * Math.PI / 180), tanX = tanY * W / H;
+  const nx = (v.left + v.width / 2) / W * 2 - 1, ny = 1 - (v.top + v.height / 2) / H * 2;
+  const show = Math.max(0.2, Math.min(v.height / H, (v.width / W) * (W / H) * 1.25)); // share of the screen the kid can fill
+  let dist = Math.max(2.2, Math.min(7, 2.2 / (2 * tanY * show)));
+  const p = player.pos, c = [p[0], p[1] + 0.78, p[2]];
+  const dirAt = a => { const d = [Math.sin(a), 0.22, Math.cos(a)], l = Math.hypot(...d); return d.map(v => v / l); };
+  // how far the camera can go that way before a wall is in the way
+  const clear = (dir, max) => {
+    for (let t = 0.4; t <= max; t += 0.1)
+      if (SOLID[world.getBlock(Math.floor(c[0] + dir[0] * t), Math.floor(c[1] + dir[1] * t), Math.floor(c[2] + dir[2] * t))]) return Math.max(0.9, t - 0.3);
+    return max;
+  };
+  if (wardrobe.camAngle === undefined) {
+    // pick where the camera goes once, when the wardrobe opens: in front of you, or the most open way round
+    const f = player.forward(), a0 = Math.atan2(f[0], f[2]);
+    let best = a0, bestD = -1;
+    for (const off of [0, 0.8, -0.8, 1.6, -1.6, 2.4, -2.4, Math.PI]) {
+      const d = clear(dirAt(a0 + off), dist);
+      if (d > bestD + 0.3) { best = a0 + off; bestD = d; }
+      if (d >= dist) break;
+    }
+    wardrobe.camAngle = best; wardrobe.spin = best - a0;   // still facing the camera
+  }
+  const dir = dirAt(wardrobe.camAngle);
+  dist = clear(dir, dist);
+  const eye = c.map((v, i) => v + dir[i] * dist);
+  // look at a point beside you so that you show up in the middle of the clear area
+  const back = dir.map(v => -v), right = [-back[2], 0, back[0]], rl = Math.hypot(...right) || 1;
+  for (let i = 0; i < 3; i++) right[i] /= rl;
+  const up = [right[1] * back[2] - right[2] * back[1], right[2] * back[0] - right[0] * back[2], right[0] * back[1] - right[1] * back[0]];
+  const aim = c.map((v, i) => v - right[i] * nx * tanX * dist - up[i] * ny * tanY * dist);
+  const fd = aim.map((v, i) => v - eye[i]), fl = Math.hypot(...fd);
+  return { eye, fwd: fd.map(v => v / fl) };
+}
+$('#btn-wardrobe').addEventListener('click', openWardrobe);
+$('#ward-done').addEventListener('click', closeWardrobe);
+$('#ward-name').addEventListener('input', () => { settings.nick = cleanNick($('#ward-name').value); store.set(SET_KEY, settings); });
+$('#ward-name').addEventListener('keydown', e => { if (e.key === 'Enter') e.target.blur(); });
+for (const b of document.querySelectorAll('#ward-char .chip')) {
+  b.querySelector('svg').innerHTML = M.KID_FACE_SVG[b.dataset.char];
+  b.addEventListener('click', () => { settings.char = b.dataset.char; applySettings(); buildWardrobe(); });
+}
+$('#ward-random').addEventListener('click', () => {
+  const r = n => Math.random() * n | 0, c = M.CLOTH_COLORS.length;
+  const f = [r(M.TOPS.length), r(c), r(M.BOTTOMS.length), r(c), r(M.HATS.length), r(c), r(c), r(2)];
+  settings.fits = { ...(settings.fits || {}), [settings.char]: f };
+  store.set(SET_KEY, settings);
+  buildWardrobe(); sfx.happy();
+});
+// drag across yourself to turn round
+const wv = $('#ward-view');
+wv.addEventListener('pointerdown', e => { wardrobe.drag = { x: e.clientX, spin: wardrobe.spin }; wv.setPointerCapture?.(e.pointerId); });
+wv.addEventListener('pointermove', e => { if (wardrobe.drag) wardrobe.spin = wardrobe.drag.spin + (e.clientX - wardrobe.drag.x) * 0.012; });
+for (const ev of ['pointerup', 'pointercancel']) wv.addEventListener(ev, () => { wardrobe.drag = null; wardrobe.idle = 0; });
+$('#ward-photo').addEventListener('click', () => $('#btn-photo').click());
 
 function enterFullscreen() {
   // iPad Safari's fullscreen mode can drop the HUD layer after a rotation, so iOS stays out of it
@@ -1209,8 +1347,22 @@ setInterval(() => { if (running && world?.editsChanged !== undefined) saveGame()
 
 // Other players drawn as Lachie or Charli, walking, looking about, with a name tag overhead.
 const tagEls = new Map();
+// Each character-and-outfit is its own model, built the first time someone wears it.
+const kidModels = new Set();
+function kidKey(char, fit) {
+  const key = char + ':' + fit.join('.');
+  if (!kidModels.has(key)) { kidModels.add(key); renderer.addModel(key, M.kidModel(char, fit)); }
+  return key;
+}
 function kidInstances(dt) {
-  const lists = { lachie: [], charli: [] }, shadows = [];
+  const lists = new Map(), shadows = [];
+  const add = (key, ...v) => { if (!lists.has(key)) lists.set(key, []); lists.get(key).push(...v); };
+  if (wardrobe.open && player) {
+    // in the wardrobe you see yourself, standing still and turning slowly so you see your outfit from all sides
+    const p = player.pos;
+    add(kidKey(settings.char, myFit()), p[0], p[1], p[2], player.yaw + Math.PI + wardrobe.spin, 1, 0, 0, 0, 0, 0, 0, 0);
+    shadows.push(p[0], p[1] + 0.015, p[2], 0, 0.75, 0, 0, 0, 0, 0, 0, 0);
+  }
   for (const o of others.values()) {
     if (o.id === myNetId) continue;
     const k = Math.min(1, dt * 12);
@@ -1225,11 +1377,11 @@ function kidInstances(dt) {
     const stride = Math.sin(o.phase) * Math.min(0.75, o.speed * 0.22);
     const bob = o.speed > 0.3 && !o.sit ? Math.abs(Math.sin(o.phase)) * 0.04 : 0;
     const nod = Math.max(-0.5, Math.min(0.5, -o.pitch * 0.5));
-    lists[o.char].push(o.p[0], o.p[1], o.p[2], o.yaw + Math.PI, 1, bob, stride, 0, 0, nod, 0, 0);
+    add(kidKey(o.char, o.fit), o.p[0], o.p[1], o.p[2], o.yaw + Math.PI, 1, bob, stride, 0, 0, nod, 0, 0);
     shadows.push(o.p[0], o.p[1] + 0.015, o.p[2], 0, 0.75, 0, 0, 0, 0, 0, 0, 0);
   }
   return {
-    groups: CHARS.map(c => ({ model: c, data: new Float32Array(lists[c]), count: lists[c].length / 12 })),
+    groups: [...lists].map(([model, v]) => ({ model, data: new Float32Array(v), count: v.length / 12 })),
     shadowGroups: [{ data: new Float32Array(shadows), count: shadows.length / 12 }],
   };
 }
@@ -1252,7 +1404,7 @@ function updateTags() {
     }
     const tx = o.p[0], ty = o.p[1] + 1.65, tz = o.p[2];
     const d = Math.hypot(tx - eye[0], tz - eye[2]);
-    const name = CHAR_NAMES[o.char] + (d > 12 ? ` · ${Math.round(d)} m` : '');
+    const name = nameOf(o) + (d > 12 ? ` · ${Math.round(d)} m` : '');
     if (el.lastName !== name) { el.querySelector('.name').textContent = name; el.lastName = name; }
     pinTag(el, 'tag ' + o.char, tx, ty, tz, W, H, eye, f, r, u);
   }
@@ -1292,15 +1444,17 @@ function pinTag(el, cls, tx, ty, tz, W, H, eye, f, r, u) {
 }
 
 function addOther(id, char) {
-  const o = { id, joined: performance.now(), char: charOf(char), p: [...player.pos], tp: [...player.pos], yaw: 0, tyaw: 0, pitch: 0, held: null, sit: false, phase: 0, speed: 0 };
+  const o = { id, joined: performance.now(), char: charOf(char), nick: '', fit: M.cleanFit(null, charOf(char)), p: [...player.pos], tp: [...player.pos], yaw: 0, tyaw: 0, pitch: 0, held: null, sit: false, phase: 0, speed: 0 };
   others.set(id, o);
   return o;
 }
-function setPose(o, p, yaw, pitch, held, sit, char) {
+function setPose(o, p, yaw, pitch, held, sit, char, nick, fit) {
   if (!o.seen) { o.p = [...p]; o.yaw = yaw; o.seen = true; }
   o.tp = p; o.tyaw = yaw; o.pitch = pitch; o.held = held; o.sit = !!sit;
   o.heard = performance.now(); o.warned = false;
   if (char) o.char = charOf(char);
+  if (typeof nick === 'string') o.nick = cleanNick(nick);
+  if (Array.isArray(fit)) o.fit = M.cleanFit(fit, o.char);
 }
 function myPose() {
   return [+player.pos[0].toFixed(2), +player.pos[1].toFixed(2), +player.pos[2].toFixed(2), +player.yaw.toFixed(3), +player.pitch.toFixed(2), running ? hotbar[selected] : null, seat ? 1 : 0];
@@ -1315,7 +1469,7 @@ function netStep(dt) {
   }
   if (net.isGuest) {
     poseTimer -= dt;
-    if (poseTimer <= 0) { poseTimer = 0.1; net.toHost({ t: 'p', pose: myPose(), char: settings.char }); }
+    if (poseTimer <= 0) { poseTimer = 0.1; net.toHost({ t: 'p', pose: myPose(), char: settings.char, nick: myName(), fit: myFit() }); }
     return;
   }
   netTimer -= dt;
@@ -1323,10 +1477,10 @@ function netStep(dt) {
   netTimer = 0.12;
   sendAnimals = !sendAnimals;
   for (const o of others.values()) {
-    if (!o.warned && performance.now() - (o.heard || o.joined) > 6000) { o.warned = true; toast(`Can’t hear from ${CHAR_NAMES[o.char]}’s device. They may need to rejoin.`); }
+    if (!o.warned && performance.now() - (o.heard || o.joined) > 6000) { o.warned = true; toast(`Can’t hear from ${nameOf(o)}’s device. They may need to rejoin.`); }
   }
-  const pl = [[0, settings.char, ...myPose()]];
-  for (const o of others.values()) pl.push([o.id, o.char, ...o.tp, o.tyaw, o.pitch, o.held, o.sit ? 1 : 0]);
+  const pl = [[0, settings.char, ...myPose(), myName(), myFit()]];
+  for (const o of others.values()) pl.push([o.id, o.char, ...o.tp, o.tyaw, o.pitch, o.held, o.sit ? 1 : 0, o.nick, o.fit]);
   const ev = netEvents.splice(0);
   const common = { t: 's', clock: +clock.toFixed(5), nights, crown, counts: flock.counts(), pl, sn: snakes.snapshot(), rd: raiders.snapshot(), tr: flock.treatSnapshot(), gf: flock.giftSnapshot(), wx: weather.snapshot(), ev };
   for (const [id] of net.conns) {
@@ -1343,7 +1497,7 @@ net.on('message', (from, msg) => {
 net.on('leave', id => {
   const o = others.get(id);
   others.delete(id);
-  if (o) toast(`${CHAR_NAMES[o.char]} left the game.`);
+  if (o) toast(`${nameOf(o)} left the game.`);
   updateRoomUi();
 });
 net.on('lost', () => {
@@ -1357,6 +1511,7 @@ function hostMessage(from, msg) {
   switch (msg.t) {
     case 'hello': {
       const n = addOther(from, msg.char);
+      setPose(n, n.p, 0, 0, null, 0, msg.char, msg.nick, msg.fit);
       const f = player.forward(), pos = [player.pos[0] + f[0] * 2, player.pos[1] + 0.2, player.pos[2] + f[2] * 2];
       n.p = [...pos]; n.tp = [...pos];
       // the world's block edits go in pieces first: some browsers only take smallish messages
@@ -1366,13 +1521,13 @@ function hostMessage(from, msg) {
         if (size > 20000) { net.send(from, { t: 'we', edits: part }); part = {}; size = 0; }
       }
       net.send(from, { t: 'w', id: from, seed: world.seed, edits: part, clock, nights, crown, pos, yaw: player.yaw + Math.PI });
-      toast(`${CHAR_NAMES[n.char]} joined your world!`);
+      toast(`${nameOf(n)} joined your world!`);
       sfx.happy();
       updateRoomUi();
       break;
     }
     case 'p': if (Array.isArray(msg.pose)) {
-      const o = others.get(from) || addOther(from, msg.char); const [x, y, z, yaw, pitch, held, sit] = msg.pose; setPose(o, [x, y, z], yaw, pitch, held, sit, msg.char); } break;
+      const o = others.get(from) || addOther(from, msg.char); const [x, y, z, yaw, pitch, held, sit] = msg.pose; setPose(o, [x, y, z], yaw, pitch, held, sit, msg.char, msg.nick, msg.fit); } break;
     case 'e':
       for (const [x, y, z, id] of msg.b || []) if (BLOCKS[id] || id === B.AIR) { world.applyEdit(x, y, z, id); remeshAround(x, z); }
       net.broadcast(msg, from);
@@ -1415,11 +1570,11 @@ function guestMessage(msg) {
       raiders.applySnapshot(msg.rd || []);
       weather.applySnapshot(msg.wx);
       const seen = new Set();
-      for (const [id, char, x, y, z, yaw, pitch, held, sit] of msg.pl || []) {
+      for (const [id, char, x, y, z, yaw, pitch, held, sit, nick, fit] of msg.pl || []) {
         if (id === myNetId) continue;
         seen.add(id);
         const o = others.get(id) || addOther(id, char);
-        setPose(o, [x, y, z], yaw, pitch, held, sit, char);
+        setPose(o, [x, y, z], yaw, pitch, held, sit, char, nick, fit);
       }
       for (const id of [...others.keys()]) if (!seen.has(id)) others.delete(id);
       if (others.size !== shownOthers) { shownOthers = others.size; updateRoomUi(); }
@@ -1494,7 +1649,7 @@ $('#btn-join').addEventListener('click', async () => {
   joining = true;
   try {
     await net.join(code);
-    net.toHost({ t: 'hello', char: settings.char });
+    net.toHost({ t: 'hello', char: settings.char, nick: myName(), fit: myFit() });
     setNetStatus('Connected! Loading your friend’s world…');
   } catch (err) { setNetStatus(err.message, true); }
   joining = false;
@@ -1588,8 +1743,9 @@ function frame(now, photo = false) {
   const pending = stream(running ? 5 : 10);
   $('#loading').hidden = pending === 0 || running;
 
-  const eye = player.eye(), fwd = player.forward();
-  target = running ? raycast(world, eye, fwd, REACH) : null;
+  const cam = wardrobe.open ? selfieCam(dt) : null;
+  const eye = cam ? cam.eye : player.eye(), fwd = cam ? cam.fwd : player.forward();
+  target = running && !cam ? raycast(world, eye, fwd, REACH) : null;
   if (running) updateBreaking(dt);
 
   const underwater = world.getBlock(Math.floor(eye[0]), Math.floor(eye[1]), Math.floor(eye[2])) === B.WATER;
@@ -1622,7 +1778,7 @@ function frame(now, photo = false) {
 requestAnimationFrame(loop);
 
 // handy for debugging from the console
-window.blockwild = { get world() { return world; }, get player() { return player; }, get target() { return target; }, get flock() { return flock; }, get nursery() { return flock; }, get snakes() { return snakes; }, get raiders() { return raiders; }, get weather() { return weather; }, get inv() { return inv; }, addItem, RECIPES, craft, input, raycast,
+window.blockwild = { get world() { return world; }, get player() { return player; }, get target() { return target; }, get flock() { return flock; }, get nursery() { return flock; }, get snakes() { return snakes; }, get raiders() { return raiders; }, get weather() { return weather; }, wardrobe, selfieCam, get inv() { return inv; }, addItem, RECIPES, craft, input, raycast,
   get clock() { return clock; }, setTime(t) { clock = t; }, swing: () => swing(),
   net, others, get myNetId() { return myNetId; },
   get seat() { return seat; }, awardCrown: () => awardCrown(), sit: (x, y, z) => sit(x, y, z), standUp: () => standUp(),

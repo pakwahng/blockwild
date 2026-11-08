@@ -326,9 +326,10 @@ function shapeMesh(buf, id, p, wx, wy, wz) {
   const swap = !(px || nx) && (pz || nz);
   if (BLOCKS[id].shape === 'door') {
     const { knob, pane } = BLOCKS[id], open = id === B.DOOR_OPEN || id === B.DOOR_OPEN_TOP, top = id === B.DOOR_TOP || id === B.DOOR_OPEN_TOP;
-    // drawn shut across the doorway; an open door is the same thing swung back against its hinge side
+    // drawn shut across the doorway; an open door is the same door, full size, swung 90° about its hinge
+    // (the x = 0 edge) so it lies flat along the side of the doorway, inside the block
     const db = (l, x0, y0, z0, x1, y1, z1) => {
-      if (open) [x0, x1, z0, z1] = [z0 - 0.42, z1 - 0.42, 0.42 + x0 * 0.58, 0.42 + x1 * 0.58];
+      if (open) [x0, x1, z0, z1] = [z0 - 0.35, z1 - 0.35, x0, x1];
       shapeBox(buf, wx, wy, wz, l, x0, y0, z0, x1, y1, z1, swap);
     };
     if (!top) {

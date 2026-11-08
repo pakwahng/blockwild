@@ -1,11 +1,20 @@
 // The game's version and what changed in each one. Shown on the front screen ("What's new")
 // and in CHANGELOG.md. When you release: bump VERSION, add an entry at the top of CHANGES,
 // and set the same number in sw.js (CACHE = 'blockwild-v<VERSION>') so phones pick it up.
-export const VERSION = 19.1;
+export const VERSION = 20;
 export const RELEASED = '8 Nov 2026';
 
 // [version, date, headline, [details]]
 export const CHANGES = [
+  [20, '8 Nov 2026', 'Wardrobe: your name and clothes', [
+    'Open the Wardrobe from the front screen or the pause menu to give yourself a name and change your clothes.',
+    'T-shirts, stripes, hoodies and dresses; shorts, trousers and skirts; caps, beanies, bows and flowers, in 12 colours. Pick your shoe colour and whether you carry your bag.',
+    'You can see yourself while you dress up: drag to turn round, or tap Photo for a picture of your outfit. Tap Surprise me! for a random outfit.',
+    'Friends you play with see your name over your head and the clothes you picked.',
+    'Lachie or Charli is now picked in the Wardrobe too.',
+    'The pause menu says Paused, and shows the version and What’s new.',
+    'Fixed: an open door looked squashed with its handle sticking out. It now swings flat against the side of the doorway.',
+  ]],
   [19.1, '8 Nov 2026', 'Bag scrolling fix', [
     'Fixed: on some Android phones (like Xiaomi) the bag and crafting lists ran off the bottom of the screen and wouldn’t scroll. They now fit the screen and scroll.',
   ]],

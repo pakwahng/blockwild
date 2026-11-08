@@ -363,3 +363,43 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
 .changelog::-webkit-scrollbar { width: 6px; }
 .changelog::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.25); border-radius: 3px; }
 .changelog::-webkit-scrollbar-track { background: transparent; }
+
+/* ---------- pause label and wardrobe ---------- */
+.paused-label { display: none; margin: 0 0 4px; text-align: center; font-size: 13px; font-weight: 800; letter-spacing: 0.2em; text-transform: uppercase; color: #ffd23c; }
+#menu.paused .paused-label { display: block; }
+.wardrobe-btn { font-size: 15px; }
+#wardrobe { position: fixed; inset: 0; z-index: 4; display: flex; flex-direction: column; }
+#ward-view { flex: 1 1 40%; min-height: 34%; touch-action: none; cursor: grab; }
+.ward-panel {
+  flex: 0 1 auto; max-height: 62%; display: flex; flex-direction: column; min-height: 0;
+  background: var(--panel); border-top: 1px solid var(--panel-edge); border-radius: 18px 18px 0 0;
+  padding: 12px calc(14px + var(--safe-r)) calc(10px + var(--safe-b)) calc(14px + var(--safe-l));
+}
+.ward-panel .panel-head { margin-bottom: 6px; }
+.ward-head-btns { display: flex; gap: 4px; }
+.ward-body { overflow-y: auto; touch-action: pan-y; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; min-height: 0; display: grid; gap: 12px; padding-bottom: 4px; }
+.ward-row { display: grid; gap: 6px; }
+.ward-label { font-weight: 800; font-size: 14px; color: var(--ink); }
+#ward-name {
+  font: inherit; font-size: 17px; font-weight: 700; padding: 9px 12px; border-radius: 10px; border: 1px solid var(--panel-edge);
+  background: rgba(0, 0, 0, 0.25); color: var(--ink); -webkit-user-select: text; user-select: text; touch-action: manipulation;
+}
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip {
+  display: flex; align-items: center; gap: 6px; padding: 7px 13px; border-radius: 99px; border: 2px solid transparent;
+  background: rgba(255, 255, 255, 0.08); color: var(--ink-dim); font: inherit; font-weight: 700; font-size: 14px;
+}
+.chip.on { background: rgba(124, 195, 90, 0.2); border-color: var(--accent); color: var(--ink); }
+.chip.kid { padding: 4px 13px 4px 5px; }
+.chip svg { width: 28px; height: 28px; }
+.swatches { display: flex; flex-wrap: wrap; gap: 7px; }
+.swatch { width: 32px; height: 32px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.25); padding: 0; }
+.swatch.on { border: 3px solid #fff; box-shadow: 0 0 0 2px var(--accent); }
+body.in-wardrobe #tags, body.in-wardrobe #loading { display: none; }
+/* phones on their side: you stand on the left, the wardrobe is on the right */
+@media (orientation: landscape) and (max-height: 600px) {
+  #wardrobe { flex-direction: row; }
+  #ward-view { flex: 1 1 45%; min-height: 0; }
+  .ward-panel { flex: 0 1 55%; max-height: none; max-width: 520px; border-radius: 18px 0 0 18px; border-top: 0; border-left: 1px solid var(--panel-edge);
+    padding: calc(10px + var(--safe-t)) calc(14px + var(--safe-r)) calc(10px + var(--safe-b)) 14px; }
+}

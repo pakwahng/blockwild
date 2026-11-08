@@ -110,6 +110,13 @@ Foxes and snakes don't go after grown wolves. Growth, gifts lying on the ground 
 - **Rain** comes now and then (about 1–2 minutes, every 3–8 minutes; the host decides). The sky greys, drops fall and stop on roofs, and planter wheat grows 2.5× faster. When a shower ends by day, a rainbow shows opposite the sun for about 45 seconds. Code: `js/weather.js`.
 - More than 35 m from your tame babies, a **Nursery** tag at the screen edge points the way back.
 
+## Wardrobe: your name and clothes
+
+- **Wardrobe** (front screen or pause menu) sets your name (up to 14 letters; blank uses Lachie or Charli), who you are, and your outfit. The camera swings round so you see yourself; drag to turn, **Photo** takes a portrait, **Surprise me!** picks a random outfit.
+- Outfits: top (T-shirt, stripes, hoodie, dress), bottoms (shorts, trousers, skirt; hidden with a dress), hat (none, cap, beanie, bow, flower), shoe colour and bag on or off, from 12 colours. Each character keeps its own outfit.
+- An outfit is 8 small numbers (`[top, colour, bottoms, colour, hat, colour, shoes, bag]`, see `DEFAULT_FIT` in `js/models.js`). Each character-and-outfit is built as its own model the first time it's seen. Names and outfits travel with player poses in play together.
+- Later: clothes to craft, in more designs.
+
 ## Version and what's new
 
 The front screen shows the version number. Tap it, or open **What’s new**, for the change log. It lives in `js/version.js` (and [CHANGELOG.md](CHANGELOG.md)). To release: bump `VERSION`, add an entry at the top of `CHANGES` and in CHANGELOG.md, and set `CACHE` in `sw.js` to the same number.
@@ -143,7 +150,7 @@ A full day lasts 10 minutes: about 6 minutes of daylight, a pink dusk, roughly 3
 
 ## Play together
 
-- Pick **Lachie** or **Charli** in Settings. That's how other players see you.
+- Pick **Lachie** or **Charli**, your name and your clothes in the **Wardrobe** (front screen or pause menu). That's how other players see you.
 - One player opens **Play together** and taps **Host my world** to get a four-letter room code.
 - Friends (up to three) type the code and tap **Join**. They arrive in the host's world, next to the host.
 - When another player is off screen, their name tag sits at the screen edge with an arrow pointing their way and how far off they are.
@@ -177,7 +184,7 @@ A full day lasts 10 minutes: about 6 minutes of daylight, a pink dusk, roughly 3
 | `js/snakes.js` | The night snake: spawning, slithering body, spooking babies, sword hits, confetti |
 | `js/sky.js` | Day/night clock: sky colours, light tint, sun and moon |
 | `js/net.js` | Play together: room codes, hosting and joining (PeerJS / WebRTC) |
-| `js/models.js` | Rounded-box 3D models for the babies, Lachie and Charli, and treats (with leg, head and tail rigs), treat icons, counter faces |
+| `js/models.js` | Rounded-box 3D models for the babies, Lachie and Charli in their outfits (clothes list and `kidModel`), and treats (with leg, head and tail rigs), treat icons, counter faces |
 | `js/audio.js` | Synthesized cheeps, moos, oinks, baas, yips and sound effects |
 | `js/renderer.js` | WebGL2 shaders, texture array, frustum culling, water pass, block outline |
 | `js/player.js` | Movement, collision, swimming, flying, voxel raycast |
