@@ -17,29 +17,40 @@ export function drops(id) {
     case B.STONE: add(B.COBBLE); if (chance(0.03)) add(ITEM_BONE); break;
     case B.LEAVES: add(B.LEAVES); if (chance(0.22)) add(ITEM_APPLE); if (chance(0.15)) add(ITEM_STICK); break;
     case B.GATE_OPEN: add(B.GATE); break;
+    case B.FEEDER_SEEDS: case B.FEEDER_WHEAT: case B.FEEDER_APPLE: case B.FEEDER_CLOVER: case B.FEEDER_BONE: add(B.FEEDER); break;
     case B.BEDROCK: case B.WATER: case B.AIR: break;
     default: add(id);
   }
   return out;
 }
 
-// [makes, how many, [[ingredient, how many], ...]]
+// Each recipe: what it makes, how many, what it needs, which tab of the bag it's on,
+// and whether you have to be standing at a crafting table to make it.
+const R = (out, n, needs, tab, table = false) => ({ out, n, needs, tab, table });
+export const TABS = [['wood', 'Wood & tools'], ['farm', 'Farm'], ['build', 'Building']];
 export const RECIPES = [
-  [B.PLANKS, 4, [[B.LOG, 1]]],
-  [ITEM_STICK, 4, [[B.PLANKS, 2]]],
-  [B.FENCE, 4, [[B.PLANKS, 2], [ITEM_STICK, 2]]],
-  [B.GATE, 1, [[B.PLANKS, 2], [ITEM_STICK, 4]]],
-  [ITEM_SWORD, 1, [[B.PLANKS, 2], [ITEM_STICK, 1]]],
-  [B.HAY, 1, [[ITEM_WHEAT, 4]]],
-  [ITEM_SEEDS, 3, [[ITEM_WHEAT, 1]]],
-  [B.GLASS, 1, [[B.SAND, 2]]],
-  [B.BRICK, 1, [[B.CLAY, 2]]],
-  [B.CREAM, 2, [[B.SAND, 1], [B.CLAY, 1]]],
-  [B.ROOF, 2, [[B.BRICK, 1], [B.PLANKS, 1]]],
-  [B.LAMP, 1, [[B.GLASS, 1], [ITEM_STICK, 1], [ITEM_APPLE, 1]]],
-  [B.WATER, 1, [[B.SNOW, 2]]],
-  [B.MUD, 2, [[B.DIRT, 2], [B.WATER, 1]]],
+  R(B.PLANKS, 4, [[B.LOG, 1]], 'wood'),
+  R(ITEM_STICK, 4, [[B.PLANKS, 2]], 'wood'),
+  R(B.TABLE, 1, [[B.PLANKS, 4]], 'wood'),
+  R(ITEM_SWORD, 1, [[B.PLANKS, 2], [ITEM_STICK, 1]], 'wood', true),
+  R(B.LADDER, 3, [[ITEM_STICK, 7]], 'wood', true),
+  R(B.FENCE, 4, [[B.PLANKS, 2], [ITEM_STICK, 2]], 'farm', true),
+  R(B.GATE, 1, [[B.PLANKS, 2], [ITEM_STICK, 4]], 'farm', true),
+  R(B.FEEDER, 1, [[B.PLANKS, 3]], 'farm', true),
+  R(B.HAY, 1, [[ITEM_WHEAT, 4]], 'farm'),
+  R(ITEM_SEEDS, 3, [[ITEM_WHEAT, 1]], 'farm'),
+  R(B.GLASS, 1, [[B.SAND, 2]], 'build'),
+  R(B.BRICK, 1, [[B.CLAY, 2]], 'build'),
+  R(B.CREAM, 2, [[B.SAND, 1], [B.CLAY, 1]], 'build'),
+  R(B.ROOF, 2, [[B.BRICK, 1], [B.PLANKS, 1]], 'build'),
+  R(B.LAMP, 1, [[B.GLASS, 1], [ITEM_STICK, 1], [ITEM_APPLE, 1]], 'build', true),
+  R(B.WATER, 1, [[B.SNOW, 2]], 'build'),
+  R(B.MUD, 2, [[B.DIRT, 2], [B.WATER, 1]], 'build'),
 ];
+// How close (in blocks) you need to be to a crafting table.
+export const TABLE_REACH = 4;
+// Treats you put into a feeder in one go.
+export const FEEDER_FILL = 5;
 
 // Tools are kept, not used up.
 export const TOOLS = new Set([ITEM_SWORD]);

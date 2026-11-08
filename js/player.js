@@ -45,7 +45,13 @@ export class Player {
     v[0] += (wx - v[0]) * k;
     v[2] += (wz - v[2]) * k;
 
-    if (this.flying) {
+    // on a ladder: walk into it or press jump to climb, fly-down to go down, otherwise slide slowly
+    const onLadder = !this.flying && [0.1, 0.9].some(h => world.getBlock(Math.floor(p[0]), Math.floor(p[1] + h), Math.floor(p[2])) === B.LADDER);
+    this.onLadder = onLadder;
+    if (onLadder) {
+      const up = input.jump || input.moveZ > 0.3;
+      v[1] = up ? 3.6 : input.down ? -3.6 : Math.max(v[1] - GRAVITY * dt, -1.6);
+    } else if (this.flying) {
       const vy = ((input.jump ? 1 : 0) - (input.down ? 1 : 0)) * (input.sprint ? 12 : 7);
       v[1] += (vy - v[1]) * (1 - Math.exp(-10 * dt));
     } else if (this.inWater) {

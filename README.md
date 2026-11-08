@@ -40,26 +40,33 @@ Based on the music video *Baby Chicken Empire*: build a nursery for baby animals
 - A new world starts with 10 seeds and the toy sword. Everything else you collect.
 - Hold to **dig** a block and it goes in your bag. Grass gives dirt (and sometimes seeds, wheat or clover), stone gives cobble, leaves can drop apples and sticks, and dirt now and then hides a bone.
 - The hotbar shows how many you have. Placing a block or throwing a treat uses one up; the sword is never used up. Things you've run out of go grey.
-- Open the **bag** (top right, or E) to pick what's in the selected slot and to **make** things:
+- Open the **bag** (top right, or E). **Your things** shows what you carry: tap one to put it in the selected hotbar slot. The other tabs (**Wood & tools**, **Farm**, **Building**) show picture cards of what you can make; a yellow dot means a tab has something ready. Each card shows what it needs (have / need).
+- Tap **Make** for one batch, **hold** it to keep making, or tap **All** to use up everything you have.
+- Things marked * need a **crafting table** within 4 blocks. Make the table from 4 wood and place it.
 
 | Make | From |
 |---|---|
 | 4 Wood | 1 Log |
 | 4 Sticks | 2 Wood |
-| 4 Fence | 2 Wood + 2 Sticks |
-| 1 Gate | 2 Wood + 4 Sticks |
-| Sword | 2 Wood + 1 Stick |
+| Crafting table | 4 Wood |
+| Sword * | 2 Wood + 1 Stick |
+| 3 Ladders * | 7 Sticks |
+| 4 Fence * | 2 Wood + 2 Sticks |
+| 1 Gate * | 2 Wood + 4 Sticks |
+| Feeder * | 3 Wood |
 | Hay | 4 Wheat |
 | 3 Seeds | 1 Wheat |
 | Glass | 2 Sand |
 | Brick | 2 Clay |
 | 2 Wall | 1 Sand + 1 Clay |
 | 2 Roof | 1 Brick + 1 Wood |
-| Lamp | 1 Glass + 1 Stick + 1 Apple |
+| Lamp * | 1 Glass + 1 Stick + 1 Apple |
 | Water | 2 Snow |
 | 2 Mud | 2 Dirt + 1 Water |
 
 - **Fences** join up with each other, gates and solid blocks. **Gates** turn to line up with the fence; tap one to open or shut it. Animals and foxes can't get past either.
+- **Ladders** lean on the wall beside them. Walk into one (or press jump) to climb; let go to slide down slowly.
+- **Feeders:** place one, then hold a treat and tap the feeder to fill it (uses 5). While a baby that likes that treat is nearby, the feeder puts a treat on the ground beside it, until it runs empty (about 8 treats). Crows like feeders too!
 - Worlds saved before crafting existed get a generous starter bag.
 - A visitor in Play together brings their own bag and takes home what they collected.
 

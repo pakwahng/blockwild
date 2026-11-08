@@ -22,7 +22,7 @@ export const isTreat = id => id in TREAT_MODEL;
 
 // Built blocks animals can't hop onto, so a one-block fence keeps them in.
 const NO_CLIMB = new Uint8Array(256);
-for (const id of [B.PLANKS, B.LOG, B.HAY, B.ROOF, B.CREAM, B.GLASS, B.BRICK, B.COBBLE, B.LAMP, B.CLAY, B.LEAVES, B.FENCE, B.GATE]) NO_CLIMB[id] = 1;
+for (const id of [B.PLANKS, B.LOG, B.HAY, B.ROOF, B.CREAM, B.GLASS, B.BRICK, B.COBBLE, B.LAMP, B.CLAY, B.LEAVES, B.FENCE, B.GATE, B.TABLE, B.FEEDER, B.FEEDER_SEEDS, B.FEEDER_WHEAT, B.FEEDER_APPLE, B.FEEDER_CLOVER, B.FEEDER_BONE]) NO_CLIMB[id] = 1;
 
 export class Nursery {
   constructor(world) {
@@ -81,6 +81,26 @@ export class Nursery {
       if (SOLID[id]) return y;
     }
     return -1;
+  }
+
+  // Filled feeders spill a treat onto the ground beside them now and then, when a baby that likes it is near.
+  // Returns the feeders that ran empty.
+  feedersStep(feeders, treatOf) {
+    const empty = [];
+    for (const [x, y, z, id] of feeders) {
+      const item = treatOf[id];
+      if (item === undefined) continue;
+      const c = [x + 0.5, y, z + 0.5];
+      if (this.treats.some(s => s.item === item && dist2(s.p, c) < 2.5 * 2.5 && Math.abs(s.p[1] - y) < 2)) continue;
+      if (!this.animals.some(a => a.S.treat === item && dist2(a.p, c) < 12 * 12 && Math.abs(a.p[1] - y) < 4)) continue;
+      const spots = [[1, 0], [-1, 0], [0, 1], [0, -1]].filter(([dx, dz]) =>
+        !SOLID[this.world.getBlock(x + dx, y, z + dz)] && this.world.getBlock(x + dx, y, z + dz) !== B.WATER && SOLID[this.world.getBlock(x + dx, y - 1, z + dz)]);
+      if (!spots.length) continue;
+      const [dx, dz] = spots[Math.random() * spots.length | 0];
+      this.treats.push({ item, p: [x + dx + 0.3 + Math.random() * 0.4, y + 0.005, z + dz + 0.3 + Math.random() * 0.4], v: [0, 0, 0], rest: true, life: 60, yaw: Math.random() * 6.28 });
+      if (Math.random() < 1 / 8) empty.push([x, y, z]);
+    }
+    return empty;
   }
 
   throwTreat(item, eye, fwd) {

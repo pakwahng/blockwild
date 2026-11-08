@@ -161,6 +161,21 @@ export class World {
     return false;
   }
 
+  // Blocks the players have placed within r of (x, z) that pass test(id): [[x, y, z, id], ...]
+  placedNear(x, z, r, test) {
+    const out = [], c0x = Math.floor((x - r) / CS), c1x = Math.floor((x + r) / CS), c0z = Math.floor((z - r) / CS), c1z = Math.floor((z + r) / CS);
+    for (let cz = c0z; cz <= c1z; cz++) for (let cx = c0x; cx <= c1x; cx++) {
+      const m = this.edits.get(World.key(cx, cz));
+      if (!m || !this.chunks.has(World.key(cx, cz))) continue;
+      for (const [i, id] of m) {
+        if (!test(id)) continue;
+        const bx = cx * CS + (i % CS), bz = cz * CS + (Math.floor(i / CS) % CS), by = Math.floor(i / (CS * CS));
+        if ((bx - x) ** 2 + (bz - z) ** 2 <= r * r) out.push([bx, by, bz, id]);
+      }
+    }
+    return out;
+  }
+
   hasNeighbours(cx, cz) {
     for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++)
       if (!this.chunks.has(World.key(cx + dx, cz + dz))) return false;

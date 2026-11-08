@@ -11,6 +11,7 @@ export const B = {
   AIR: 0, GRASS: 1, DIRT: 2, STONE: 3, SAND: 4, LOG: 5, LEAVES: 6, PLANKS: 7,
   GLASS: 8, WATER: 9, COBBLE: 10, BRICK: 11, SNOW: 12, BEDROCK: 13, LAMP: 14, CLAY: 15,
   HAY: 16, ROOF: 17, CREAM: 18, MUD: 19, THRONE: 20, FENCE: 21, GATE: 22, GATE_OPEN: 23,
+  TABLE: 24, LADDER: 25, FEEDER: 26, FEEDER_SEEDS: 27, FEEDER_WHEAT: 28, FEEDER_APPLE: 29, FEEDER_CLOVER: 30, FEEDER_BONE: 31,
 };
 
 // kind: 'opaque' | 'cutout' (alpha-tested, e.g. leaves) | 'liquid' (translucent pass)
@@ -40,6 +41,17 @@ const defs = [
   { id: B.FENCE, name: 'Fence', kind: 'cutout', all: T.PLANKS, hard: 0.45, shape: 'fence' },
   { id: B.GATE, name: 'Gate', kind: 'cutout', all: T.PLANKS, hard: 0.45, shape: 'gate' },
   { id: B.GATE_OPEN, name: 'Gate', kind: 'cutout', all: T.PLANKS, hard: 0.45, shape: 'gateOpen', passable: true },
+  // the crafting table: a wooden workbench you make fences, gates and tools at
+  { id: B.TABLE, name: 'Crafting table', kind: 'cutout', all: T.PLANKS, hard: 0.6, shape: 'table' },
+  // ladders lean on the wall beside them and you can climb them
+  { id: B.LADDER, name: 'Ladder', kind: 'cutout', all: T.PLANKS, hard: 0.3, shape: 'ladder', passable: true },
+  // a wooden feeder; filled with a treat it keeps putting out food for that kind of baby
+  { id: B.FEEDER, name: 'Feeder', kind: 'cutout', all: T.PLANKS, hard: 0.45, shape: 'feeder' },
+  { id: B.FEEDER_SEEDS, name: 'Feeder', kind: 'cutout', all: T.PLANKS, fill: T.SAND, hard: 0.45, shape: 'feeder' },
+  { id: B.FEEDER_WHEAT, name: 'Feeder', kind: 'cutout', all: T.PLANKS, fill: T.HAY_TOP, hard: 0.45, shape: 'feeder' },
+  { id: B.FEEDER_APPLE, name: 'Feeder', kind: 'cutout', all: T.PLANKS, fill: T.THRONE_TOP, hard: 0.45, shape: 'feeder' },
+  { id: B.FEEDER_CLOVER, name: 'Feeder', kind: 'cutout', all: T.PLANKS, fill: T.LEAVES, hard: 0.45, shape: 'feeder' },
+  { id: B.FEEDER_BONE, name: 'Feeder', kind: 'cutout', all: T.PLANKS, fill: T.SNOW, hard: 0.45, shape: 'feeder' },
 ];
 
 export const BLOCKS = [];
@@ -60,7 +72,7 @@ for (const b of BLOCKS) {
   KIND[b.id] = { air: 0, opaque: 1, cutout: 2, liquid: 3 }[b.kind];
 }
 
-export const PLACEABLE = [B.FENCE, B.GATE, B.GRASS, B.DIRT, B.PLANKS, B.LOG, B.HAY, B.MUD, B.ROOF, B.CREAM, B.BRICK,
+export const PLACEABLE = [B.FENCE, B.GATE, B.TABLE, B.LADDER, B.FEEDER, B.GRASS, B.DIRT, B.PLANKS, B.LOG, B.HAY, B.MUD, B.ROOF, B.CREAM, B.BRICK,
   B.STONE, B.COBBLE, B.GLASS, B.LEAVES, B.SAND, B.SNOW, B.CLAY, B.LAMP, B.WATER];
 // Non-block items (animal treats) share the hotbar with blocks; their ids sit above the block range.
 export const ITEM_SEEDS = 200, ITEM_WHEAT = 201, ITEM_APPLE = 202, ITEM_CLOVER = 203, ITEM_BONE = 204;
@@ -73,4 +85,9 @@ ITEM_NAMES[ITEM_STICK] = 'Sticks';
 export const SHAPED = new Uint8Array(256); // fences and gates: thin shapes, not full cubes
 for (const b of BLOCKS) if (b?.shape) SHAPED[b.id] = 1;
 // Fences and gates join up with each other and with solid full blocks.
-export const JOINS = id => SHAPED[id] || OPAQUE[id];
+export const JOINS = id => id === B.FENCE || id === B.GATE || id === B.GATE_OPEN || OPAQUE[id];
+// Feeders filled with each treat, and the other way round.
+export const FEEDER_OF = { [ITEM_SEEDS]: B.FEEDER_SEEDS, [ITEM_WHEAT]: B.FEEDER_WHEAT, [ITEM_APPLE]: B.FEEDER_APPLE, [ITEM_CLOVER]: B.FEEDER_CLOVER, [ITEM_BONE]: B.FEEDER_BONE };
+export const FEEDER_TREAT = {};
+for (const k in FEEDER_OF) FEEDER_TREAT[FEEDER_OF[k]] = +k;
+export const IS_FEEDER = id => id === B.FEEDER || FEEDER_TREAT[id] !== undefined;

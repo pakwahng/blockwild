@@ -328,6 +328,20 @@ export function treatIcon(kind, px = 64) {
     } else if (kind === 'fence') {
       for (const x of [10, 44]) { rr(g, x, 8, 11, 50, 3, '#8f5f34'); rr(g, x + 2, 9, 5, 48, 2, '#c08850'); }
       for (const y of [20, 38]) { rr(g, 6, y, 52, 8, 3, '#9a6a3c'); rr(g, 7, y + 1, 50, 3, 1.5, '#c99558'); }
+    } else if (kind === 'table') {
+      rr(g, 6, 18, 52, 12, 4, '#c08850'); rr(g, 8, 19, 48, 4, 2, '#dcae74');           // worktop
+      for (const x of [10, 44]) rr(g, x, 28, 10, 30, 3, '#8f5f34');
+      rr(g, 12, 44, 40, 5, 2, '#9a6a3c');                                              // shelf
+      rr(g, 14, 10, 18, 8, 2, '#b8bcc4'); rr(g, 30, 11, 6, 6, 2, '#7e5230');           // little saw
+      rr(g, 38, 12, 16, 6, 2, '#e8c890');
+    } else if (kind === 'ladder') {
+      for (const x of [14, 42]) rr(g, x, 4, 8, 56, 3, '#8f5f34');
+      for (const y of [12, 26, 40, 52]) rr(g, 20, y, 24, 6, 2, '#c08850');
+    } else if (kind === 'feeder') {
+      rr(g, 6, 28, 52, 24, 5, '#9a6a3c'); rr(g, 10, 24, 44, 10, 4, '#f2c35a');         // wooden trough of treats
+      for (const [x, y, c] of [[16, 24, '#e8443a'], [28, 22, '#4cc25a'], [40, 24, '#f4efe3'], [22, 26, '#e9c27b']]) rr(g, x, y, 8, 7, 3, c);
+      rr(g, 6, 34, 52, 4, 2, '#c08850');
+      for (const x of [10, 46]) rr(g, x, 50, 8, 8, 2, '#7e5230');
     } else if (kind === 'gate') {
       for (const x of [4, 50]) rr(g, x, 6, 10, 52, 3, '#7e5230');
       for (const y of [14, 28, 42]) rr(g, 13, y, 38, 8, 3, '#b07a45');

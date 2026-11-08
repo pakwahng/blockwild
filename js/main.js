@@ -1,8 +1,8 @@
 // Baby Chicken Empire: bootstrap, game loop, streaming, interaction, UI and saving.
-import { B, T, BLOCKS, SOLID, PLACEABLE, TILE_COUNT, ITEM_SEEDS, ITEM_SWORD, ITEM_BONE, ITEM_STICK, TREATS, ITEM_NAMES, SHAPED } from './blocks.js';
+import { B, T, BLOCKS, SOLID, PLACEABLE, TILE_COUNT, ITEM_SEEDS, ITEM_SWORD, ITEM_BONE, ITEM_STICK, TREATS, ITEM_NAMES, SHAPED, FEEDER_OF, FEEDER_TREAT, IS_FEEDER } from './blocks.js';
 import { Snakes } from './snakes.js';
 import { Raiders } from './raiders.js';
-import { drops, RECIPES, TOOLS, STARTER, OLD_SAVE_BAG } from './crafting.js';
+import { drops, RECIPES, TABS, TOOLS, STARTER, OLD_SAVE_BAG, TABLE_REACH, FEEDER_FILL } from './crafting.js';
 import { skyAt, CYCLE } from './sky.js';
 import { buildTextures, blockIcon } from './textures.js';
 import * as M from './models.js';
@@ -68,7 +68,7 @@ let hotbar = [...NEW_HOTBAR];
 let inv = { ...STARTER };
 let selected = 0;
 let target = null, breakT = { key: '', p: 0 };
-let milestone = 0, throwCool = 0;
+let milestone = 0, throwCool = 0, feederTimer = 0;
 const sfx = new Sfx();
 
 // play together
@@ -78,8 +78,9 @@ let myNetId = 0, netTimer = 0, poseTimer = 0, shownOthers = -1, pendingEdits = {
 const netEdits = [], netEvents = [];
 
 const icons = {};
+const SHAPE_ICON = { [B.FENCE]: 'fence', [B.GATE]: 'gate', [B.TABLE]: 'table', [B.LADDER]: 'ladder', [B.FEEDER]: 'feeder' };
 if (textures) for (const id of [...PLACEABLE, B.THRONE]) {
-  icons[id] = SHAPED[id] ? M.treatIcon(id === B.FENCE ? 'fence' : 'gate', 64).toDataURL() : blockIcon(BLOCKS[id], textures.tiles, 64).toDataURL();
+  icons[id] = SHAPED[id] ? M.treatIcon(SHAPE_ICON[id], 64).toDataURL() : blockIcon(BLOCKS[id], textures.tiles, 64).toDataURL();
 }
 for (const id of [...TREATS, ITEM_SWORD, ITEM_STICK]) icons[id] = M.treatIcon(ITEM_NAMES[id].toLowerCase(), 64).toDataURL();
 $('#held').src = icons[ITEM_SWORD] || '';
@@ -111,14 +112,22 @@ function useItem(id, n = 1) {
   updateCounts();
   return true;
 }
-function canMake([, , needs]) { return needs.every(([id, n]) => have(id) >= n); }
-function craft(recipe) {
-  if (!canMake(recipe)) return false;
-  const [out, n, needs] = recipe;
-  for (const [id, k] of needs) useItem(id, k);
-  addItem(out, n, true);
+// How many times you could make a recipe with what's in your bag.
+const timesYouCan = r => Math.min(...r.needs.map(([id, k]) => Math.floor(have(id) / k)));
+// Is there a crafting table close by?
+function atTable() {
+  if (!world || !player) return false;
+  const [x, y, z] = player.pos;
+  return world.placedNear(x, z, TABLE_REACH, id => id === B.TABLE).some(t => Math.abs(t[1] - y) <= 3);
+}
+function canMake(r) { return timesYouCan(r) > 0 && (!r.table || atTable()); }
+function craft(r, times = 1) {
+  times = Math.min(times, timesYouCan(r));
+  if (times <= 0 || (r.table && !atTable())) return 0;
+  for (const [id, k] of r.needs) useItem(id, k * times);
+  addItem(r.out, r.n * times, true);
   sfx.place();
-  return true;
+  return times;
 }
 
 // Lines from the song, shown as the nursery grows.
@@ -513,6 +522,16 @@ function placeBlock() {
     remeshAround(target.x, target.z); sfx.place(); buzz(8);
     return;
   }
+  if (target && IS_FEEDER(target.id) && isTreat(id)) {
+    // fill a feeder with the treat you're holding
+    if (FEEDER_TREAT[target.id] === id) { toast(`That feeder’s already full of ${itemName(id).toLowerCase()}.`); return; }
+    if (have(id) < FEEDER_FILL) { toast(`You need ${FEEDER_FILL} ${itemName(id).toLowerCase()} to fill a feeder.`); return; }
+    useItem(id, FEEDER_FILL);
+    editBlock(target.x, target.y, target.z, FEEDER_OF[id]);
+    remeshAround(target.x, target.z); sfx.munch(); buzz(10);
+    if (!firsts.includes('feeder')) { firsts.push('feeder'); toast('Feeder filled! It puts treats out when a baby that likes them comes by.'); }
+    return;
+  }
   if (!id) return;
   if (!have(id)) { emptyHint(id); return; }
   if (id === ITEM_SWORD) { swing(); return; }
@@ -607,7 +626,7 @@ let hintCool = 0;
 function emptyHint(id) {
   if (performance.now() < hintCool) return;
   hintCool = performance.now() + 4000;
-  const made = RECIPES.find(r => r[0] === id);
+  const made = RECIPES.find(r => r.out === id);
   toast(made ? `You’re out of ${itemName(id).toLowerCase()}. Open your bag to make more.` : `You’re out of ${itemName(id).toLowerCase()}. Dig or find some more.`);
 }
 function selectSlot(i) {
@@ -623,7 +642,8 @@ function openPicker() {
   buildBag();
   $('#picker').hidden = false;
 }
-function buildBag() {
+function buildBag() { buildOwned(); buildMake(); }
+function buildOwned() {
   const grid = $('#picker-grid');
   grid.innerHTML = '';
   const owned = BAG_ORDER.filter(id => have(id) > 0);
@@ -641,30 +661,101 @@ function buildBag() {
     grid.appendChild(b);
   }
   if (!owned.length) grid.innerHTML = '<p class="bag-empty">Your bag is empty. Dig some blocks!</p>';
+}
 
+// ---- the Make section: picture cards in tabs ----
+let bagTab = 'have', cards = [];
+const stickName = (id, k) => id === ITEM_STICK && k === 1 ? 'Stick' : itemName(id);
+function buildTabs() {
+  const tabs = $('#craft-tabs');
+  tabs.innerHTML = '';
+  for (const [key, label] of [['have', 'Your things'], ...TABS]) {
+    const t = document.createElement('button');
+    t.className = 'tab' + (key === bagTab ? ' on' : '');
+    t.setAttribute('role', 'tab'); t.setAttribute('aria-selected', key === bagTab);
+    const ready = RECIPES.some(r => r.tab === key && canMake(r));
+    t.innerHTML = `${label}${ready ? '<i class="dot" aria-label="(you can make something here)"></i>' : ''}`;
+    t.addEventListener('click', () => { bagTab = key; buildMake(); });
+    tabs.appendChild(t);
+  }
+}
+function buildMake() {
+  buildTabs();
+  const mine = bagTab === 'have';
+  $('#bag-tip').hidden = $('#picker-grid').hidden = !mine;
+  $('#table-note').hidden = $('#craft-list').hidden = mine;
   const list = $('#craft-list');
   list.innerHTML = '';
-  // things you can make first, then the rest
-  const sorted = [...RECIPES].sort((a, b) => canMake(b) - canMake(a));
-  for (const r of sorted) {
-    const [out, n, needs] = r;
-    const ok = canMake(r);
-    const b = document.createElement('button');
-    b.className = 'recipe';
-    b.disabled = !ok;
-    b.innerHTML = `<span class="out"><img alt="" src="${icons[out]}">${n > 1 ? n + ' ' : ''}${itemName(out)}</span>` +
-      `<span class="needs">${needs.map(([id, k]) => `<span class="${have(id) >= k ? '' : 'short'}"><img alt="" src="${icons[id]}">${k} ${id === ITEM_STICK && k === 1 ? 'Stick' : itemName(id)}</span>`).join('')}</span>` +
-      `<span class="go">${ok ? 'Make' : ''}</span>`;
-    b.setAttribute('aria-label', `Make ${n} ${itemName(out)} from ${needs.map(([id, k]) => k + ' ' + itemName(id)).join(' and ')}`);
-    b.addEventListener('click', () => {
-      if (!craft(r)) return;
-      const y = $('#bag-body').scrollTop;
-      buildBag();
-      $('#bag-body').scrollTop = y;
-      if (!firsts.includes('craft')) { firsts.push('craft'); toast('You made something! Tap it in your bag to hold it.'); }
-    });
-    list.appendChild(b);
+  cards = [];
+  $('#bag-body').scrollTop = 0;
+  for (const r of RECIPES.filter(q => q.tab === bagTab)) {
+    const c = document.createElement('div');
+    c.className = 'card';
+    c.innerHTML = `<div class="card-out"><img alt="" src="${icons[r.out]}">${r.n > 1 ? `<b class="times">×${r.n}</b>` : ''}</div>` +
+      `<div class="card-name">${itemName(r.out)}</div>` +
+      `<div class="card-needs">${r.needs.map(([id, k]) => `<span data-id="${id}" data-k="${k}"><img alt="" src="${icons[id]}"><em></em></span>`).join('')}</div>` +
+      `<div class="card-table"><img alt="" src="${icons[B.TABLE]}">Needs a table</div>` +
+      `<div class="card-go"><button class="make">Make</button><button class="all"></button></div>`;
+    c.querySelector('.make').setAttribute('aria-label', `Make ${r.n} ${itemName(r.out)} from ${r.needs.map(([id, k]) => k + ' ' + stickName(id, k)).join(' and ')}`);
+    holdToRepeat(c.querySelector('.make'), () => makeIt(r, 1));
+    c.querySelector('.all').addEventListener('click', () => makeIt(r, Infinity));
+    list.appendChild(c);
+    cards.push([c, r]);
   }
+  refreshMake();
+}
+// Updates the cards' counts and buttons without rebuilding them (so a held button keeps working).
+function refreshMake() {
+  const table = atTable();
+  $('#table-note').textContent = table ? 'You’re at a crafting table: you can make everything.'
+    : 'Some things need a crafting table close by. Make one from 4 wood and place it.';
+  $('#table-note').classList.toggle('ok', table);
+  for (const [c, r] of cards) {
+    const n = timesYouCan(r), blocked = r.table && !table;
+    c.classList.toggle('ready', n > 0 && !blocked);
+    c.classList.toggle('locked', blocked);
+    for (const s of c.querySelectorAll('.card-needs span')) {
+      const id = +s.dataset.id, k = +s.dataset.k;
+      s.classList.toggle('short', have(id) < k);
+      s.querySelector('em').textContent = `${Math.min(have(id), 999)}/${k}`;
+      s.title = `${k} ${stickName(id, k)}`;
+    }
+    c.querySelector('.make').disabled = n <= 0 || blocked;
+    const all = c.querySelector('.all');
+    all.hidden = n < 2 || blocked;
+    all.textContent = `All ×${n}`;
+    all.setAttribute('aria-label', `Make ${n * r.n} ${itemName(r.out)}`);
+  }
+}
+function makeIt(r, times) {
+  const made = craft(r, times);
+  if (!made) return false;
+  const card = cards.find(([, q]) => q === r)?.[0];
+  card?.classList.remove('pop'); void card?.offsetWidth; card?.classList.add('pop');
+  const y = $('#bag-body').scrollTop;
+  const grid = $('#picker-grid');
+  grid.style.minHeight = grid.offsetHeight + 'px';
+  buildOwned();
+  grid.style.minHeight = '';
+  refreshMake();
+  buildTabs();
+  $('#bag-body').scrollTop = y;
+  if (!firsts.includes('craft')) { firsts.push('craft'); toast('You made something! Tap it in your bag to hold it.'); }
+  return true;
+}
+// Press and hold: makes one straight away, then keeps going while you hold.
+function holdToRepeat(btn, fn) {
+  let timer = 0;
+  const stop = () => { clearTimeout(timer); timer = 0; };
+  btn.addEventListener('pointerdown', e => {
+    if (btn.disabled) return;
+    e.preventDefault();
+    fn();
+    const again = delay => { timer = setTimeout(() => { if (!btn.disabled && fn()) again(Math.max(70, delay * 0.8)); else stop(); }, delay); };
+    again(450);
+  });
+  for (const ev of ['pointerup', 'pointerleave', 'pointercancel']) btn.addEventListener(ev, stop);
+  btn.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fn(); } });
 }
 let pickerOpenFromLock = false;
 function closePicker() {
@@ -1100,6 +1191,15 @@ function frame(now) {
       for (const o of others.values()) players.push({ pos: o.p, holding: o.held });
       flock.update(dt, players, [...snakes.heads(), ...raiders.threats()], isNight);
       raiders.update(dt, flock, players.map(q => q.pos), skyAt(clock).night < 0.3, nights);
+      feederTimer -= dt;
+      if (feederTimer <= 0) {
+        feederTimer = 2;
+        const seen = new Set(), feeders = [];
+        for (const q of players) for (const f of world.placedNear(q.pos[0], q.pos[2], 40, id => FEEDER_TREAT[id] !== undefined)) {
+          const k = f.slice(0, 3).join(); if (!seen.has(k)) { seen.add(k); feeders.push(f); }
+        }
+        for (const [x, y, z] of flock.feedersStep(feeders, FEEDER_TREAT)) { editBlock(x, y, z, B.FEEDER); remeshAround(x, z); }
+      }
       snakes.update(dt, flock, player, isNight, nights);
     }
     handleChickEvents();

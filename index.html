@@ -61,9 +61,10 @@
     <div class="panel">
       <div class="panel-head"><h2>Bag</h2><button id="picker-close" class="text-btn">Done</button></div>
       <div id="bag-body">
-        <p class="bag-tip">Tap something to hold it. Dig blocks to collect them, then make new things below.</p>
+        <div id="craft-tabs" role="tablist" aria-label="Your things, and things to make"></div>
+        <p class="bag-tip" id="bag-tip">Tap something to hold it. Dig blocks to collect them, and make new things in the other tabs.</p>
         <div id="picker-grid"></div>
-        <h3 class="bag-h">Make</h3>
+        <p id="table-note"></p>
         <div id="craft-list"></div>
       </div>
     </div>
@@ -118,7 +119,7 @@
           <summary>Controls</summary>
           <div class="controls">
             <p><b>Baby animals:</b> each baby has a favourite treat: seeds for chicks, wheat for calves, apples for piglets, clover for lambs and a bone for wolf pups. Hold a treat and those babies follow you. Tap to throw it: a baby that eats one joins your nursery, and two fed babies of the same kind make a new baby. Calves like to munch beside hay and piglets love to roll in mud. Animals can’t hop over wood, hay or walls, so build a pen to keep them.</p>
-            <p><b>Collect and make:</b> you start with seeds and the toy sword. Dig blocks to collect them (grass can turn up seeds, wheat and clover, leaves can drop apples and sticks, dirt sometimes hides a bone). Open your bag (top right) to pick what to hold and to make new things: wood from logs, sticks from wood, and wooden fences and gates from wood and sticks. Tap a gate to open or shut it.</p>
+            <p><b>Collect and make:</b> you start with seeds and the toy sword. Dig blocks to collect them (grass can turn up seeds, wheat and clover, leaves can drop apples and sticks, dirt sometimes hides a bone). Open your bag (top right) to pick what to hold, and use its tabs to make new things: tap Make, hold it to keep making, or tap All. Wood comes from logs, sticks from wood. Fences, gates, ladders, feeders and the sword need a crafting table close by (make one from 4 wood). Tap a gate to open or shut it. Walk into a ladder to climb it. Tap a feeder while holding a treat to fill it, and it puts treats out for the babies.</p>
             <p><b>Day raiders:</b> by day a sneaky fox creeps up on your nursery to spook a baby, and crows swoop down to pinch treats lying on the ground. Foxes can’t climb fences, so pen your babies in. Bonk a fox twice with the sword for 2 bones, or a crow once for some seeds.</p>
             <p><b>Night:</b> when the square moon comes up, the babies doze off and a block snake slithers towards your nursery. If it reaches a baby, the baby gets spooked and runs off. Snakes can slither over a one-block fence, but not a two-block wall. Pick the toy sword and tap the snake twice to bonk it into confetti.</p>
             <p><b>Chicken king:</b> keep every baby safe through a night (or raise 100 chicks) to earn the gold crown and a hay bale throne. Place the throne, then tap it to sit: your babies gather round to cheer. Walk or jump to stand up.</p>

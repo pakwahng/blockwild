@@ -260,18 +260,47 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
 .slot.none img { opacity: 0.28; filter: grayscale(1); }
 .slot.got { animation: got .35s ease-out; }
 @keyframes got { 40% { transform: scale(1.22); } }
-#craft-list { display: flex; flex-direction: column; gap: 6px; }
-.recipe {
-  display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 10px; text-align: left;
-  border: 2px solid transparent; background: rgba(255, 255, 255, 0.06); color: var(--ink); font-size: 13px;
+#craft-tabs { display: flex; gap: 6px; margin-bottom: 8px; overflow-x: auto; }
+.tab {
+  position: relative; flex: 0 0 auto; padding: 8px 14px; border-radius: 99px; border: 2px solid transparent;
+  background: rgba(255, 255, 255, 0.08); color: var(--ink-dim); font-weight: 700; font-size: 14px;
 }
-.recipe img { width: 32px; height: 32px; image-rendering: pixelated; }
-.recipe .out { display: flex; align-items: center; gap: 4px; min-width: 120px; font-weight: 700; }
-.recipe .needs { display: flex; flex-wrap: wrap; gap: 6px; color: var(--ink-dim); flex: 1; }
-.recipe .needs span { display: inline-flex; align-items: center; gap: 2px; }
-.recipe .needs img { width: 22px; height: 22px; }
-.recipe .needs .short { color: #ff9a8a; }
-.recipe .go { font-weight: 800; color: var(--accent); }
-.recipe:disabled { opacity: 0.55; }
-.recipe:disabled .go { color: var(--ink-dim); }
-.recipe:not(:disabled):active { border-color: var(--accent); }
+.tab.on { background: var(--accent); color: #12200c; }
+.tab .dot { position: absolute; top: 4px; right: 6px; width: 8px; height: 8px; border-radius: 50%; background: #ffd23c; }
+#table-note { margin: 0 0 10px; font-size: 13px; color: var(--ink-dim); }
+#table-note.ok { color: #b8f09c; }
+#craft-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.card {
+  display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 8px; border-radius: 14px;
+  background: rgba(255, 255, 255, 0.05); border: 2px solid transparent; opacity: 0.6;
+}
+.card.ready { opacity: 1; border-color: rgba(124, 195, 90, 0.55); background: rgba(124, 195, 90, 0.1); }
+.card.pop { animation: got .3s ease-out; }
+.card-out { position: relative; }
+.card-out img { width: 60px; height: 60px; image-rendering: pixelated; }
+.card-out .times { position: absolute; right: -14px; bottom: -2px; font-size: 16px; color: #fff; text-shadow: 0 1px 2px #000, 0 0 3px #000; }
+.card-name { font-weight: 800; font-size: 15px; text-align: center; }
+.card-needs { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.card-needs span { display: flex; flex-direction: column; align-items: center; font-size: 12px; color: var(--ink); }
+.card-needs img { width: 30px; height: 30px; image-rendering: pixelated; }
+.card-needs em { font-style: normal; font-weight: 700; }
+.card-needs .short em { color: #ff9a8a; }
+.card-table { display: none; align-items: center; gap: 4px; font-size: 12px; color: #ffcf7a; }
+.card-table img { width: 20px; height: 20px; }
+.card.locked .card-table { display: flex; }
+.card-go { display: flex; gap: 6px; width: 100%; }
+.card-go button {
+  flex: 1; padding: 9px 4px; border-radius: 10px; border: 0; font-weight: 800; font-size: 14px;
+  background: var(--accent); color: #12200c; touch-action: none; user-select: none; -webkit-user-select: none;
+}
+.card-go .all { background: rgba(255, 255, 255, 0.16); color: var(--ink); }
+.card-go button:disabled { background: rgba(255, 255, 255, 0.08); color: var(--ink-dim); }
+.card-go button[hidden] { display: none; }
+#craft-tabs { position: sticky; top: 0; z-index: 1; background: var(--panel); padding-bottom: 6px; }
+#picker-grid[hidden], #craft-list[hidden], #table-note[hidden], #bag-tip[hidden] { display: none; }
+@media (max-height: 500px) {
+  .card { padding: 6px; gap: 4px; }
+  .card-out img { width: 42px; height: 42px; }
+  .card-needs img { width: 24px; height: 24px; }
+  .card-go button { padding: 7px 4px; }
+}

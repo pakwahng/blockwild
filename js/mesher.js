@@ -264,6 +264,34 @@ function shapeMesh(buf, id, p, wx, wy, wz) {
     }
     return;
   }
+  if (id === B.TABLE) {
+    box(0.02, 0.8, 0.02, 0.98, 1, 0.98);                                       // worktop
+    for (const [x, z] of [[0.08, 0.08], [0.78, 0.08], [0.08, 0.78], [0.78, 0.78]]) box(x, 0, z, x + 0.14, 0.8, z + 0.14);
+    box(0.1, 0.24, 0.1, 0.9, 0.32, 0.9);                                       // low shelf
+    box(0.12, 1, 0.14, 0.42, 1.04, 0.3);                                       // a saw and a little plank on top
+    box(0.55, 1, 0.55, 0.85, 1.08, 0.8);
+    return;
+  }
+  if (id === B.LADDER) {
+    // leans on the first solid wall beside it (drawn here for a wall on the -z side, then turned)
+    const side = OPAQUE[padded[p - PX]] ? 0 : OPAQUE[padded[p + PX]] ? 1 : OPAQUE[padded[p - 1]] ? 2 : OPAQUE[padded[p + 1]] ? 3 : 0;
+    const lb = (x0, y0, z0, x1, y1, z1) => {
+      if (side === 1) [z0, z1] = [1 - z1, 1 - z0];
+      if (side >= 2) { [x0, z0, x1, z1] = [z0, x0, z1, x1]; if (side === 3) [x0, x1] = [1 - x1, 1 - x0]; }
+      shapeBox(buf, wx, wy, wz, layer, x0, y0, z0, x1, y1, z1, false);
+    };
+    lb(0.12, 0, 0.02, 0.22, 1, 0.13); lb(0.78, 0, 0.02, 0.88, 1, 0.13);        // rails
+    for (const y of [0.12, 0.37, 0.62, 0.87]) lb(0.22, y, 0.04, 0.78, y + 0.08, 0.11); // rungs
+    return;
+  }
+  if (BLOCKS[id].shape === 'feeder') {
+    box(0.05, 0, 0.2, 0.95, 0.1, 0.8);                                         // floor
+    box(0.05, 0.1, 0.2, 0.95, 0.46, 0.28); box(0.05, 0.1, 0.72, 0.95, 0.46, 0.8); // long sides
+    box(0.05, 0.1, 0.28, 0.13, 0.5, 0.72); box(0.87, 0.1, 0.28, 0.95, 0.5, 0.72); // ends
+    const fill = BLOCKS[id].fill;
+    if (fill !== undefined) shapeBox(buf, wx, wy, wz, fill, 0.13, 0.1, 0.28, 0.87, 0.4, 0.72, false);
+    return;
+  }
   // gates run between the fences beside them: along x unless the neighbours are along z
   const swap = !(px || nx) && (pz || nz);
   box(0, 0, 0.42, 0.14, 1, 0.58, swap);                                        // hinge post
