@@ -169,6 +169,20 @@ export class Sfx {
     this.tone('sine', 1320, 1760, t + 0.08, 0.12, 0.18);
   }
 
+  // picking up a gift: a bright little "plink plink"
+  pickup() {
+    if (!this.ready) return;
+    const t = this.ctx.currentTime + 0.01;
+    this.tone('triangle', 1046, 1046, t, 0.07, 0.22);
+    this.tone('triangle', 1568, 1568, t + 0.07, 0.1, 0.2);
+  }
+  // a baby all grown up: a rising three-note chime
+  grown() {
+    if (!this.ready) return;
+    const t = this.ctx.currentTime + 0.01;
+    [523, 659, 784, 1046].forEach((f, k) => this.tone('sine', f, f, t + k * 0.1, 0.16, 0.22));
+  }
+
   toss() { if (this.ready) this.noise(this.ctx.currentTime + 0.01, 0.12, 0.25, 3000); }
   place() { if (this.ready) { const t = this.ctx.currentTime + 0.01; this.tone('sine', 220, 120, t, 0.09, 0.35); this.noise(t, 0.05, 0.12, 900); } }
   dig() { if (this.ready) this.noise(this.ctx.currentTime + 0.01, 0.16, 0.35, 600); }

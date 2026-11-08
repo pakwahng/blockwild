@@ -75,6 +75,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .fx.heart::after { left: 0; transform: rotate(45deg); transform-origin: 100% 100%; }
 .fx.hatch { font-weight: 900; font-size: 22px; color: #fff3b0; text-shadow: 0 2px 0 #c98a00, 0 3px 6px rgba(0,0,0,.4); }
 .fx.bonk { font-weight: 900; font-size: 26px; color: #ffe23a; text-shadow: 0 2px 0 #6a2a6e, 0 3px 6px rgba(0,0,0,.5); }
+.fx.grown { font-weight: 900; font-size: 20px; color: #fff; white-space: nowrap; text-shadow: 0 2px 0 #3a9a46, 0 3px 6px rgba(0,0,0,.45); animation-duration: 1.8s; }
 
 /* the toy sword, held in the bottom right */
 #held {

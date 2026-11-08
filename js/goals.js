@@ -1,8 +1,8 @@
 // Goals: a short list of things to try, in order, each with a little reward.
 // They lead a new player from digging their first block to building a pen and surviving the night.
-import { B, ITEM_SEEDS, ITEM_WHEAT, ITEM_APPLE, ITEM_CLOVER, ITEM_BONE, ITEM_STICK } from './blocks.js';
+import { B, ITEM_SEEDS, ITEM_WHEAT, ITEM_APPLE, ITEM_CLOVER, ITEM_BONE, ITEM_STICK, ITEM_EGG, ITEM_MILK } from './blocks.js';
 
-// stats: { dug: {id: n}, got: {id: n}, made: {id: n}, placed: {id: n}, tamed, hatched, bonked, filled, nights, climbed, chicks }
+// stats: { dug: {id: n}, got: {id: n}, made: {id: n}, placed: {id: n}, tamed, hatched, bonked, filled, nights, climbed, chicks, grown, gifts: {id: n} }
 const n = (map, id) => (map && map[id]) || 0;
 const sum = (map, ids) => ids.reduce((a, id) => a + n(map, id), 0);
 const FLOWERS = [B.FLOWER_RED, B.FLOWER_YELLOW, B.FLOWER_WHITE];
@@ -23,6 +23,8 @@ export const GOALS = [
   ['bonk', 'Bonk a fox, crow or snake with the sword', 1, s => s.bonked || 0, [[ITEM_BONE, 3]]],
   ['ladder', 'Climb a ladder', 1, s => s.climbed || 0, [[B.LAMP, 2]]],
   ['night', 'Keep the nursery safe through a night', 1, s => s.nights || 0, [[B.LAMP, 3]]],
+  ['grow', 'Look after a baby until it grows up', 1, s => s.grown || 0, [[ITEM_MILK, 2]]],
+  ['gifts', 'Pick up 5 gifts from your grown-ups', 5, s => Object.values(s.gifts || {}).reduce((a, b) => a + b, 0), [[ITEM_EGG, 3]]],
   ['chicks', 'Grow your nursery to 37 chickens', 37, s => s.chicks || 0, [[B.HAY, 4], [ITEM_APPLE, 5]]],
 ];
 export const GOAL_IDS = GOALS.map(g => g[0]);

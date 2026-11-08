@@ -255,6 +255,15 @@ const painters = {
       return scale(mix(mix(base, dark, p * 0.7), wet, s * 0.8), rim(u, v, 0.1, 0.2));
     };
   },
+  [T.WOOL]: rnd => {
+    // fluffy cream wool: lots of little round curls with soft shadows between them
+    const base = hex('#fbf6ec'), shade = hex('#e6dccb');
+    const curls = blobs(rnd, 14, 0.09, 0.14);
+    return (u, v) => {
+      const [b] = curls(u, v);
+      return scale(mix(shade, base, sstep(0.05, 0.6, b)), rim(u, v, 0.12, 0.14));
+    };
+  },
 };
 
 function makeTile(i) {

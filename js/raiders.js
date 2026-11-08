@@ -95,6 +95,18 @@ export class Raiders {
     r.leaving = true; r.target = null; r.life = 0;
   }
 
+  // Foxes still on the hunt, for the nursery's grown wolves to chase.
+  foes() { return this.list.filter(r => r.kind === FOX && !r.leaving && !r.gone).map(r => ({ kind: 'fox', p: r.p, ref: r })); }
+  // A grown wolf caught up with a fox: it yelps and runs off home the other way.
+  scare(f, from) {
+    if (f.leaving || f.gone) return;
+    this.leave(f);
+    f.yaw = Math.atan2(f.p[0] - from[0], f.p[2] - from[2]);
+    f.hit = 0.4; f.knock = 0.3;
+    f.v[0] = Math.sin(f.yaw) * 5; f.v[2] = Math.cos(f.yaw) * 5; f.v[1] = 4.5;
+    this.events.push({ type: 'foxChased', p: [...f.p] });
+  }
+
   stepFox(f, dt, nursery) {
     f.life += dt;
     f.hit = Math.max(0, f.hit - dt);
@@ -107,7 +119,7 @@ export class Raiders {
       f.retarget = 1.5;
       let best = null, bd = 60 * 60;
       for (const a of nursery.animals) {
-        if (!a.tame) continue;
+        if (!a.tame || (a.sp === 'pup' && a.grow >= 1)) continue; // grown wolves guard, they don't get spooked
         if (Math.abs(a.p[1] - f.p[1]) > 3) continue; // babies down a hole or up a cliff are out of reach
         const d = dist2(a.p, f.p);
         if (d < bd) { bd = d; best = a; }

@@ -147,7 +147,7 @@ export class Snakes {
       s.retarget = 1;
       let best = null, bd = 70 * 70;
       for (const a of nursery.animals) {
-        if (!a.tame) continue;
+        if (!a.tame || (a.sp === 'pup' && a.grow >= 1)) continue; // grown wolves guard, they don't get spooked
         const d = dist2(a.p, s.p);
         if (d < bd) { bd = d; best = a; }
       }
@@ -245,6 +245,20 @@ export class Snakes {
       this.events.push({ type: 'poof', p: [...s.p], id: s.id });
     }
     return true;
+  }
+
+  // A grown wolf from the nursery nips the snake: same as a bonk, knocked away from the wolf.
+  nip(s, from) {
+    if (s.gone || s.hit > 0) return;
+    s.hp--; s.hit = 0.55; s.knock = 0.35;
+    const dx = s.p[0] - from[0], dz = s.p[2] - from[2], l = Math.hypot(dx, dz) || 1;
+    s.v[0] = dx / l * 4.5; s.v[2] = dz / l * 4.5; s.v[1] = 4;
+    this.events.push({ type: 'bonk', p: [...s.p] });
+    if (s.hp <= 0) {
+      this.poof(s, true);
+      s.gone = true;
+      this.events.push({ type: 'poof', p: [...s.p], id: s.id, wolf: 1 });
+    }
   }
 
   // Bursts a snake into confetti cubes.

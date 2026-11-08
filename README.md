@@ -35,6 +35,20 @@ Based on the music video *Baby Chicken Empire*: build a nursery for baby animals
 - Animals hop up natural steps, but can't climb **wood, logs, hay, walls, roof, glass or brick**. A one-block fence keeps them in.
 - Milestones at 10, 37, 67 and 100 chicks, the first of each other baby, and a full set of all five quote the song.
 
+### Growing up
+
+Babies in your nursery slowly grow up (about seven minutes of being tame), getting bigger as they go. Grown-ups leave **gifts** on the ground now and then; walk over one to pick it up.
+
+| Baby | Grows into | Gift |
+|---|---|---|
+| Chick | Hen | **Egg**: throw it and a tame chick hatches where it lands |
+| Calf | Cow | **Milk**: throw it near a baby in your nursery; it drinks it and grows a quarter of the way up |
+| Piglet | Pig | Digs up 2 **apples** |
+| Lamb | Sheep | 2 **wool**, a soft building block |
+| Wolf pup | Wolf | Guards the nursery: chases off foxes and nips snakes into confetti (two nips) |
+
+Foxes and snakes don't go after grown wolves. Growth, gifts lying on the ground and grown-ups all save, and guests see them too.
+
 ## Collecting and crafting
 
 - A new world starts with 10 seeds and the toy sword. Everything else you collect.
@@ -73,7 +87,7 @@ Based on the music video *Baby Chicken Empire*: build a nursery for baby animals
 ## Goals
 
 - The star line under the nursery counters shows your **next goal** (tap it to see them all in the bag's **★ Goals** tab).
-- Goals lead from digging your first blocks to chopping a tree, building a crafting table, penning your babies in with fences and a gate, filling a feeder, climbing a ladder, bonking a raider, keeping the nursery safe for a night and growing to 37 chickens.
+- Goals lead from digging your first blocks to chopping a tree, building a crafting table, penning your babies in with fences and a gate, filling a feeder, climbing a ladder, bonking a raider, keeping the nursery safe for a night, watching a baby grow up, picking up gifts from the grown-ups and growing to 37 chickens.
 - Each goal gives a reward (seeds, wheat, apples, bones, wood, a gate, hay or lamps) when you finish it.
 
 ## Flowers
@@ -129,7 +143,7 @@ A full day lasts 10 minutes: about 6 minutes of daylight, a pink dusk, roughly 3
 | `js/main.js` | Boot, game loop, chunk streaming, break/place, menus, saving |
 | `js/world.js` | Chunk storage, terrain/caves/trees generation, player edits |
 | `js/mesher.js` | Turns chunks into triangles, with rounded block edges and ambient occlusion |
-| `js/animals.js` | Baby animal behaviour: species table, wandering, treats, taming, breeding, hay and mud habits, pens |
+| `js/animals.js` | Baby animal behaviour: species table, wandering, treats, taming, breeding, hay and mud habits, pens, growing up, gifts, wolf guards |
 | `js/raiders.js` | Daytime foxes and crows: sneaking, stealing treats, fences, sword hits |
 | `js/goals.js` | The goals list, progress and rewards |
 | `js/crafting.js` | What digging gives you, crafting recipes, starter bag |

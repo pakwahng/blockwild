@@ -1,5 +1,5 @@
 // Baby Chicken Empire: bootstrap, game loop, streaming, interaction, UI and saving.
-import { B, T, BLOCKS, SOLID, PLACEABLE, TILE_COUNT, ITEM_SEEDS, ITEM_SWORD, ITEM_BONE, ITEM_STICK, TREATS, ITEM_NAMES, SHAPED, FEEDER_OF, FEEDER_TREAT, IS_FEEDER } from './blocks.js';
+import { B, T, BLOCKS, SOLID, PLACEABLE, TILE_COUNT, ITEM_SEEDS, ITEM_SWORD, ITEM_BONE, ITEM_APPLE, ITEM_STICK, ITEM_EGG, ITEM_MILK, TREATS, ITEM_NAMES, SHAPED, FEEDER_OF, FEEDER_TREAT, IS_FEEDER } from './blocks.js';
 import { Snakes } from './snakes.js';
 import { Raiders } from './raiders.js';
 import { GOALS, newStats, bump } from './goals.js';
@@ -7,7 +7,7 @@ import { drops, RECIPES, TABS, TOOLS, STARTER, OLD_SAVE_BAG, TABLE_REACH, FEEDER
 import { skyAt, CYCLE } from './sky.js';
 import { buildTextures, blockIcon } from './textures.js';
 import * as M from './models.js';
-import { Nursery, SPECIES, SPECIES_ORDER, isTreat } from './animals.js';
+import { Nursery, SPECIES, SPECIES_ORDER, isTreat, GIFTS } from './animals.js';
 import { Sfx } from './audio.js';
 import { World, CS, CH } from './world.js';
 import { buildMesh } from './mesher.js';
@@ -55,6 +55,10 @@ try {
   renderer.addModel('charli', M.charliModel());
   renderer.addModel('fox', M.foxModel());
   renderer.addModel('crow', M.crowModel());
+  renderer.addModel('hen', M.henModel());
+  renderer.addModel('egg', M.eggModel());
+  renderer.addModel('milk', M.milkModel());
+  renderer.addModel('woolTuft', M.woolTuftModel());
 } catch (err) {
   console.error(err);
   showError('This device or browser cannot run Baby Chicken Empire (WebGL2 is required). ' + err.message);
@@ -85,12 +89,12 @@ const SHAPE_ICON = { [B.FENCE]: 'fence', [B.GATE]: 'gate', [B.TABLE]: 'table', [
 if (textures) for (const id of [...PLACEABLE, B.THRONE]) {
   icons[id] = SHAPED[id] ? M.treatIcon(SHAPE_ICON[id], 64).toDataURL() : blockIcon(BLOCKS[id], textures.tiles, 64).toDataURL();
 }
-for (const id of [...TREATS, ITEM_SWORD, ITEM_STICK]) icons[id] = M.treatIcon(ITEM_NAMES[id].toLowerCase(), 64).toDataURL();
+for (const id of [...TREATS, ITEM_SWORD, ITEM_STICK, ITEM_EGG, ITEM_MILK]) icons[id] = M.treatIcon(ITEM_NAMES[id].toLowerCase(), 64).toDataURL();
 $('#held').src = icons[ITEM_SWORD] || '';
 const itemName = id => ITEM_NAMES[id] || BLOCKS[id]?.name || '';
 const isItem = id => !!icons[id];
 // the order things are listed in your bag
-const BAG_ORDER = [...TREATS, ITEM_SWORD, ITEM_STICK, B.THRONE, ...PLACEABLE];
+const BAG_ORDER = [...TREATS, ITEM_EGG, ITEM_MILK, ITEM_SWORD, ITEM_STICK, B.THRONE, ...PLACEABLE];
 
 // ---------- your bag: collecting and using things up ----------
 const have = id => inv[id] || 0;
@@ -155,6 +159,22 @@ function buildGoals() {
     list.appendChild(row);
   }
 }
+
+// Grown-ups: what each baby becomes, and what it does for you.
+const ADULT_NAME = { chick: 'hen', calf: 'cow', piglet: 'pig', lamb: 'sheep', pup: 'wolf' };
+const GROWN_TIP = {
+  chick: 'Your chick grew up into a hen! Hens lay eggs: pick one up and throw it, and a chick hatches where it lands.',
+  calf: 'Your calf grew up into a cow! Cows give milk: throw it near a baby and it drinks it to grow up faster.',
+  piglet: 'Your piglet grew up into a pig! Pigs snuffle about and dig up apples for you.',
+  lamb: 'Your lamb grew up into a sheep! Sheep leave soft wool you can build with.',
+  pup: 'Your wolf pup grew up into a wolf! Grown wolves guard the nursery and chase off foxes and snakes.',
+};
+const GIFT_TIP = {
+  [ITEM_EGG]: 'You picked up an egg! Throw it and a chick hatches where it lands.',
+  [ITEM_MILK]: 'You picked up milk! Throw it near a baby in your nursery and it drinks it to grow up faster.',
+  [B.WOOL]: 'You picked up wool! It’s a soft block for building.',
+  [ITEM_APPLE]: 'Your pig dug up some apples!',
+};
 
 // A little "+1 Dirt" that floats up from where you dug.
 function pickupPop(at, got) {
@@ -274,6 +294,7 @@ function startWorld(save) {
   flock = new Nursery(world);
   if (guest) flock.remoteCounts = { chick: 0, calf: 0, piglet: 0, lamb: 0, pup: 0 }; // the host's animals arrive over the network
   else if (save?.animals) flock.load(save.animals); else flock.loadChicks(save?.chicks);
+  if (!guest) flock.loadGifts(save?.gifts);
   milestone = save?.milestone || 0;
   firsts = save?.firsts || [];
   snakes = new Snakes(world);
@@ -304,7 +325,7 @@ function saveGame() {
   store.set(SAVE_KEY, {
     v: 4, inv, stats, goals: goalsDone, seed: world.seed, clock: +clock.toFixed(4), nights, crown, pos: player.pos.map(v => +v.toFixed(2)), yaw: player.yaw, pitch: player.pitch,
     flying: player.flying, hotbar, selected, edits: world.serializeEdits(),
-    animals: flock ? flock.serialize() : [], milestone, firsts,
+    animals: flock ? flock.serialize() : [], gifts: flock ? flock.serializeGifts() : [], milestone, firsts,
   });
 }
 
@@ -432,10 +453,10 @@ function floatFx(p, kind) {
   const [sx, sy] = at;
   const el = document.createElement('div');
   el.className = 'fx ' + kind;
-  el.textContent = kind === 'hatch' ? '+1' : kind === 'bonk' ? 'BONK!' : '';
+  el.textContent = kind === 'hatch' ? '+1' : kind === 'bonk' ? 'BONK!' : kind === 'grown' ? 'All grown up!' : '';
   el.style.left = sx + 'px'; el.style.top = sy + 'px';
   $('#fx').appendChild(el);
-  setTimeout(() => el.remove(), 1300);
+  setTimeout(() => el.remove(), kind === 'grown' ? 1800 : 1300);
 }
 
 function handleChickEvents() {
@@ -450,7 +471,33 @@ function handleChickEvents() {
   for (const ev of flock.events) {
     const d = Math.hypot(ev.p[0] - eye[0], ev.p[1] - eye[1], ev.p[2] - eye[2]);
     if (ev.type === 'call') { if (d < 20) sfx.call(ev.sp, 0.35 * (1 - d / 20)); continue; }
+    if (ev.type === 'gift') {
+      // whoever walked over a gift gets it
+      if (ev.by !== myNetId) continue;
+      addItem(ev.item, ev.n);
+      bump(stats, 'gifts', ev.item, ev.n);
+      pickupPop({ x: ev.p[0] - 0.5, y: ev.p[1] - 0.6, z: ev.p[2] - 0.5 }, [[ev.item, ev.n]]);
+      sfx.pickup(); buzz(10);
+      if (!firsts.includes('gift' + ev.item)) { firsts.push('gift' + ev.item); toast(GIFT_TIP[ev.item] || `You picked up ${itemName(ev.item).toLowerCase()}.`); }
+      continue;
+    }
     if (d > 40) continue;
+    if (ev.type === 'grown') {
+      bump(stats, 'grown');
+      sfx.grown(); sfx.call(ev.sp, 0.5); floatFx(ev.p, 'grown'); buzz(25);
+      snakes.burst([ev.p[0], ev.p[1] + 0.4, ev.p[2]], 26, [1, 1, 2, 3], false);
+      const first = !firsts.includes('grown' + ev.sp);
+      if (first) firsts.push('grown' + ev.sp);
+      toast(first ? GROWN_TIP[ev.sp] : `Your ${SPECIES[ev.sp].name} grew up into a ${ADULT_NAME[ev.sp]}!`);
+      continue;
+    }
+    if (ev.type === 'laid') { if (d < 16) sfx.call(ev.sp, 0.4 * (1 - d / 16)); continue; }
+    if (ev.type === 'woof') {
+      sfx.call('pup', 0.6); buzz(15);
+      if (!firsts.includes('woof')) { firsts.push('woof'); toast(`Woof! Your grown-up wolf is chasing the ${ev.kind} away from the nursery.`); }
+      continue;
+    }
+    if (ev.type === 'milk') { sfx.happy(); floatFx(ev.p, 'heart'); continue; }
     if (ev.type === 'tame') bump(stats, 'tamed');
     if (ev.type === 'hatch') { bump(stats, 'hatched'); sfx.hatch(); sfx.call(ev.sp, 0.45); floatFx(ev.p, 'hatch'); buzz(20); }
     else if (ev.type === 'splash') { if (d < 16) sfx.splash(); }
@@ -484,7 +531,10 @@ function handleChickEvents() {
       sfx.hiss(0.4); sfx.call(ev.sp, 0.5);
       toast(`The snake spooked a ${SPECIES[ev.sp].name} out of your nursery! Feed it again to bring it back.`);
     } else if (ev.type === 'bonk') { sfx.bonk(); floatFx(ev.p, 'bonk'); buzz(30); }
-    else if (ev.type === 'poof') {
+    else if (ev.type === 'poof' && ev.wolf) {
+      sfx.poof(); buzz(40);
+      if (d < 60) toast('Your grown-up wolf nipped the snake into confetti! Good wolf.');
+    } else if (ev.type === 'poof') {
       sfx.poof(); buzz(60); bump(stats, 'bonked');
       if (!firsts.includes('poof')) { firsts.push('poof'); toast('Swung once, swung twice: bonk! The snake poofed into confetti cubes.'); }
     }
@@ -506,7 +556,8 @@ function handleChickEvents() {
     else if (ev.type === 'foxSpook') {
       sfx.yelp(0.4); sfx.call(ev.sp, 0.5);
       toast(`The fox spooked a ${SPECIES[ev.sp].name} out of your nursery! Feed it again to bring it back.`);
-    } else if (ev.type === 'foxGiveUp') { if (d < 60) toast('The fox couldn’t get past your fence and slunk off home.'); }
+    } else if (ev.type === 'foxChased') { sfx.yelp(0.45); if (d < 60) toast('Your grown-up wolf chased the fox away!'); }
+    else if (ev.type === 'foxGiveUp') { if (d < 60) toast('The fox couldn’t get past your fence and slunk off home.'); }
     else if (ev.type === 'bonk') { sfx.bonk(); floatFx(ev.p, 'bonk'); buzz(30); }
     else if (ev.type === 'rpoof') {
       sfx.poof(); buzz(60);
@@ -589,7 +640,7 @@ function placeBlock() {
     remeshAround(target.x, target.z); sfx.place(); buzz(8);
     return;
   }
-  if (target && IS_FEEDER(target.id) && isTreat(id)) {
+  if (target && IS_FEEDER(target.id) && FEEDER_OF[id]) {
     // fill a feeder with the treat you're holding
     if (FEEDER_TREAT[target.id] === id) { toast(`That feeder’s already full of ${itemName(id).toLowerCase()}.`); return; }
     if (have(id) < FEEDER_FILL) { toast(`You need ${FEEDER_FILL} ${itemName(id).toLowerCase()} to fill a feeder.`); return; }
@@ -1042,7 +1093,7 @@ function netStep(dt) {
   const pl = [[0, settings.char, ...myPose()]];
   for (const o of others.values()) pl.push([o.id, o.char, ...o.tp, o.tyaw, o.pitch, o.held, o.sit ? 1 : 0]);
   const ev = netEvents.splice(0);
-  const common = { t: 's', clock: +clock.toFixed(5), nights, crown, counts: flock.counts(), pl, sn: snakes.snapshot(), rd: raiders.snapshot(), tr: flock.treatSnapshot(), ev };
+  const common = { t: 's', clock: +clock.toFixed(5), nights, crown, counts: flock.counts(), pl, sn: snakes.snapshot(), rd: raiders.snapshot(), tr: flock.treatSnapshot(), gf: flock.giftSnapshot(), ev };
   for (const [id] of net.conns) {
     const o = others.get(id);
     // animals go every other update (about 4 a second): the copies glide in between
@@ -1115,6 +1166,7 @@ function guestMessage(msg) {
       flock.remoteCounts = msg.counts;
       if (msg.a) flock.applySnapshot(msg.a);
       flock.applyTreats(msg.tr || []);
+      flock.applyGifts(msg.gf || []);
       // events first, so a snake that just poofed is still here to burst into confetti
       for (const ev of msg.ev || []) {
         if (ev.type === 'crown') { if (!crown) awardCrown(); continue; }
@@ -1262,9 +1314,13 @@ function frame(now) {
       raiders.puppetStep(dt);
     } else {
       const isNight = skyAt(clock).night > 0.5;
-      const players = [{ pos: player.pos, holding: running ? hotbar[selected] : null }];
-      for (const o of others.values()) players.push({ pos: o.p, holding: o.held });
-      flock.update(dt, players, [...snakes.heads(), ...raiders.threats()], isNight);
+      const players = [{ pos: player.pos, holding: running ? hotbar[selected] : null, id: myNetId }];
+      for (const o of others.values()) players.push({ pos: o.p, holding: o.held, id: o.id });
+      const foes = [...snakes.list.filter(s => !s.gone).map(s => ({ kind: 'snake', p: s.p, ref: s })), ...raiders.foes()];
+      flock.update(dt, players, [...snakes.heads(), ...raiders.threats()], isNight, foes);
+      // grown wolves that caught up with a fox or a snake
+      for (const b of flock.bites) { if (b.kind === 'fox') raiders.scare(b.ref, b.from); else snakes.nip(b.ref, b.from); }
+      flock.bites.length = 0;
       raiders.update(dt, flock, players.map(q => q.pos), skyAt(clock).night < 0.3, nights);
       feederTimer -= dt;
       if (feederTimer <= 0) {

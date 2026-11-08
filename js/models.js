@@ -274,6 +274,52 @@ export function boneModel() {
   return m.done(NO_RIG);
 }
 
+// ---- grown-ups and their gifts ----
+// A plump hen: what a chick grows up into. Same parts as the chick so it flaps and hops the same way.
+export function henModel() {
+  const m = new ModelBuilder();
+  const white = '#fbf7ee', cream = '#efe4cf', red = '#e8443a', orange = '#ff8a2a';
+  m.box([0, 0.32, -0.04], [0.44, 0.38, 0.54], 0.15, white);
+  m.box([0, 0.34, 0.17], [0.38, 0.34, 0.22], 0.13, white);                         // round breast
+  m.box([0, 0.58, 0.19], [0.26, 0.27, 0.25], 0.1, white);                          // head
+  for (const [z, h] of [[0.12, 0.08], [0.19, 0.11], [0.26, 0.08]]) m.box([0, 0.73 + h / 2, z], [0.06, h, 0.07], 0.025, red, 0, false); // comb
+  m.box([0, 0.46, 0.33], [0.06, 0.09, 0.04], 0.02, red, 0, false);                 // wattle
+  m.box([0, 0.555, 0.335], [0.09, 0.055, 0.08], 0.025, orange, 0, false);          // beak
+  for (const sx of [-1, 1]) {
+    m.box([sx * 0.075, 0.62, 0.312], [0.06, 0.07, 0.02], 0.02, '#1c1a1a', 0, false);
+    m.box([sx * 0.075 - 0.012, 0.635, 0.323], [0.02, 0.02, 0.01], 0.008, '#ffffff', 0, false);
+    m.box([sx * 0.11, 0.55, 0.3], [0.05, 0.03, 0.01], 0.012, '#ffb0a8', 0, false);   // cheeks
+  }
+  m.box([0, 0.5, -0.3], [0.24, 0.24, 0.12], 0.06, cream, 8);                       // tail feathers
+  m.box([0, 0.62, -0.33], [0.16, 0.18, 0.09], 0.05, white, 8);
+  m.box([0.24, 0.32, -0.05], [0.06, 0.2, 0.3], 0.03, cream, 1, false);
+  m.box([-0.24, 0.32, -0.05], [0.06, 0.2, 0.3], 0.03, cream, 2, false);
+  for (const sx of [-1, 1]) {
+    m.box([sx * 0.09, 0.08, 0.02], [0.04, 0.12, 0.04], 0.015, orange, 3, false);
+    m.box([sx * 0.09, 0.015, 0.06], [0.09, 0.03, 0.13], 0.012, orange, 3, false);
+  }
+  return m.done({ wing: [0.22, 0.4], leg: [0, 0, 0], head: [0, 0], tail: [-0.28] });
+}
+export function eggModel() {
+  const m = new ModelBuilder();
+  m.box([0, 0.075, 0], [0.12, 0.15, 0.12], 0.055, '#f6ead2');
+  m.box([-0.025, 0.11, 0.045], [0.03, 0.04, 0.02], 0.01, '#fffaf0', 0, false);
+  return m.done(NO_RIG);
+}
+export function milkModel() {
+  const m = new ModelBuilder();
+  m.box([0, 0.1, 0], [0.13, 0.2, 0.13], 0.045, '#fbfbf7');
+  m.box([0, 0.1, 0], [0.135, 0.06, 0.135], 0.02, '#4aa8ff', 0, false);              // label
+  m.box([0, 0.225, 0], [0.075, 0.05, 0.075], 0.02, '#4aa8ff', 0, false);            // cap
+  return m.done(NO_RIG);
+}
+export function woolTuftModel() {
+  const m = new ModelBuilder();
+  for (const [x, y, z, s] of [[0, 0.08, 0, 0.17], [0.07, 0.07, 0.05, 0.12], [-0.07, 0.07, -0.04, 0.12], [0.02, 0.15, -0.02, 0.11]])
+    m.box([x, y, z], [s, s * 0.9, s], s * 0.45, '#fbf6ec');
+  return m.done(NO_RIG);
+}
+
 export function shadowModel() {
   return new ModelBuilder().disc(0.5, 14, '#000000', 9).done(NO_RIG);
 }
@@ -362,6 +408,17 @@ export function treatIcon(kind, px = 64) {
       rr(g, -14, 9, 28, 7, 3, '#b5763a');
       rr(g, -4, 15, 8, 12, 3, '#7a4a28');
       g.fillStyle = '#e04a3c'; g.beginPath(); g.arc(0, 29, 4.5, 0, Math.PI * 2); g.fill();
+    } else if (kind === 'egg') {
+      g.fillStyle = '#f6ead2'; g.beginPath(); g.ellipse(32, 35, 17, 22, 0, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#e3d2b2'; g.beginPath(); g.ellipse(36, 42, 11, 13, 0, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#f6ead2'; g.beginPath(); g.ellipse(31, 33, 14, 19, 0, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#fffaf0'; g.beginPath(); g.ellipse(25, 24, 4, 6, -0.4, 0, Math.PI * 2); g.fill();
+    } else if (kind === 'milk') {
+      rr(g, 16, 20, 32, 40, 9, '#e9eef2'); rr(g, 18, 21, 28, 37, 8, '#fbfbf7');
+      rr(g, 23, 6, 18, 16, 4, '#fbfbf7'); rr(g, 22, 4, 20, 7, 3, '#4aa8ff');           // neck and cap
+      rr(g, 16, 34, 32, 12, 3, '#4aa8ff');
+      g.fillStyle = '#ffffff'; g.beginPath(); g.arc(32, 40, 4, 0, Math.PI * 2); g.fill();
+      rr(g, 21, 24, 4, 8, 2, '#ffffff');
     } else if (kind === 'bone') {
       g.translate(32, 32); g.rotate(-0.7);
       rr(g, -18, -6, 36, 12, 5, '#f4efe3');
