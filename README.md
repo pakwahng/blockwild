@@ -104,6 +104,8 @@ Tap a grown-up (hen, cow, pig, sheep or wolf) to pet it and open **Teach a job**
 | Planter * | 3 Wood + 2 Dirt |
 | Door * | 3 Wood + 1 Stick |
 | House kit * | 20 Wood + 2 Glass + 1 Lamp |
+| Bed * | 3 Wood + 3 Wool |
+| 2 Signs * | 2 Wood + 1 Stick |
 | Water | 2 Snow |
 | 2 Mud | 2 Dirt + 1 Water |
 
@@ -116,7 +118,7 @@ Tap a grown-up (hen, cow, pig, sheep or wolf) to pet it and open **Teach a job**
 ## Goals
 
 - The star line under the nursery counters shows your **next goal** (tap it to see them all in the bag's **★ Goals** tab).
-- Goals lead from digging your first blocks to chopping a tree, building a crafting table, penning your babies in with fences and a gate, filling a feeder, climbing a ladder, bonking a raider, keeping the nursery safe for a night, watching a baby grow up, picking up gifts from the grown-ups, teaching a grown-up a job and growing to 37 chickens.
+- Goals lead from digging your first blocks to chopping a tree, building a crafting table, penning your babies in with fences and a gate, filling a feeder, climbing a ladder, bonking a raider, keeping the nursery safe for a night, watching a baby grow up, picking up gifts from the grown-ups, teaching a grown-up a job, writing on a sign, sleeping in a bed and growing to 37 chickens.
 - Each goal gives a reward (seeds, wheat, apples, bones, wood, a gate, hay or lamps) when you finish it.
 
 ## Fishing
@@ -155,6 +157,7 @@ Tap a grown-up (hen, cow, pig, sheep or wolf) to pet it and open **Teach a job**
 - **Animal hats:** the card (pat a baby twice, or tap a grown-up) has a **Hat** row with every hat you've sewn or got free in the Wardrobe. Each species has its own hat spot (`HAT_SPOT` in `js/models.js`); `animalHatModel()` adds the Wardrobe hat to the animal's model as part 10, so it nods with the head. Hatted models are named like `hen~6`. Hats are saved with the animal and shared like names (`ht` in the state message, `'hat'` from guests).
 - **Ambient sounds:** birds sing now and then by day and crickets trill at night when you're outside and above water (`bird()` and `cricket()` in `js/audio.js`).
 - **Rain** comes now and then (about 1–2 minutes, every 3–8 minutes; the host decides). The sky greys, drops fall and stop on roofs, and planter wheat grows 2.5× faster. When a shower ends by day, a rainbow shows opposite the sun for about 45 seconds. Code: `js/weather.js`.
+- **Snow:** when you're high up in the mountains (eye above `SNOW_LINE`, sea level + 20) a shower falls as slow, drifting white snowflakes instead, with no rain sound. Down in the valley the same shower is rain.
 - More than 35 m from your tame babies, a **Nursery** tag at the screen edge points the way back.
 
 ## Wardrobe: your name and clothes
@@ -189,6 +192,11 @@ Tap a grown-up (hen, cow, pig, sheep or wolf) to pet it and open **Teach a job**
 ## Version and what's new
 
 The front screen shows the version number. Tap it, or open **What’s new**, for the change log. It lives in `js/version.js` (and [CHANGELOG.md](CHANGELOG.md)). To release: bump `VERSION`, add an entry at the top of `CHANGES` and in CHANGELOG.md, and set `CACHE` in `sw.js` to the same number.
+
+## Beds and signs
+
+- **Beds** (3 wood and 3 wool at a table; you learn the recipe by finishing the hat goal, or from a recipe page). Put one down: the headboard turns to sit against a wall. You can walk through it. Tap it when it's dark to sleep: the screen fades out and you wake at sunrise. Sunrise ends the night as usual: the snake goes home, and if no baby was spooked it counts for the night goal. Tap it by day and it tells you to come back at bedtime. Playing together, anyone can sleep: a guest's bed asks the host, and the host moves the clock on for everyone (`'sleep'` to the host, `'slept'` back to the guests).
+- **Signs** (2 wood and 1 stick make 2, at a table; learned by finishing the treasure chest goal, or from a page). Put one down and a box opens to write on it (up to 40 letters). Tap a sign to change its words; leave the box blank to rub them out. The words float over the sign for the nearest 6 signs within 12 blocks. They're saved with the world as `signs` (`"x,y,z": text`), and the host shares them with friends who visit (in the welcome message, then `'sign'` messages). Digging a sign rubs its words out.
 
 ## Doors and houses
 

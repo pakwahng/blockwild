@@ -314,6 +314,31 @@ function shapeMesh(buf, id, p, wx, wy, wz) {
     }
     return;
   }
+  if (BLOCKS[id].shape === 'bed' || BLOCKS[id].shape === 'sign') {
+    // drawn with the head (or the board) along x; turned so the head of the bed sits against a wall if there is one
+    const wall = OPAQUE[padded[p - 1]] ? 0 : OPAQUE[padded[p + 1]] ? 1 : OPAQUE[padded[p - PX]] ? 2 : OPAQUE[padded[p + PX]] ? 3 : 0;
+    const tb = (l, x0, y0, z0, x1, y1, z1) => {
+      if (wall === 1 || wall === 3) [x0, x1] = [1 - x1, 1 - x0];
+      shapeBox(buf, wx, wy, wz, l, x0, y0, z0, x1, y1, z1, wall >= 2);
+    };
+    if (BLOCKS[id].shape === 'sign') {
+      const { post } = BLOCKS[id];
+      shapeBox(buf, wx, wy, wz, post, 0.45, 0, 0.45, 0.55, 0.62, 0.55, false);   // post
+      tb(layer, 0.06, 0.5, 0.44, 0.94, 0.98, 0.56);                               // board
+      tb(layer, 0.02, 0.47, 0.42, 0.98, 0.52, 0.58); tb(layer, 0.02, 0.96, 0.42, 0.98, 1.0, 0.58); // trim
+      return;
+    }
+    const { sheet, blanket, pillow } = BLOCKS[id];
+    tb(layer, 0, 0, 0.06, 0.1, 0.78, 0.94);                                       // headboard
+    tb(layer, 0.9, 0, 0.06, 1, 0.46, 0.94);                                       // footboard
+    for (const z of [0.08, 0.8]) tb(layer, 0.1, 0, z, 0.2, 0.2, z + 0.12);        // legs
+    tb(layer, 0.1, 0.18, 0.08, 0.9, 0.3, 0.92);                                   // frame
+    tb(sheet, 0.1, 0.3, 0.1, 0.9, 0.44, 0.9);                                     // mattress
+    tb(pillow, 0.13, 0.44, 0.2, 0.34, 0.54, 0.8);                                 // pillow
+    tb(blanket, 0.36, 0.3, 0.07, 0.92, 0.5, 0.93);                                // blanket, tucked over the sides
+    tb(blanket, 0.36, 0.5, 0.1, 0.9, 0.52, 0.9);
+    return;
+  }
   if (BLOCKS[id].shape === 'feeder') {
     box(0.05, 0, 0.2, 0.95, 0.1, 0.8);                                         // floor
     box(0.05, 0.1, 0.2, 0.95, 0.46, 0.28); box(0.05, 0.1, 0.72, 0.95, 0.46, 0.8); // long sides

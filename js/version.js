@@ -1,11 +1,17 @@
 // The game's version and what changed in each one. Shown on the front screen ("What's new")
 // and in CHANGELOG.md. When you release: bump VERSION, add an entry at the top of CHANGES,
 // and set the same number in sw.js (CACHE = 'blockwild-v<VERSION>') so phones pick it up.
-export const VERSION = 30;
+export const VERSION = 31;
 export const RELEASED = '8 Nov 2026';
 
 // [version, date, headline, [details]]
 export const CHANGES = [
+  [31, '8 Nov 2026', 'Beds, signs and mountain snow', [
+    'Make a bed from 3 wood and 3 wool. Tap it when it’s dark to sleep till morning. Playing together, anyone can go to bed and everyone wakes up at sunrise.',
+    'Put down a sign and write on it. Your words float over it when you’re close by, so you can name your farm, your pens and your house. Tap a sign to change what it says.',
+    'Up high in the snowy mountains, showers fall as gentle snowflakes instead of rain.',
+    'Learn the sign by opening a treasure chest and the bed by putting a hat on an animal (or find their recipe pages). Two new goals go with them.',
+  ]],
   [30, '8 Nov 2026', 'Save and load, and coloured wool', [
     'New on the menu: Saved games. Save the world you’re playing in one of 5 slots, give it a name, and load it again any time.',
     'Download a backup to keep your world safe in a file, or to move it to another phone or computer. Load a backup brings it back (with the clothes patterns you’ve learned too).',

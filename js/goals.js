@@ -33,6 +33,8 @@ export const GOALS = [
   ['fish', 'Catch something with a fishing rod: cast into water, tap when the float bobs', 1, s => s.fished || 0, [[ITEM_FISH, 2], [ITEM_BONE, 3]]],
   ['chest', 'Find a treasure chest and open it: look for the gold Treasure tag', 1, s => s.chests || 0, [[ITEM_APPLE, 4], [B.LAMP, 1]]],
   ['hat', 'Put a hat on one of your animals: tap it, then pick a hat', 1, s => s.hatted || 0, [[ITEM_CLOVER, 3], [B.WOOL, 2]]],
+  ['sign', 'Make a sign and write on it: tap a sign to change what it says', 1, s => s.signed || 0, [[ITEM_APPLE, 3], [B.FLOWER_YELLOW, 2]]],
+  ['sleep', 'Make a bed and sleep in it till morning: tap it when it’s dark', 1, s => s.slept || 0, [[ITEM_MILK, 2], [B.WOOL, 2]]],
   ['chicks', 'Grow your nursery to 37 chickens', 37, s => s.chicks || 0, [[B.HAY, 4], [ITEM_APPLE, 5]]],
 ];
 export const GOAL_IDS = GOALS.map(g => g[0]);

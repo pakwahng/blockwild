@@ -36,6 +36,7 @@ export const patternKey = (slot, v) => slot + ':' + v;
 export const GOAL_TEACH = {
   fence: B.GATE, pen: B.FEEDER, flowers: '4:4', hatch: B.PLANTER, feeder: B.LADDER, wheat: B.DOOR,
   bonk: B.GLASS, ladder: B.LAMP, house: B.BRICK, night: B.ROOF, grow: '4:2', gifts: ITEM_HOUSE, job: '0:4', sew: ITEM_ROD,
+  chest: B.SIGN, hat: B.BED,
 };
 
 // How often digging a block turns up a recipe page.

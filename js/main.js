@@ -80,6 +80,7 @@ try {
   for (let k = 0; k < BUTTERFLY_KINDS; k++) renderer.addModel('butterfly' + k, M.butterflyModel(k));
   renderer.addModel('firefly', M.fireflyModel());
   renderer.addModel('rain', M.rainModel());
+  renderer.addModel('snow', M.snowModel());
 } catch (err) {
   console.error(err);
   showError('This device or browser cannot run Baby Chicken Empire (WebGL2 is required). ' + err.message);
@@ -105,7 +106,7 @@ let myNetId = 0, netTimer = 0, poseTimer = 0, shownOthers = -1, pendingEdits = {
 const netEdits = [], netEvents = [];
 
 const icons = {};
-const SHAPE_ICON = { [B.FENCE]: 'fence', [B.GATE]: 'gate', [B.DOOR]: 'door', [B.PLANTER]: 'planter', [B.TABLE]: 'table', [B.LADDER]: 'ladder', [B.FEEDER]: 'feeder',
+const SHAPE_ICON = { [B.FENCE]: 'fence', [B.GATE]: 'gate', [B.DOOR]: 'door', [B.BED]: 'bed', [B.SIGN]: 'sign', [B.PLANTER]: 'planter', [B.TABLE]: 'table', [B.LADDER]: 'ladder', [B.FEEDER]: 'feeder',
   [B.FLOWER_RED]: 'flower-red', [B.FLOWER_YELLOW]: 'flower-yellow', [B.FLOWER_WHITE]: 'flower-white' };
 if (textures) for (const id of [...PLACEABLE, B.THRONE]) {
   icons[id] = SHAPED[id] ? M.treatIcon(SHAPE_ICON[id], 64).toDataURL() : blockIcon(BLOCKS[id], textures.tiles, 64).toDataURL();
@@ -410,6 +411,7 @@ function startWorld(save) {
   clock = save?.clock ?? 0.08;
   nights = save?.nights || 0;
   crown = !!save?.crown;
+  loadSigns(save?.signs);
   seat = null;
   showCrown();
   // a few wild babies of each kind close by, so there's someone to feed straight away
@@ -434,6 +436,7 @@ function saveGame() {
     v: 4, inv, stats, goals: goalsDone, seed: world.seed, clock: +clock.toFixed(4), nights, crown, pos: player.pos.map(v => +v.toFixed(2)), yaw: player.yaw, pitch: player.pitch,
     flying: player.flying, hotbar, selected, edits: world.serializeEdits(),
     animals: flock ? flock.serialize() : [], gifts: flock ? flock.serializeGifts() : [], milestone, firsts,
+    signs: signsOut(),
   });
 }
 
@@ -792,7 +795,7 @@ function handleChickEvents() {
   raiders.events.length = 0;
   for (const ev of weather.events) {
     if (ev.type === 'rain') {
-      if (!firsts.includes('rain')) { firsts.push('rain'); toast('It’s raining! Wheat in your planters grows faster in the rain. Stay dry under a roof.'); }
+      if (!firsts.includes('rain') && !weather.snowing) { firsts.push('rain'); toast('It’s raining! Wheat in your planters grows faster in the rain. Stay dry under a roof.'); }
     } else if (ev.type === 'rainEnd' && ev.rainbow) { sfx.grown(); toast('The rain stopped. Look, a rainbow!'); }
   }
   weather.events.length = 0;
@@ -973,6 +976,8 @@ function placeBlock() {
     return;
   }
   if (target && target.id === B.CHEST) { openChest(target); return; }
+  if (target && target.id === B.BED) { sleepInBed(); return; }
+  if (target && target.id === B.SIGN) { openSign(target.x, target.y, target.z); return; }
   if (target && IS_DOOR(target.id)) {
     // tap either half of a door to open or shut the whole thing
     const by = DOOR_TOPS.has(target.id) ? target.y - 1 : target.y;
@@ -1055,6 +1060,7 @@ function placeBlock() {
   if (editBlock(x, y, z, id)) {
     useItem(id); bump(stats, 'placed', id);
     if (id === B.THRONE) buildThrone(x, y, z);
+    if (id === B.SIGN) setTimeout(() => openSign(x, y, z), 120);
     remeshAround(x, z); buzz(8); sfx.place();
   }
 }
@@ -1236,6 +1242,7 @@ function updateBreaking(dt) {
     bump(stats, 'dug', target.id);
     const got = drops(target.id);
     if (target.id === B.CHEST) lootChest(target); else maybePage(target.id);
+    if (target.id === B.SIGN) setSign(target.x, target.y, target.z, '');
     for (const [item, n] of got) { addItem(item, n); bump(stats, 'got', item, n); }
     pickupPop(target, got);
     // let water flow back into a hole next to water
@@ -1454,6 +1461,7 @@ function pause() {
   if (pickerOpenFromLock) return; // pointer lock was released for the picker, not a pause
   if (!running && !$('#picker').hidden) $('#picker').hidden = true;
   if (!running && !$('#jobcard').hidden) { $('#jobcard').hidden = true; jobAnimal = null; }
+  if (!running && !$('#signcard').hidden) { $('#signcard').hidden = true; signAt = null; }
   running = false; input.enabled = false;
   input.state.breaking = false;
   saveGame();
@@ -1824,6 +1832,110 @@ $('#import-file').addEventListener('change', async e => {
   saveMsg(`Backup loaded. Tap ${world ? 'Resume' : 'Continue'} to play.`);
 });
 $('#saves').addEventListener('toggle', () => { if ($('#saves').open) buildSlots(); });
+
+// ---------- signs ----------
+// What's written on each sign, by "x,y,z". Saved with the world; the host shares them with friends who visit.
+const SIGN_MAX = 40;
+let signs = new Map(), signAt = null;
+const signKey = (x, y, z) => x + ',' + y + ',' + z;
+const cleanSign = t => typeof t === 'string' ? t.replace(/[\u0000-\u001f\u007f]/g, '').replace(/\s+/g, ' ').trim().slice(0, SIGN_MAX) : '';
+function loadSigns(list) {
+  signs = new Map();
+  if (!list || typeof list !== 'object') return;
+  for (const [k, t] of Object.entries(list)) { const text = cleanSign(t); if (text && /^-?\d+,-?\d+,-?\d+$/.test(k)) signs.set(k, text); }
+}
+const signsOut = () => Object.fromEntries(signs);
+// Writes on a sign (blank rubs it out). Returns true if it changed. remote: it came over the network.
+function setSign(x, y, z, text, remote = false) {
+  if (![x, y, z].every(Number.isInteger)) return false;
+  const k = signKey(x, y, z), t = cleanSign(text);
+  if ((signs.get(k) || '') === t) return false;
+  if (t) signs.set(k, t); else signs.delete(k);
+  if (!remote && net.active) {
+    const msg = { t: 'sign', at: [x, y, z], text: t };
+    if (net.isHost) net.broadcast(msg); else net.toHost(msg);
+  }
+  return true;
+}
+function openSign(x, y, z) {
+  if (world.getBlock(x, y, z) !== B.SIGN) return;
+  signAt = [x, y, z];
+  running = false; input.enabled = false; input.state.breaking = false;
+  if (document.pointerLockElement) { pickerOpenFromLock = true; document.exitPointerLock(); }
+  $('#sign-text').value = signs.get(signKey(x, y, z)) || '';
+  $('#signcard').hidden = false;
+  setTimeout(() => $('#sign-text').focus(), 50);
+}
+function closeSign() {
+  if (signAt) {
+    const [x, y, z] = signAt, text = $('#sign-text').value;
+    if (world.getBlock(x, y, z) === B.SIGN && setSign(x, y, z, text) && cleanSign(text)) {
+      bump(stats, 'signed'); sfx.place();
+      if (!firsts.includes('sign')) { firsts.push('sign'); toast('Your words float over the sign when you’re close by. Tap the sign any time to change them.'); }
+    }
+  }
+  $('#sign-text').blur();
+  $('#signcard').hidden = true;
+  signAt = null;
+  pickerOpenFromLock = false;
+  resume();
+}
+$('#sign-done').addEventListener('click', closeSign);
+$('#sign-text').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); closeSign(); } });
+$('#signcard').addEventListener('click', e => { if (e.target.id === 'signcard') closeSign(); });
+// The words on signs close by float over them (the nearest few, fading out further away).
+const signEls = new Map();
+function updateSignTags(box, eye) {
+  const near = [];
+  for (const [k, t] of signs) {
+    const [x, y, z] = k.split(',').map(Number);
+    const d = Math.hypot(x + 0.5 - eye[0], y + 0.5 - eye[1], z + 0.5 - eye[2]);
+    if (d < 12 && world.getBlock(x, y, z) === B.SIGN) near.push([d, k, t, x, y, z]);
+  }
+  near.sort((a, b) => a[0] - b[0]);
+  if (near.length > 6) near.length = 6;
+  const keep = new Set(near.map(s => s[1]));
+  for (const [k, el] of signEls) if (!keep.has(k)) { el.remove(); signEls.delete(k); }
+  for (const [d, k, t, x, y, z] of near) {
+    let el = signEls.get(k);
+    if (!el) { el = document.createElement('div'); el.className = 'sign-tag'; box.appendChild(el); signEls.set(k, el); }
+    if (el.textContent !== t) el.textContent = t;
+    const at = project(x + 0.5, y + 1.15, z + 0.5);
+    el.hidden = !at;
+    if (at) { el.style.left = at[0] + 'px'; el.style.top = at[1] + 'px'; el.style.opacity = d > 8 ? ((12 - d) / 4).toFixed(2) : ''; }
+  }
+}
+
+// ---------- sleeping ----------
+// Tap a bed when it's dark: the screen fades out and you wake up at sunrise.
+// Playing together, anyone can sleep: the host moves the clock on for everybody.
+const MORNING = 0.985;
+let sleeping = false;
+function sleepInBed(guest) {
+  if (sleeping || !world) return;
+  if (skyAt(clock).night < 0.5) {
+    if (!guest) toast(skyAt(clock).night > 0.05 ? 'It’s not quite bedtime. Come back when it’s dark to sleep till morning.' : 'It’s daytime! Come back when it’s dark to sleep till morning.');
+    return;
+  }
+  if (!guest) bump(stats, 'slept');
+  if (net.isGuest) { net.toHost({ t: 'sleep' }); return; } // the host sends 'slept' back to everyone
+  if (net.isHost) net.broadcast({ t: 'slept' });
+  if (guest) toast(`${nameOf(guest)} went to bed. Sleeping till morning…`);
+  sleepFade();
+  setTimeout(() => { clock = MORNING; }, 900);
+}
+function sleepFade() {
+  if (sleeping) return;
+  sleeping = true;
+  const el = $('#sleep');
+  el.hidden = false;
+  setTimeout(() => el.classList.add('on'), 20);
+  setTimeout(() => {
+    el.classList.remove('on');
+    sfx.grown();
+    setTimeout(() => { el.hidden = true; sleeping = false; }, 800);
+  }, 1800);
+}
 function hideHintLater() { setTimeout(() => $('#touch-hint').classList.add('gone'), 7000); }
 
 // settings
@@ -1948,6 +2060,7 @@ function updateTags() {
     if (chestEl.lastName !== label) { chestEl.querySelector('.name').textContent = label; chestEl.lastName = label; }
     pinTag(chestEl, 'tag treasure', tc[0] + 0.5, tc[1] + 1.4, tc[2] + 0.5, W, H, eye, f, r, u);
   }
+  updateSignTags(box, eye);
   // The home arrow: when you wander far from your tame babies, it points the way back to them.
   let n = 0, hx = 0, hy = 0, hz = 0;
   for (const a of flock.animals) if (a.tame) { n++; hx += a.p[0]; hy += a.p[1]; hz += a.p[2]; }
@@ -2060,7 +2173,7 @@ function hostMessage(from, msg) {
         part[key] = arr; size += arr.length * 6;
         if (size > 20000) { net.send(from, { t: 'we', edits: part }); part = {}; size = 0; }
       }
-      net.send(from, { t: 'w', id: from, seed: world.seed, edits: part, clock, nights, crown, pos, yaw: player.yaw + Math.PI });
+      net.send(from, { t: 'w', id: from, seed: world.seed, edits: part, clock, nights, crown, pos, yaw: player.yaw + Math.PI, signs: signsOut() });
       toast(`${nameOf(n)} joined your world!`);
       sfx.happy();
       updateRoomUi();
@@ -2078,6 +2191,8 @@ function hostMessage(from, msg) {
     case 'train': if (typeof msg.id === 'number' && (msg.job === null || JOB_TEXT[msg.job])) flock.train(msg.id, msg.job, from); break;
     case 'nick': if (typeof msg.id === 'number') flock.setNick(msg.id, msg.nick); break;
     case 'hat': if (typeof msg.id === 'number') flock.setHat(msg.id, msg.hat); break;
+    case 'sign': if (Array.isArray(msg.at)) { const [x, y, z] = msg.at; if (setSign(x, y, z, msg.text, true)) net.broadcast(msg, from); } break;
+    case 'sleep': if (o) sleepInBed(o); break;
     case 'sit': flock.gatherAt(msg.seat, msg.front); break;
     case 'stand': flock.endGather(); break;
   }
@@ -2094,6 +2209,8 @@ function guestMessage(msg) {
     case 'full': setNetStatus('That game already has four players.', true); net.close(); updateRoomUi(); break;
     case 'bye': net.close(); others.clear(); updateTags(); backToOwnWorld(); toast('The host stopped the game. You’re back in your own world.'); break;
     case 'e': for (const [x, y, z, id] of msg.b || []) { world.applyEdit(x, y, z, id); remeshAround(x, z); } break;
+    case 'sign': if (Array.isArray(msg.at)) { const [x, y, z] = msg.at; setSign(x, y, z, msg.text, true); } break;
+    case 'slept': sleepFade(); break;
     case 's': {
       if (Math.abs(msg.clock - clock) > 0.002 && Math.abs(msg.clock - clock) < 0.998) clock = msg.clock;
       nights = msg.nights;
@@ -2129,7 +2246,7 @@ function guestMessage(msg) {
 
 function startGuestWorld(w) {
   myNetId = w.id;
-  startWorld({ v: 3, guest: true, seed: w.seed, edits: w.edits, pos: w.pos, yaw: w.yaw, pitch: 0, clock: w.clock, nights: w.nights, crown: w.crown });
+  startWorld({ v: 3, guest: true, seed: w.seed, edits: w.edits, pos: w.pos, yaw: w.yaw, pitch: 0, clock: w.clock, nights: w.nights, crown: w.crown, signs: w.signs });
   setNetStatus(`Playing in a friend’s world (room ${net.code}).`);
   updateRoomUi();
   if (coarse) input.setTouchMode(true);
@@ -2308,7 +2425,8 @@ function frame(now, photo = false) {
   s.groups.push(...critters.instances(eye, Math.min(far, 40), now / 1000));
   fishStep(dt);
   if (fishing) s.groups.push(bobberGroup());
-  sfx.rain(running && !underwater ? weather.amount : 0);
+  sfx.rain(running && !underwater && !weather.snowing ? weather.amount : 0);
+  if (weather.snowing && weather.amount > 0.3 && running && !firsts.includes('snow')) { firsts.push('snow'); toast('It’s snowing up here on the mountain! Down in the valley it’s only rain.'); }
   // birds singing by day, crickets at night (only on the surface, away from heavy rain)
   ambientT -= dt;
   if (ambientT <= 0) {

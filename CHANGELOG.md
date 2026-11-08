@@ -2,6 +2,12 @@
 
 The same list is in the game: tap the version number on the front screen, or open **What’s new**.
 
+## 31. Beds, signs and mountain snow (8 Nov 2026)
+- Make a bed from 3 wood and 3 wool. Tap it when it’s dark to sleep till morning. Playing together, anyone can go to bed and everyone wakes up at sunrise.
+- Put down a sign and write on it. Your words float over it when you’re close by, so you can name your farm, your pens and your house. Tap a sign to change what it says.
+- Up high in the snowy mountains, showers fall as gentle snowflakes instead of rain.
+- Learn the sign by opening a treasure chest and the bed by putting a hat on an animal (or find their recipe pages). Two new goals go with them.
+
 ## 30. Save and load, and coloured wool (8 Nov 2026)
 - New on the menu: Saved games. Save the world you’re playing in one of 5 slots, give it a name, and load it again any time.
 - Download a backup to keep your world safe in a file, or to move it to another phone or computer. Load a backup brings it back (with the clothes patterns you’ve learned too).

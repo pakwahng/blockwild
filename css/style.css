@@ -145,7 +145,7 @@ body.flying #btn-down { display: grid; }
 #touch-hint.gone { opacity: 0; }
 
 /* ---------- block picker ---------- */
-#picker, #jobcard {
+#picker, #jobcard, #signcard {
   position: fixed; inset: 0; z-index: 3; background: rgba(0, 0, 0, 0.45);
   display: flex; align-items: center; justify-content: center; /* flex (not grid) so the panel can't grow past the screen */
   padding: calc(8px + var(--safe-t)) calc(8px + var(--safe-r)) calc(8px + var(--safe-b)) calc(8px + var(--safe-l));
@@ -467,3 +467,26 @@ body.in-wardrobe #tags, body.in-wardrobe #loading { display: none; }
 .save-file { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .save-file button { flex: 1; }
 #save-msg.bad { color: #ff9a8a; }
+
+/* ---------- signs ---------- */
+.sign-panel { width: min(420px, 100%); }
+#sign-text {
+  width: 100%; padding: 10px 12px; border-radius: 10px; border: 2px solid #c08850; background: #f3dcb6; color: #4a2e18;
+  font: inherit; font-size: 18px; font-weight: 800; -webkit-user-select: text; user-select: text;
+}
+#sign-text:focus { outline: none; border-color: #ffcf3a; }
+.sign-panel .note { margin: 8px 0 0; }
+.sign-tag {
+  position: absolute; transform: translate(-50%, -100%); max-width: 220px; padding: 4px 10px; border-radius: 8px;
+  background: #f3dcb6; color: #4a2e18; border: 2px solid #8f5f34; font-weight: 800; font-size: 14px; text-align: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3); pointer-events: none; overflow-wrap: anywhere;
+}
+.sign-tag[hidden] { display: none; }
+
+/* ---------- sleeping: the screen fades to night and back ---------- */
+#sleep {
+  position: fixed; inset: 0; z-index: 4; background: #0b1024; display: flex; align-items: center; justify-content: center;
+  opacity: 0; transition: opacity 0.7s ease; color: #cfd8ff; font-size: 34px; font-weight: 800; letter-spacing: 2px;
+}
+#sleep.on { opacity: 1; }
+#sleep[hidden] { display: none; }

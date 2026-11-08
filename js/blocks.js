@@ -19,6 +19,7 @@ export const B = {
   PLANTER: 40, PLANTER_SEEDED: 41, PLANTER_GROWING: 42, PLANTER_RIPE: 43,
   CHEST: 44, CHEST_OPEN: 45,
   WOOL_RED: 46, WOOL_ORANGE: 47, WOOL_YELLOW: 48, WOOL_PINK: 49, WOOL_GREEN: 50,
+  BED: 51, SIGN: 52,
 };
 
 // kind: 'opaque' | 'cutout' (alpha-tested, e.g. leaves) | 'liquid' (translucent pass)
@@ -84,6 +85,10 @@ const defs = [
   { id: B.WOOL_YELLOW, name: 'Yellow wool', kind: 'opaque', all: T.WOOL_YELLOW, hard: 0.25, round: 0.22 },
   { id: B.WOOL_PINK, name: 'Pink wool', kind: 'opaque', all: T.WOOL_PINK, hard: 0.25, round: 0.22 },
   { id: B.WOOL_GREEN, name: 'Green wool', kind: 'opaque', all: T.WOOL_GREEN, hard: 0.25, round: 0.22 },
+  // a cosy bed: tap it at night to sleep till morning
+  { id: B.BED, name: 'Bed', kind: 'cutout', all: T.PLANKS, sheet: T.WOOL, blanket: T.WOOL_RED, pillow: T.SNOW, hard: 0.4, shape: 'bed', passable: true },
+  // a wooden sign: write something on it and the words float above it for everyone to read
+  { id: B.SIGN, name: 'Sign', kind: 'cutout', all: T.PLANKS, post: T.LOG_SIDE, hard: 0.3, shape: 'sign', passable: true },
 ];
 
 export const BLOCKS = [];
@@ -104,7 +109,7 @@ for (const b of BLOCKS) {
   KIND[b.id] = { air: 0, opaque: 1, cutout: 2, liquid: 3 }[b.kind];
 }
 
-export const PLACEABLE = [B.FENCE, B.GATE, B.DOOR, B.PLANTER, B.TABLE, B.LADDER, B.FEEDER, B.FLOWER_RED, B.FLOWER_YELLOW, B.FLOWER_WHITE, B.GRASS, B.DIRT, B.PLANKS, B.WOOL, B.WOOL_RED, B.WOOL_ORANGE, B.WOOL_YELLOW, B.WOOL_PINK, B.WOOL_GREEN, B.LOG, B.HAY, B.MUD, B.ROOF, B.CREAM, B.BRICK,
+export const PLACEABLE = [B.FENCE, B.GATE, B.DOOR, B.BED, B.SIGN, B.PLANTER, B.TABLE, B.LADDER, B.FEEDER, B.FLOWER_RED, B.FLOWER_YELLOW, B.FLOWER_WHITE, B.GRASS, B.DIRT, B.PLANKS, B.WOOL, B.WOOL_RED, B.WOOL_ORANGE, B.WOOL_YELLOW, B.WOOL_PINK, B.WOOL_GREEN, B.LOG, B.HAY, B.MUD, B.ROOF, B.CREAM, B.BRICK,
   B.STONE, B.COBBLE, B.GLASS, B.LEAVES, B.SAND, B.SNOW, B.CLAY, B.LAMP, B.WATER];
 // Non-block items (animal treats) share the hotbar with blocks; their ids sit above the block range.
 export const ITEM_SEEDS = 200, ITEM_WHEAT = 201, ITEM_APPLE = 202, ITEM_CLOVER = 203, ITEM_BONE = 204;

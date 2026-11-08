@@ -386,6 +386,10 @@ export function rainModel() {
   return new ModelBuilder().box([0, 0, 0], [0.035, 0.42, 0.035], 0.012, '#bfe0ff', 0, false).done(NO_RIG);
 }
 
+export function snowModel() {
+  return new ModelBuilder().box([0, 0, 0], [0.09, 0.09, 0.09], 0.03, '#eef3fb', 11, false).done(NO_RIG); // part 11: stays bright, like real snow
+}
+
 export function shadowModel() {
   return new ModelBuilder().disc(0.5, 14, '#000000', 9).done(NO_RIG);
 }
@@ -488,6 +492,17 @@ export function treatIcon(kind, px = 64) {
       rr(g, 31, 11, 2, 12, 1, '#8f5f34');
       rr(g, 17, 32, 30, 5, 2, '#b8743c'); rr(g, 17, 50, 30, 5, 2, '#b8743c');          // braces
       g.fillStyle = '#ffcf3a'; g.beginPath(); g.arc(41, 40, 3.5, 0, Math.PI * 2); g.fill();
+    } else if (kind === 'bed') {
+      rr(g, 4, 14, 9, 44, 3, '#8f5f34'); rr(g, 51, 30, 9, 28, 3, '#8f5f34');          // headboard and footboard
+      rr(g, 10, 36, 44, 12, 3, '#b07a45');                                             // frame
+      rr(g, 10, 30, 44, 10, 4, '#f4efe3');                                             // mattress
+      rr(g, 12, 23, 14, 10, 4, '#ffffff'); rr(g, 13, 24, 12, 3, 2, '#e6e9ee');          // pillow
+      rr(g, 26, 26, 30, 16, 4, '#e2443a'); rr(g, 27, 27, 28, 4, 2, '#f26a5a');          // red blanket
+      for (const x of [12, 46]) rr(g, x, 48, 6, 10, 2, '#7e5230');                      // legs
+    } else if (kind === 'sign') {
+      rr(g, 28, 30, 8, 30, 3, '#7e5230');                                              // post
+      rr(g, 4, 8, 56, 30, 4, '#8f5f34'); rr(g, 7, 11, 50, 24, 3, '#d8924e');            // board
+      for (const [y, w] of [[16, 36], [22, 28], [28, 32]]) rr(g, 14, y, w, 3, 1.5, '#7a4a2e'); // writing
     } else if (kind === 'house kit') {
       g.fillStyle = '#e2443a'; g.beginPath(); g.moveTo(4, 30); g.lineTo(32, 6); g.lineTo(60, 30); g.closePath(); g.fill(); // roof
       g.fillStyle = '#f26a5a'; g.beginPath(); g.moveTo(12, 28); g.lineTo(32, 11); g.lineTo(52, 28); g.closePath(); g.fill();
