@@ -1,5 +1,5 @@
 // Baby Chicken Empire: bootstrap, game loop, streaming, interaction, UI and saving.
-import { B, T, BLOCKS, SOLID, PLACEABLE, TILE_COUNT, ITEM_SEEDS, ITEM_WHEAT, ITEM_SWORD, ITEM_BONE, ITEM_APPLE, ITEM_STICK, ITEM_EGG, ITEM_MILK, ITEM_HOUSE, IS_DOOR, DOOR_TOPS, TREATS, ITEM_NAMES, SHAPED, FEEDER_OF, FEEDER_TREAT, IS_FEEDER } from './blocks.js';
+import { B, T, BLOCKS, SOLID, PLACEABLE, TILE_COUNT, ITEM_SEEDS, ITEM_WHEAT, ITEM_SWORD, ITEM_BONE, ITEM_APPLE, ITEM_CLOVER, ITEM_STICK, ITEM_EGG, ITEM_MILK, ITEM_HOUSE, IS_DOOR, DOOR_TOPS, TREATS, ITEM_NAMES, SHAPED, FEEDER_OF, FEEDER_TREAT, IS_FEEDER } from './blocks.js';
 import { Snakes, SNAKE_KINDS, K_POISON, K_FLYING, K_DIGGER, K_BOOM } from './snakes.js';
 import { Raiders } from './raiders.js';
 import { Weather } from './weather.js';
@@ -1221,10 +1221,44 @@ function resume() {
 // ---------- wardrobe: your name, your character and what you wear ----------
 // While it's open the camera swings round to look at you, so you can see your outfit change.
 const wardrobe = { open: false, spin: 0, drag: null, idle: 0 };
+// Clothes you sew yourself in the Wardrobe, from wool (grown-up sheep leave it) and flowers.
+// The basics are free; these unlock on this device once you've sewn them.
+const SEW = [
+  { slot: 0, v: 4, needs: [[B.WOOL, 3], [B.FLOWER_YELLOW, 1]] },                          // chick jumper
+  { slot: 0, v: 5, needs: [[B.WOOL, 4], [B.FLOWER_RED, 1]] },                             // hero cape
+  { slot: 2, v: 3, needs: [[B.WOOL, 4], [ITEM_STICK, 1]] },                               // dungarees
+  { slot: 2, v: 4, needs: [[B.WOOL, 2], [B.FLOWER_WHITE, 2]] },                           // tutu
+  { slot: 4, v: 5, needs: [[B.WOOL, 2], [ITEM_EGG, 1]] },                                 // chick hat
+  { slot: 4, v: 6, needs: [[B.WOOL, 2], [B.FLOWER_RED, 1], [B.FLOWER_YELLOW, 1]] },       // party hat
+  { slot: 4, v: 7, needs: [[B.WOOL, 2], [ITEM_CLOVER, 1]] },                              // bunny ears
+  { slot: 4, v: 8, needs: [[B.FLOWER_RED, 2], [B.FLOWER_YELLOW, 2], [B.FLOWER_WHITE, 2]] }, // flower crown
+];
+const sewOf = (slot, v) => SEW.find(s => s.slot === slot && s.v === v);
+const isSewn = (slot, v) => !sewOf(slot, v) || (settings.sewn || []).includes(slot + ':' + v);
+const LOCK_SVG = '<svg class="lock" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 7V5a4 4 0 0 1 8 0v2" fill="none" stroke="currentColor" stroke-width="2"/><rect x="2.5" y="7" width="11" height="8" rx="2" fill="currentColor"/></svg>';
+function sewBox(slot, v, name) {
+  const s = sewOf(slot, v), box = document.createElement('div'), can = s.needs.every(([id, k]) => have(id) >= k);
+  box.className = 'sew-box';
+  box.innerHTML = `<b>Sew ${/^[aeiou]/i.test(name) ? 'an' : 'a'} ${name.toLowerCase()}</b><span class="sew-needs">${s.needs.map(([id, k]) =>
+    `<span class="${have(id) >= k ? '' : 'short'}"><img alt="" src="${icons[id]}"><em>${Math.min(have(id), k)}/${k}</em>${itemName(id)}</span>`).join('')}</span>` +
+    `<button type="button" class="primary sew-go"${can ? '' : ' disabled'}>Sew it!</button>` +
+    (can ? '' : `<p class="note">${s.needs.some(([id]) => id === B.WOOL) ? 'Grown-up sheep leave wool on the ground. ' : ''}Flowers grow wild in the grass.</p>`);
+  box.querySelector('.sew-go').addEventListener('click', () => {
+    if (!s.needs.every(([id, k]) => have(id) >= k)) return;
+    for (const [id, k] of s.needs) useItem(id, k);
+    settings.sewn = [...new Set([...(settings.sewn || []), slot + ':' + v])];
+    wardrobe.sewing = null;
+    bump(stats, 'sewn');
+    saveGame();
+    sfx.grown(); buzz(20);
+    setFit(slot, v);
+  });
+  return box;
+}
 const WARD_ROWS = [
   { label: 'Top', style: 0, opts: M.TOPS, colour: 1 },
   { label: 'Bottoms', style: 2, opts: M.BOTTOMS, colour: 3, hide: f => f[0] === 3 },  // a dress has its own skirt
-  { label: 'Hat', style: 4, opts: M.HATS, colour: 5, hideColour: f => f[4] === 0 },
+  { label: 'Hat', style: 4, opts: M.HATS, colour: 5, hideColour: f => f[4] === 0 || M.HAT_FIXED_COLOUR.has(f[4]) },
   { label: 'Shoes', colour: 6 },
   { label: 'Bag', style: 7, opts: ['No bag', 'Bag'] },
 ];
@@ -1249,11 +1283,15 @@ function buildWardrobe() {
       const chips = document.createElement('div'); chips.className = 'chips';
       r.opts.forEach((name, v) => {
         const b = document.createElement('button');
-        b.type = 'button'; b.className = 'chip' + (f[r.style] === v ? ' on' : ''); b.textContent = name;
-        b.addEventListener('click', () => setFit(r.style, v));
+        const open = isSewn(r.style, v), picking = wardrobe.sewing && wardrobe.sewing[0] === r.style && wardrobe.sewing[1] === v;
+        b.type = 'button'; b.className = 'chip' + (f[r.style] === v ? ' on' : '') + (open ? '' : ' locked') + (picking ? ' picking' : '');
+        b.innerHTML = open ? name : LOCK_SVG + name;
+        if (!open) b.setAttribute('aria-label', name + ' (sew it to unlock)');
+        b.addEventListener('click', () => { if (open) { wardrobe.sewing = null; setFit(r.style, v); } else { wardrobe.sewing = picking ? null : [r.style, v]; buildWardrobe(); } });
         chips.appendChild(b);
       });
       row.appendChild(chips);
+      if (wardrobe.sewing && wardrobe.sewing[0] === r.style) row.appendChild(sewBox(r.style, wardrobe.sewing[1], r.opts[wardrobe.sewing[1]]));
     }
     if (r.colour !== undefined && !(r.hideColour && r.hideColour(f))) {
       const sw = document.createElement('div'); sw.className = 'swatches';
@@ -1271,7 +1309,7 @@ function buildWardrobe() {
 }
 function openWardrobe() {
   if (!world || !player) return;
-  wardrobe.open = true; wardrobe.spin = 0; wardrobe.idle = 0; wardrobe.camAngle = undefined;
+  wardrobe.open = true; wardrobe.spin = 0; wardrobe.idle = 0; wardrobe.camAngle = undefined; wardrobe.sewing = null;
   $('#menu').hidden = true;
   $('#wardrobe').hidden = false;
   document.body.classList.add('in-wardrobe');
@@ -1293,8 +1331,8 @@ function selfieCam(dt) {
   const tanY = Math.tan(35 * Math.PI / 180), tanX = tanY * W / H;
   const nx = (v.left + v.width / 2) / W * 2 - 1, ny = 1 - (v.top + v.height / 2) / H * 2;
   const show = Math.max(0.2, Math.min(v.height / H, (v.width / W) * (W / H) * 1.25)); // share of the screen the kid can fill
-  let dist = Math.max(2.2, Math.min(7, 2.2 / (2 * tanY * show)));
-  const p = player.pos, c = [p[0], p[1] + 0.78, p[2]];
+  let dist = Math.max(2.4, Math.min(7.5, 2.55 / (2 * tanY * show))); // room for tall hats and ears
+  const p = player.pos, c = [p[0], p[1] + 0.86, p[2]];
   const dirAt = a => { const d = [Math.sin(a), 0.22, Math.cos(a)], l = Math.hypot(...d); return d.map(v => v / l); };
   // how far the camera can go that way before a wall is in the way
   const clear = (dir, max) => {
@@ -1334,7 +1372,9 @@ for (const b of document.querySelectorAll('#ward-char .chip')) {
 }
 $('#ward-random').addEventListener('click', () => {
   const r = n => Math.random() * n | 0, c = M.CLOTH_COLORS.length;
-  const f = [r(M.TOPS.length), r(c), r(M.BOTTOMS.length), r(c), r(M.HATS.length), r(c), r(c), r(2)];
+  const pick = (slot, n) => { const ok = [...Array(n).keys()].filter(v => isSewn(slot, v)); return ok[r(ok.length)]; };
+  const f = [pick(0, M.TOPS.length), r(c), pick(2, M.BOTTOMS.length), r(c), pick(4, M.HATS.length), r(c), r(c), r(2)];
+  wardrobe.sewing = null;
   settings.fits = { ...(settings.fits || {}), [settings.char]: f };
   store.set(SET_KEY, settings);
   buildWardrobe(); sfx.happy();

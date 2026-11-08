@@ -421,3 +421,19 @@ body.in-wardrobe #tags, body.in-wardrobe #loading { display: none; }
 .job.on em { color: var(--accent); }
 .job:disabled:not(.on) { opacity: 0.45; }
 #job-note { margin: 10px 0 0; }
+
+/* ---------- sewing clothes in the wardrobe ---------- */
+.chip.locked { border-style: dashed; color: var(--ink-dim); }
+.chip.locked.picking { border-color: #ffcf7a; color: var(--ink); }
+.chip .lock { width: 11px; height: 11px; margin-right: 4px; vertical-align: -1px; opacity: 0.8; }
+.sew-box {
+  display: flex; flex-direction: column; align-items: center; gap: 6px; margin-top: 8px; padding: 10px;
+  border-radius: 12px; border: 1px dashed rgba(255, 207, 122, 0.6); background: rgba(255, 207, 122, 0.08); text-align: center;
+}
+.sew-needs { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+.sew-needs span { display: flex; flex-direction: column; align-items: center; font-size: 12px; color: var(--ink); }
+.sew-needs img { width: 30px; height: 30px; image-rendering: pixelated; }
+.sew-needs em { font-style: normal; font-weight: 700; }
+.sew-needs .short em { color: #ff9a8a; }
+.sew-go { padding: 8px 22px; }
+.sew-box .note { margin: 0; }

@@ -1,11 +1,18 @@
 // The game's version and what changed in each one. Shown on the front screen ("What's new")
 // and in CHANGELOG.md. When you release: bump VERSION, add an entry at the top of CHANGES,
 // and set the same number in sw.js (CACHE = 'blockwild-v<VERSION>') so phones pick it up.
-export const VERSION = 22.1;
+export const VERSION = 23;
 export const RELEASED = '8 Nov 2026';
 
 // [version, date, headline, [details]]
 export const CHANGES = [
+  [23, '8 Nov 2026', 'Sew your own clothes', [
+    'New clothes to sew in the Wardrobe: a chick jumper, a hero cape, dungarees, a tutu, a chick hat (a little chick sits on your head!), a party hat, bunny ears and a flower crown.',
+    'Tap a piece with a padlock to see what it needs, then tap Sew it! Wool comes from grown-up sheep, and flowers grow wild.',
+    'Once you’ve sewn something it’s yours to wear any time, in any colour.',
+    'New goal: sew something new in the Wardrobe.',
+    'The Wardrobe camera steps back a little so tall hats and ears fit.',
+  ]],
   [22.1, '8 Nov 2026', 'Wolf and job fixes', [
     'Fixed: a grown wolf chasing a fox could follow it a very long way from home. It now gives up after about 20 blocks and trots back.',
     'New goal: teach a grown-up a job.',

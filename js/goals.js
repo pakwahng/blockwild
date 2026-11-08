@@ -29,6 +29,7 @@ export const GOALS = [
   ['grow', 'Look after a baby until it grows up', 1, s => s.grown || 0, [[ITEM_MILK, 2]]],
   ['gifts', 'Pick up 5 gifts from your grown-ups', 5, s => Object.values(s.gifts || {}).reduce((a, b) => a + b, 0), [[ITEM_EGG, 3]]],
   ['job', 'Teach a grown-up a job: tap it and pick one', 1, s => s.trained || 0, [[ITEM_BONE, 2], [ITEM_SEEDS, 6]]],
+  ['sew', 'Sew something new in the Wardrobe (pause menu)', 1, s => s.sewn || 0, [[B.WOOL, 3], [ITEM_APPLE, 3]]],
   ['chicks', 'Grow your nursery to 37 chickens', 37, s => s.chicks || 0, [[B.HAY, 4], [ITEM_APPLE, 5]]],
 ];
 export const GOAL_IDS = GOALS.map(g => g[0]);

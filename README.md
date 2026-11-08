@@ -128,9 +128,23 @@ Tap a grown-up (hen, cow, pig, sheep or wolf) to pet it and open **Teach a job**
 ## Wardrobe: your name and clothes
 
 - **Wardrobe** (front screen or pause menu) sets your name (up to 14 letters; blank uses Lachie or Charli), who you are, and your outfit. The camera swings round so you see yourself; drag to turn, **Photo** takes a portrait, **Surprise me!** picks a random outfit.
-- Outfits: top (T-shirt, stripes, hoodie, dress), bottoms (shorts, trousers, skirt; hidden with a dress), hat (none, cap, beanie, bow, flower), shoe colour and bag on or off, from 12 colours. Each character keeps its own outfit.
+- Outfits: top (T-shirt, stripes, hoodie, dress, chick jumper, hero cape), bottoms (shorts, trousers, skirt, dungarees, tutu; hidden with a dress), hat (none, cap, beanie, bow, flower, chick hat, party hat, bunny ears, flower crown), shoe colour and bag on or off, from 12 colours. Each character keeps its own outfit.
 - An outfit is 8 small numbers (`[top, colour, bottoms, colour, hat, colour, shoes, bag]`, see `DEFAULT_FIT` in `js/models.js`). Each character-and-outfit is built as its own model the first time it's seen. Names and outfits travel with player poses in play together.
-- Later: clothes to craft, in more designs.
+- **Sewing:** some pieces have a little padlock. Tap one to see what it needs, then **Sew it!** to unlock it for good on this device. Wool comes from grown-up sheep; flowers grow wild.
+
+| Piece | Sew it from |
+|---|---|
+| Chick jumper (top, with a chick face) | 3 wool, 1 yellow flower |
+| Hero cape (top: white T-shirt and a cape) | 4 wool, 1 red flower |
+| Dungarees (bottoms) | 4 wool, 1 stick |
+| Tutu (bottoms) | 2 wool, 2 white flowers |
+| Chick hat (a chick sits on your head) | 2 wool, 1 egg |
+| Party hat | 2 wool, 1 red flower, 1 yellow flower |
+| Bunny ears | 2 wool, 1 clover |
+| Flower crown | 2 each of red, yellow and white flowers |
+
+- **Surprise me!** only picks pieces you've already got. The list is `SEW` in `js/main.js`; what's sewn is saved with your settings.
+- More designs and colours to sew later.
 
 ## Version and what's new
 
