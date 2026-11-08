@@ -143,6 +143,7 @@ uniform vec3 uRig;   // head pivot y, z; tail pivot z
 uniform float uArmY; // shoulder height: when set, parts 6/7 are arms swinging from the shoulder
 out vec3 vColor;
 out float vFog;
+out float vGlow;  // part 11 glows: it ignores the night tint (fireflies)
 vec2 rot(vec2 v, float a) { float c = cos(a), s = sin(a); return vec2(c * v.x - s * v.y, s * v.x + c * v.y); }
 void main() {
   vec3 p = aPos, n = aNormal;
@@ -182,6 +183,8 @@ void main() {
   float rim = pow(1.0 - max(dot(n, V), 0.0), 2.2);
   vColor = aColor * (0.5 + 0.35 * diff + 0.2 * hemi) + rim * 0.28 * vec3(1.0, 0.97, 0.85);
   vFog = clamp((length(p - uCam) - uFogNear) / (uFogFar - uFogNear), 0.0, 1.0);
+  vGlow = part == 11 ? 1.0 : 0.0;
+  if (part == 11) vColor = aColor;
 }`;
 const ENT_FS = `#version 300 es
 precision mediump float;
@@ -190,10 +193,11 @@ uniform vec3 uTint;
 uniform float uShadow;
 in vec3 vColor;
 in float vFog;
+in float vGlow;
 out vec4 outColor;
 void main() {
   if (uShadow > 0.5) { outColor = vec4(0.0, 0.0, 0.0, 0.22 * (1.0 - vFog)); return; }
-  outColor = vec4(mix(vColor * uTint, uFogColor, vFog), 1.0);
+  outColor = vec4(mix(mix(vColor * uTint, vColor, vGlow), uFogColor, vFog * (1.0 - 0.6 * vGlow)), 1.0);
 }`;
 
 const LINE_VS = `#version 300 es

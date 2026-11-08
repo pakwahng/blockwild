@@ -2,6 +2,11 @@
 
 The same list is in the game: tap the version number on the front screen, or open **What’s new**.
 
+## 24. Pets, butterflies and fireflies (8 Nov 2026)
+- New job: Follow me. A grown-up you teach it to trots after you everywhere, day and night, and sits by you when you stop. If you run far ahead it catches up.
+- Butterflies flutter round the wild flowers by day, and sometimes land on one.
+- Fireflies drift and blink over the grass at night, with glowing tails.
+
 ## 23. Sew your own clothes (8 Nov 2026)
 - New clothes to sew in the Wardrobe: a chick jumper, a hero cape, dungarees, a tutu, a chick hat (a little chick sits on your head!), a party hat, bunny ears and a flower crown.
 - Tap a piece with a padlock to see what it needs, then tap Sew it! Wool comes from grown-up sheep, and flowers grow wild.

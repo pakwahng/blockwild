@@ -3,6 +3,7 @@ import { B, T, BLOCKS, SOLID, PLACEABLE, TILE_COUNT, ITEM_SEEDS, ITEM_WHEAT, ITE
 import { Snakes, SNAKE_KINDS, K_POISON, K_FLYING, K_DIGGER, K_BOOM } from './snakes.js';
 import { Raiders } from './raiders.js';
 import { Weather } from './weather.js';
+import { Critters, BUTTERFLY_KINDS } from './critters.js';
 import { GOALS, newStats, bump } from './goals.js';
 import { drops, RECIPES, TABS, TOOLS, STARTER, OLD_SAVE_BAG, TABLE_REACH, FEEDER_FILL } from './crafting.js';
 import { skyAt, CYCLE } from './sky.js';
@@ -66,13 +67,15 @@ try {
   renderer.addModel('woolTuft', M.woolTuftModel());
   renderer.addModel('logChunk', M.logChunkModel());
   renderer.addModel('stoneChunk', M.stoneChunkModel());
+  for (let k = 0; k < BUTTERFLY_KINDS; k++) renderer.addModel('butterfly' + k, M.butterflyModel(k));
+  renderer.addModel('firefly', M.fireflyModel());
   renderer.addModel('rain', M.rainModel());
 } catch (err) {
   console.error(err);
   showError('This device or browser cannot run Baby Chicken Empire (WebGL2 is required). ' + err.message);
 }
 
-let world = null, player = null, flock = null, snakes = null, raiders = null, weather = null, running = false, firsts = [];
+let world = null, player = null, flock = null, snakes = null, raiders = null, weather = null, critters = null, running = false, firsts = [];
 let clock = 0.08, nights = 0, swingCool = 0, wasBreaking = false;
 let crown = false, seat = null;
 // hotbar: nine slots holding item ids (0 = empty); inv: how many of each item you're carrying
@@ -351,6 +354,7 @@ function startWorld(save) {
   snakes = new Snakes(world);
   raiders = new Raiders(world, snakes);
   weather = new Weather(world);
+  critters = new Critters(world);
   clock = save?.clock ?? 0.08;
   nights = save?.nights || 0;
   crown = !!save?.crown;
@@ -928,7 +932,9 @@ const JOB_TEXT = {
   wood:  { name: 'Fetch wood',  icon: B.LOG,      learn: 'fetch wood',  doing: 'fetching wood for you',  what: 'Finds a tree and brings you logs.', place: 'trees', spot: 'tree' },
   stone: { name: 'Fetch stone', icon: B.COBBLE,   learn: 'fetch stone', doing: 'fetching stone for you', what: 'Finds bare rock and brings you cobble.', place: 'bare rock', spot: 'rock' },
   seeds: { name: 'Find seeds',  icon: ITEM_SEEDS, learn: 'find seeds',  doing: 'finding seeds for you',  what: 'Scratches about in the grass for seeds.', place: 'grass', spot: 'grass' },
+  follow: { name: 'Follow me', learn: 'follow you', doing: 'following you everywhere', what: 'Comes everywhere with you, like a pet.', place: 'you', spot: 'you' },
 };
+const BALL_SVG = '<svg class="job-play" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="17" r="11" fill="#e8473a"/><path d="M5 17h22M16 6c-5 4-5 18 0 22" stroke="#fff6e8" stroke-width="2.4" fill="none"/></svg>';
 const PAW_SVG = '<svg class="job-play" viewBox="0 0 32 32" aria-hidden="true"><g fill="#f3c9a0"><ellipse cx="16" cy="20" rx="7" ry="6"/><circle cx="8" cy="12" r="3.2"/><circle cx="13.5" cy="7.5" r="3.2"/><circle cx="18.5" cy="7.5" r="3.2"/><circle cx="24" cy="12" r="3.2"/></g></svg>';
 const grownName = a => BABY_NAMES[a.name] ? `${BABY_NAMES[a.name]} the ${ADULT_NAME[a.sp]}` : `Your ${ADULT_NAME[a.sp]}`;
 const fetchedWhat = id => id === B.LOG ? 'a log' : id === B.COBBLE ? 'some cobble' : 'some seeds';
@@ -947,13 +953,13 @@ function buildJobs() {
   $('#job-now').textContent = a.job ? `${grownName(a)} is ${JOB_TEXT[a.job].doing}.` : `${grownName(a)} doesn’t have a job yet.`;
   const list = $('#job-list');
   list.innerHTML = '';
-  for (const job of ['wood', 'stone', 'seeds', null]) {
+  for (const job of ['wood', 'stone', 'seeds', 'follow', null]) {
     const J = job && JOB_TEXT[job], on = (a.job || null) === job, b = document.createElement('button');
     b.type = 'button'; b.className = 'job' + (on ? ' on' : '');
     b.disabled = on || (!!job && !got);
     const tag = on ? '<em>Doing this now</em>' : job ? `<em><img alt="" src="${icons[treat]}">1 ${tname}</em>` : '<em>Free</em>';
-    b.innerHTML = job ? `<img alt="" src="${icons[J.icon]}"><b>${J.name}</b><span>${J.what}</span>${tag}`
-      : `${PAW_SVG}<b>Just play</b><span>No job: wanders about and plays.</span>${tag}`;
+    b.innerHTML = job ? `${job === 'follow' ? PAW_SVG : `<img alt="" src="${icons[J.icon]}">`}<b>${J.name}</b><span>${J.what}</span>${tag}`
+      : `${BALL_SVG}<b>Just play</b><span>No job: wanders about and plays.</span>${tag}`;
     b.addEventListener('click', () => teachJob(job));
     list.appendChild(b);
   }
@@ -968,9 +974,10 @@ function teachJob(job) {
   sfx.happy(); sfx.call(a.sp, 0.55); buzz(15);
   floatFx([a.p[0], a.p[1] + a.S.height * 0.6, a.p[2]], 'heart');
   if (job) bump(stats, 'trained');
-  const first = job && !firsts.includes('trained');
+  const first = job && job !== 'follow' && !firsts.includes('trained');
   if (first) firsts.push('trained');
   toast(!job ? `${grownName(a)} is off to play. No more jobs for now.`
+    : job === 'follow' ? `${grownName(a)} will follow you everywhere now! Tap it and pick Just play to let it stay.`
     : first ? `${grownName(a)} learned to ${JOB_TEXT[job].learn}! Each day it finds ${JOB_TEXT[job].place} near by and carries what it gets back to you. Animals don’t work at night.`
       : `${grownName(a)} learned to ${JOB_TEXT[job].learn}!`, first ? 7000 : 3000);
   closeJobs();
@@ -1914,6 +1921,8 @@ function frame(now, photo = false) {
   const k = kidInstances(dt);
   s.groups.push(...k.groups); s.shadowGroups.push(...k.shadowGroups);
   if (weather.amount > 0.01) s.groups.push(weather.instances(eye, dt));
+  critters.update(dt, player.pos, skyAt(clock).night, weather.amount);
+  s.groups.push(...critters.instances(eye, Math.min(far, 40), now / 1000));
   sfx.rain(running && !underwater ? weather.amount : 0);
   renderer.render({
     eye, forward: fwd, fov: 70 * Math.PI / 180,
@@ -1935,7 +1944,7 @@ function frame(now, photo = false) {
 requestAnimationFrame(loop);
 
 // handy for debugging from the console
-window.blockwild = { get world() { return world; }, get player() { return player; }, get target() { return target; }, get flock() { return flock; }, get nursery() { return flock; }, get snakes() { return snakes; }, get raiders() { return raiders; }, get weather() { return weather; }, wardrobe, selfieCam, petBaby, openJobs, get inv() { return inv; }, addItem, RECIPES, craft, input, raycast,
+window.blockwild = { get world() { return world; }, get player() { return player; }, get target() { return target; }, get flock() { return flock; }, get nursery() { return flock; }, get snakes() { return snakes; }, get raiders() { return raiders; }, get weather() { return weather; }, get critters() { return critters; }, wardrobe, selfieCam, petBaby, openJobs, get inv() { return inv; }, addItem, RECIPES, craft, input, raycast,
   get clock() { return clock; }, setTime(t) { clock = t; }, swing: () => swing(),
   net, others, get myNetId() { return myNetId; },
   get seat() { return seat; }, awardCrown: () => awardCrown(), sit: (x, y, z) => sit(x, y, z), standUp: () => standUp(),

@@ -1,11 +1,16 @@
 // The game's version and what changed in each one. Shown on the front screen ("What's new")
 // and in CHANGELOG.md. When you release: bump VERSION, add an entry at the top of CHANGES,
 // and set the same number in sw.js (CACHE = 'blockwild-v<VERSION>') so phones pick it up.
-export const VERSION = 23;
+export const VERSION = 24;
 export const RELEASED = '8 Nov 2026';
 
 // [version, date, headline, [details]]
 export const CHANGES = [
+  [24, '8 Nov 2026', 'Pets, butterflies and fireflies', [
+    'New job: Follow me. A grown-up you teach it to trots after you everywhere, day and night, and sits by you when you stop. If you run far ahead it catches up.',
+    'Butterflies flutter round the wild flowers by day, and sometimes land on one.',
+    'Fireflies drift and blink over the grass at night, with glowing tails.',
+  ]],
   [23, '8 Nov 2026', 'Sew your own clothes', [
     'New clothes to sew in the Wardrobe: a chick jumper, a hero cape, dungarees, a tutu, a chick hat (a little chick sits on your head!), a party hat, bunny ears and a flower crown.',
     'Tap a piece with a padlock to see what it needs, then tap Sew it! Wool comes from grown-up sheep, and flowers grow wild.',

@@ -58,6 +58,7 @@ Tap a grown-up (hen, cow, pig, sheep or wolf) to pet it and open **Teach a job**
 | Fetch wood | Walks to a tree trunk near you and pecks or butts at it | 1 **log** |
 | Fetch stone | Finds bare rock out in the open (not down caves) and chips at it | 1 **cobble** |
 | Find seeds | Scratches about on a grassy patch | 2 **seeds** |
+| Follow me | Trots after you everywhere, day and night, finding a way round things; sits by you when you stop, and catches up if you get far ahead | (a friend!) |
 
 - Workers only work by day. They look for work within about 18 blocks of whoever taught them, find a way there round hills, fences and water, work for a few seconds, then carry the log, cobble or seeds home on their back and drop it at your feet. Then they have a short break and go again.
 - The block stays put: they gather from the tree or rock, they don't knock it down.
@@ -118,6 +119,11 @@ Tap a grown-up (hen, cow, pig, sheep or wolf) to pet it and open **Teach a job**
 - **Pet** a baby in your nursery by tapping it (not while holding a treat or the sword): hearts, a happy hop, and a small push towards growing up (once every 20 seconds per baby).
 - The **camera** button takes a photo of your world with a "Day N" label, and shares it (phones) or downloads it.
 - Each sunrise says which day it is.
+
+## Butterflies and fireflies
+
+- By day, butterflies (orange, blue and pink) flutter round wild flowers and over meadows, and sometimes land on a flower. At night, fireflies drift and blink over the grass. They're just for looking at, and each device has its own (`js/critters.js`).
+- Firefly tails glow in the dark: in the model shader, part 11 of a model ignores the night tint.
 
 ## Names, rain and rainbows
 
@@ -211,6 +217,7 @@ A full day lasts 10 minutes: about 6 minutes of daylight, a pink dusk, roughly 3
 | `js/world.js` | Chunk storage, terrain/caves/trees generation, player edits |
 | `js/mesher.js` | Turns chunks into triangles, with rounded block edges and ambient occlusion |
 | `js/animals.js` | Baby animal behaviour: species table, wandering, treats, taming, breeding, hay and mud habits, pens, growing up, gifts, wolf guards, jobs (finding work, path-finding round hills and fences, carrying things home) |
+| `js/critters.js` | Butterflies by day and fireflies at night, just for looking at |
 | `js/raiders.js` | Daytime foxes and crows: sneaking, stealing treats, fences, sword hits |
 | `js/goals.js` | The goals list, progress and rewards |
 | `js/version.js` | Version number and the change log shown in What’s new |

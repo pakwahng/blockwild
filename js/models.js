@@ -788,3 +788,26 @@ export function crowModel() {
   for (const sx of [-1, 1]) m.box([sx * 0.07, 0.07, 0.04], [0.04, 0.14, 0.04], 0.015, beak, 3, false);
   return m.done({ wing: [0.06, 0.34], leg: [0, 0, 0], head: [0, 0], tail: [-0.2] });
 }
+
+// ---- little visitors ----
+// A butterfly: two pairs of wings (parts 1 and 2, so they flap) on a thin dark body.
+const BUTTERFLY_COLOURS = [['#f2a03a', '#ffd27a', '#3a2a1a'], ['#7fb8f0', '#d8ecff', '#26324a'], ['#f28bb3', '#fff0f6', '#3a2030']];
+export function butterflyModel(k) {
+  const m = new ModelBuilder(), [wing, spot, body] = BUTTERFLY_COLOURS[k % BUTTERFLY_COLOURS.length];
+  m.box([0, 0, 0], [0.03, 0.03, 0.17], 0.012, body, 0, false);
+  for (const [sx, part] of [[1, 1], [-1, 2]]) {
+    m.box([sx * 0.075, 0, 0.03], [0.13, 0.008, 0.12], 0.004, wing, part, false);
+    m.box([sx * 0.06, 0, -0.06], [0.09, 0.008, 0.08], 0.004, wing, part, false);
+    m.box([sx * 0.09, 0.006, 0.04], [0.04, 0.006, 0.04], 0.002, spot, part, false);
+    m.box([sx * 0.02, 0.012, 0.11], [0.006, 0.006, 0.06], 0.002, body, 0, false); // feelers
+  }
+  return m.done({ wing: [0.012, 0], leg: [0, 0, 0], head: [0, 0], tail: [0] });
+}
+// A firefly: a dark little bug with a glowing tail (part 11 glows at night).
+export function fireflyModel() {
+  const m = new ModelBuilder();
+  m.box([0, 0, 0.03], [0.04, 0.035, 0.06], 0.014, '#3a3222', 0, false);
+  m.box([0, 0, -0.03], [0.06, 0.055, 0.065], 0.024, '#e4ff70', 11, false);
+  for (const [sx, part] of [[1, 1], [-1, 2]]) m.box([sx * 0.035, 0.022, 0.01], [0.05, 0.006, 0.05], 0.003, '#c8d0e0', part, false);
+  return m.done({ wing: [0.01, 0.02], leg: [0, 0, 0], head: [0, 0], tail: [0] });
+}

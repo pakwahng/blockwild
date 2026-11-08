@@ -17,11 +17,12 @@ const GIFT_MODEL = { [ITEM_EGG]: 'egg', [ITEM_MILK]: 'milk', [B.WOOL]: 'woolTuft
 const ease = t => t * t * (3 - 2 * t);
 // Jobs a tame grown-up can learn. It finds a tree, a rock or a grassy patch near by, works at it for a bit
 // (the block stays put: it gathers from it), then carries what it got back to whoever taught it.
-export const JOBS = [null, 'wood', 'stone', 'seeds'];
+export const JOBS = [null, 'wood', 'stone', 'seeds', 'follow'];
 export const JOB_INFO = {
   wood:  { blocks: [B.LOG], item: B.LOG, n: 1, work: 4 },
   stone: { blocks: [B.STONE, B.COBBLE], item: B.COBBLE, n: 1, work: 4.5 },
   seeds: { blocks: [B.GRASS], item: ITEM_SEEDS, n: 2, work: 3 },
+  follow: { follow: true }, // not work: it comes everywhere with you, like a pet
 };
 const JOB_RANGE = 18, SIDES = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 // Every baby gets a name (an index into this list, so it travels and saves as a number).
@@ -269,14 +270,41 @@ export class Nursery {
     return null;
   }
 
+  // A grown-up taught to follow trots after whoever taught it, finding a way round things, and sits by them
+  // when they stop. If it gets left far behind it catches up (it pops up near them).
+  followStep(a, dt, pl, T, night) {
+    if (!pl) return null;
+    const d = dist2(a.p, pl.pos);
+    if (d > 40 * 40) {
+      for (let k = 0; k < 8; k++) {
+        const ang = Math.random() * 6.28, x = pl.pos[0] + Math.cos(ang) * 2.5, z = pl.pos[2] + Math.sin(ang) * 2.5;
+        const y = this.surface(Math.floor(x), Math.floor(z));
+        if (y > 0 && Math.abs(y - pl.pos[1]) < 3) { a.p = [x, y + 0.05, z]; a.v = [0, 0, 0]; a.gy = y; T.path = null; a.born = 0.6; break; }
+      }
+      return null;
+    }
+    if (d < 2.4 * 2.4) T.on = false;
+    else if (d > 4.5 * 4.5) T.on = true;
+    if (!T.on) return night ? null : { heel: pl.pos }; // close by: sit and look up at you (or doze at night)
+    T.re = (T.re || 0) - dt;
+    const end = T.path && T.path[T.path.length - 1];
+    if (!this._looked && T.re <= 0 && (!T.path || dist2(end, pl.pos) > 2 * 2)) {
+      this._looked = true;
+      T.path = this.findPath(a, [pl.pos], 2, 1500)?.path || null; T.i = 0; T.re = 1;
+    }
+    const next = T.path ? this.followPath(a, T) : null;
+    return { goal: next || pl.pos, speed: a.S.run * (d > 9 * 9 ? 1.3 : 1) };
+  }
+
   // One step of a working grown-up's day. Returns { goal, speed }, { work: true } while it's busy at a tree or rock,
   // or null when it's having a break between trips (and does the usual wandering about).
-  jobStep(a, dt, players) {
+  jobStep(a, dt, players, night = false) {
     const J = JOB_INFO[a.job], world = this.world, S = a.S;
     const T = a.task || (a.task = { ph: a.carry ? 'carry' : 'rest', t: 1 + Math.random() * 2 });
     T.t -= dt;
     // whoever taught it (or the host, if they've gone): it works near them and brings things to them
     const pl = players.find(q => (q.id || 0) === a.trainer) || players[0];
+    if (J.follow) return this.followStep(a, dt, pl, T, night);
     if (T.ph === 'rest') {
       const far = pl ? dist2(a.p, pl.pos) : 0;
       if (far > 16 * 16 && far < 64 * 64 && T.t > -15) return { goal: pl.pos, speed: S.run * 0.7 }; // wandered off: head back towards you
@@ -471,11 +499,12 @@ export class Nursery {
         }
       }
       // a grown-up with a job goes off to fetch wood, stone or seeds by day
-      let working = false;
-      if (!goal && !cheering && a.job && a.tame && adult && !night) {
-        const r = this.jobStep(a, dt, players);
+      let working = false, heeling = null;
+      if (!goal && !cheering && a.job && a.tame && adult && (!night || a.job === 'follow')) {
+        const r = this.jobStep(a, dt, players, night);
         if (r && r.goal) { goal = r.goal; speed = r.speed; a.spot = null; a.enjoy = 0; }
         else if (r && r.work) { working = true; a.spot = null; a.enjoy = 0; }
+        else if (r && r.heel) { heeling = r.heel; a.spot = null; a.enjoy = 0; }
       }
       // the nearest player holding this baby's favourite treat
       let lure = null, ld = 14 * 14;
@@ -484,12 +513,12 @@ export class Nursery {
         const d = dist2(a.p, pl.pos);
         if (d < ld) { ld = d; lure = pl; }
       }
-      if (!goal && !cheering && !working && lure && !foe) {
+      if (!goal && !cheering && !working && !heeling && lure && !foe) {
         const near = 1.4 + S.half * 2;
         if (ld > near * near) { goal = lure.pos; speed = S.run * 0.9; a.spot = null; a.enjoy = 0; }
       }
       // favourite spot: calves munch next to hay, piglets roll in mud
-      if (!goal && !cheering && !working && a.spot) {
+      if (!goal && !cheering && !working && !heeling && a.spot) {
         const sx = a.spot[0] + 0.5, sz = a.spot[2] + 0.5;
         const reach = S.likes === B.HAY ? 1.05 + S.half : 0.35;
         if (dist2(a.p, [sx, 0, sz]) > reach * reach && a.enjoy === 0) { goal = [sx, a.spot[1], sz]; speed = S.walk * 1.2; }
@@ -515,6 +544,8 @@ export class Nursery {
         if (a.onGround && Math.random() < dt * 0.9) a.v[1] = 3 + Math.random() * 1.5;   // little hops of joy
       } else if (working) {
         a.speed = 0; a.mode = 'work';
+      } else if (heeling) {
+        a.speed = 0; a.mode = 'heel';
       } else if (night && a.enjoy === 0) {
         // night time: curl up and doze
         a.speed = 0; a.mode = 'sleep'; a.sleep = true; a.spot = null;
@@ -591,7 +622,8 @@ export class Nursery {
       let ty = hs > 0.15 ? Math.atan2(v[0], v[2]) : a.yaw;
       if (a.mode === 'goal' && lure && hs <= 0.15) ty = Math.atan2(lure.pos[0] - a.p[0], lure.pos[2] - a.p[2]);
       if (a.mode === 'work' && a.job !== 'seeds' && !a.task.top) ty = Math.atan2(a.task.b[0] + 0.5 - a.p[0], a.task.b[2] + 0.5 - a.p[2]);
-      if (a.mode === 'cheer') ty =Math.atan2(this.gather.seat[0] - a.p[0], this.gather.seat[2] - a.p[2]);
+      if (a.mode === 'heel' && heeling) ty = Math.atan2(heeling[0] - a.p[0], heeling[2] - a.p[2]);
+      if (a.mode === 'cheer') ty = Math.atan2(this.gather.seat[0] - a.p[0], this.gather.seat[2] - a.p[2]);
       let dy = ty - a.yaw;
       dy = Math.atan2(Math.sin(dy), Math.cos(dy));
       a.yaw += dy * Math.min(1, dt * 10);
