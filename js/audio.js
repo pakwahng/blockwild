@@ -167,6 +167,7 @@ export class Sfx {
   }
 
   whoosh() { if (this.ready) this.noise(this.ctx.currentTime + 0.01, 0.14, 0.2, 2200); }
+  crackle(vol = 0.06) { if (this.ready) { const t = this.ctx.currentTime + 0.01; this.noise(t, 0.03, vol, 2600 + Math.random() * 1800); if (Math.random() < 0.4) this.noise(t + 0.05, 0.02, vol * 0.7, 3200); } }
 
   nightfall() {
     if (!this.ready) return;

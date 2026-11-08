@@ -73,6 +73,7 @@ Tap a grown-up (hen, cow, pig, sheep or wolf) to pet it and open **Teach a job**
 - Open the **bag** (top right, or E). **Your things** shows what you carry: tap one to put it in the selected hotbar slot. The other tabs (**Wood & tools**, **Farm**, **Building**) show picture cards of what you can make; a yellow dot means a tab has something ready. Each card shows what it needs (have / need).
 - Tap **Make** for one batch, **hold** it to keep making, or tap **All** to use up everything you have.
 - Things marked * need a **crafting table** within 4 blocks. Make the table from 4 wood and place it.
+- Things marked † are food: cook them at a **campfire** within 4 blocks (see Cooking below).
 - **Learning recipes:** a new world knows only how to make wood, sticks, the crafting table, fences, seeds and hay. Everything else you learn first:
   - **Recipe pages** turn up now and then when you dig (leaves 3%, clay 3%, stone 2.5%, sand and snow 2%, grass 1.5%, dirt 0.8%). A page teaches something you don't know yet, usually something you've already found all the bits for. It could be a crafting recipe or a sewing pattern.
   - **Treasure chests** and **fishing** turn up recipe pages too.
@@ -106,6 +107,11 @@ Tap a grown-up (hen, cow, pig, sheep or wolf) to pet it and open **Teach a job**
 | House kit * | 20 Wood + 2 Glass + 1 Lamp |
 | Bed * | 3 Wood + 3 Wool |
 | 2 Signs * | 2 Wood + 1 Stick |
+| Campfire | 2 Logs + 3 Cobble |
+| Bread † | 2 Wheat |
+| Grilled fish † | 1 Fish |
+| Apple pie † | 3 Apples + 1 Wheat + 1 Egg |
+| Party cake † | 3 Wheat + 1 Milk + 2 Eggs |
 | Water | 2 Snow |
 | 2 Mud | 2 Dirt + 1 Water |
 
@@ -188,10 +194,27 @@ Tap a grown-up (hen, cow, pig, sheep or wolf) to pet it and open **Teach a job**
 - **Saved games** on the menu keeps up to **5 named copies** on the device (`blockwild.slot.0`–`4`, listed in `blockwild.slots.v1` with name, time and number of animals). **Save here** copies the world you're playing into a slot (asking before it saves over one); **Load** swaps it in as the world you're playing (asking first). Loading never deletes a slot.
 - **Download a backup** saves a `.json` file with the world and your learned clothes patterns. **Load a backup** reads one back, on any device. Files that aren't a world are turned away and nothing changes; the bag is cleaned on load so only real items come in.
 - Saving and loading are off while you play together (host or guest). A save is usually a few KB; if the device runs out of room you're told, and the world you're playing is kept.
+- **Keeping it safe:** when you tap Play the game asks the browser to keep its storage (`navigator.storage.persist()`). Once a world has had some play (tamed animals, nights and goals adding up to 4), the menu shows a reminder when there's been no backup for 5 days (`settings.lastBackup`). Saved games shows when you last downloaded one. On an iPhone or iPad that hasn't added the game to the Home Screen, it explains that Safari may clear the world after a week or so without a visit.
 
 ## Version and what's new
 
 The front screen shows the version number. Tap it, or open **What’s new**, for the change log. It lives in `js/version.js` (and [CHANGELOG.md](CHANGELOG.md)). To release: bump `VERSION`, add an entry at the top of `CHANGES` and in CHANGELOG.md, and set `CACHE` in `sw.js` to the same number.
+
+## Cooking
+
+- The **Cooking** tab in the bag. Make a **campfire** from 2 logs and 3 cobble (learned by finishing the chop-a-tree goal) and put it down: a ring of stones, crossed logs and glowing flames that crackle when you're close by. Food needs a campfire within 4 blocks (`r.table === 'fire'` in `RECIPES`).
+- **Bread** (2 wheat; learned from the gate goal): eat it for **zoomies**, running 1.5× faster for 60 seconds.
+- **Grilled fish** (1 fish; learned from the fishing goal): eat it to be **springy**, jumping about 2.6 blocks instead of 1.5, for 60 seconds.
+- **Apple pie** (3 apples, 1 wheat, 1 egg; learned from the sign goal): both, for 90 seconds.
+- **Party cake** (3 wheat, 1 milk, 2 eggs; learned from the sleep goal): use it near your animals to throw a party. Every tame animal within 14 blocks hops for joy with hearts, and babies grow a good bit (60% of a drink of milk). `party()` in `js/animals.js`; a guest's party asks the host (`'party'`).
+- Hold the food and tap to eat it. A pill by the nursery counters shows the food and the seconds left. Two new goals: cook something, and throw a party.
+
+## Theme song
+
+- The Baby Chicken Empire song (`audio/theme.m4a`, 2 MB AAC, made from the music video's WAV) plays on the front screen and the pause menu after your first tap. Phones only allow sound after a tap.
+- While you play, it comes back quietly now and then by day: 25 seconds after you start, then every 8–12 minutes (`js/music.js`). If you start playing within 30 seconds of it starting on the menu, it carries on softly.
+- It goes through the sound effects' audio context so the volume works on iPhones. **Settings → Theme song** turns it off; turning **Sound** off silences it too.
+- The service worker leaves `.m4a` files to the network, because phones fetch media in pieces (range requests) that a cached copy can't answer. So the song needs a connection, though the rest of the game works offline.
 
 ## Beds and signs
 

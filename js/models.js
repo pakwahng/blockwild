@@ -503,6 +503,32 @@ export function treatIcon(kind, px = 64) {
       rr(g, 28, 30, 8, 30, 3, '#7e5230');                                              // post
       rr(g, 4, 8, 56, 30, 4, '#8f5f34'); rr(g, 7, 11, 50, 24, 3, '#d8924e');            // board
       for (const [y, w] of [[16, 36], [22, 28], [28, 32]]) rr(g, 14, y, w, 3, 1.5, '#7a4a2e'); // writing
+    } else if (kind === 'campfire') {
+      for (const [x, y] of [[4, 50], [16, 54], [30, 55], [44, 54], [54, 50]]) rr(g, x, y, 12, 8, 3, '#9aa3ad');  // stones
+      g.save(); g.translate(32, 48); g.rotate(0.35); rr(g, -22, -4, 44, 8, 3, '#7e5230'); g.restore();           // logs
+      g.save(); g.translate(32, 48); g.rotate(-0.35); rr(g, -22, -4, 44, 8, 3, '#8f5f34'); g.restore();
+      g.fillStyle = '#ff8a2a'; g.beginPath(); g.moveTo(14, 46); g.quadraticCurveTo(12, 24, 32, 6); g.quadraticCurveTo(52, 24, 50, 46); g.closePath(); g.fill();
+      g.fillStyle = '#ffd23c'; g.beginPath(); g.moveTo(22, 46); g.quadraticCurveTo(22, 30, 32, 20); g.quadraticCurveTo(42, 30, 42, 46); g.closePath(); g.fill();
+    } else if (kind === 'bread') {
+      rr(g, 6, 22, 52, 30, 14, '#b9722f'); rr(g, 9, 22, 46, 22, 11, '#dc9a4c');
+      for (const x of [18, 30, 42]) { g.save(); g.translate(x, 30); g.rotate(0.5); rr(g, -2, -7, 4, 14, 2, '#f2c98a'); g.restore(); }
+    } else if (kind === 'grilled fish') {
+      g.fillStyle = '#c47a3a'; g.beginPath(); g.ellipse(28, 34, 21, 12, 0, 0, Math.PI * 2); g.fill();
+      g.beginPath(); g.moveTo(46, 34); g.lineTo(60, 22); g.lineTo(60, 46); g.closePath(); g.fill();
+      for (const x of [18, 26, 34]) rr(g, x, 24, 3, 20, 1.5, '#7a3f1c');                                       // grill marks
+      g.fillStyle = '#2a1a10'; g.beginPath(); g.arc(14, 31, 2.5, 0, Math.PI * 2); g.fill();
+      rr(g, 6, 50, 52, 6, 3, '#e8e2d4');                                                                        // plate
+    } else if (kind === 'apple pie') {
+      rr(g, 4, 34, 56, 20, 8, '#c98a45'); rr(g, 8, 26, 48, 14, 7, '#e6ad62');                                   // crust
+      for (const x of [16, 28, 40]) rr(g, x, 27, 8, 4, 2, '#b8483a');                                          // apple peeking out
+      for (const x of [12, 24, 36, 48]) rr(g, x, 26, 3, 14, 1.5, '#f2c98a');                                   // lattice
+    } else if (kind === 'party cake') {
+      rr(g, 8, 30, 48, 26, 5, '#f4c6d6'); rr(g, 8, 28, 48, 9, 4, '#fff6f0');                                    // pink cake, cream top
+      for (const x of [14, 26, 38, 50]) rr(g, x - 3, 34, 6, 7, 3, '#fff6f0');                                  // drips
+      for (const [x, c] of [[18, '#e8443a'], [32, '#4cc25a'], [46, '#ffd23c']]) {
+        rr(g, x - 2, 12, 4, 16, 1.5, c);
+        g.fillStyle = '#ffb02e'; g.beginPath(); g.ellipse(x, 9, 3, 5, 0, 0, Math.PI * 2); g.fill();
+      }
     } else if (kind === 'house kit') {
       g.fillStyle = '#e2443a'; g.beginPath(); g.moveTo(4, 30); g.lineTo(32, 6); g.lineTo(60, 30); g.closePath(); g.fill(); // roof
       g.fillStyle = '#f26a5a'; g.beginPath(); g.moveTo(12, 28); g.lineTo(32, 11); g.lineTo(52, 28); g.closePath(); g.fill();

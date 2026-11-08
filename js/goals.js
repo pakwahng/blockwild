@@ -1,6 +1,6 @@
 // Goals: a short list of things to try, in order, each with a little reward.
 // They lead a new player from digging their first block to building a pen and surviving the night.
-import { B, ITEM_SEEDS, ITEM_WHEAT, ITEM_APPLE, ITEM_CLOVER, ITEM_BONE, ITEM_STICK, ITEM_EGG, ITEM_MILK, ITEM_HOUSE, ITEM_FISH } from './blocks.js';
+import { B, ITEM_SEEDS, ITEM_WHEAT, ITEM_APPLE, ITEM_CLOVER, ITEM_BONE, ITEM_STICK, ITEM_EGG, ITEM_MILK, ITEM_HOUSE, ITEM_FISH, FOODS } from './blocks.js';
 
 // stats: { dug: {id: n}, got: {id: n}, made: {id: n}, placed: {id: n}, tamed, hatched, bonked, filled, nights, climbed, chicks, grown, gifts: {id: n} }
 const n = (map, id) => (map && map[id]) || 0;
@@ -35,6 +35,8 @@ export const GOALS = [
   ['hat', 'Put a hat on one of your animals: tap it, then pick a hat', 1, s => s.hatted || 0, [[ITEM_CLOVER, 3], [B.WOOL, 2]]],
   ['sign', 'Make a sign and write on it: tap a sign to change what it says', 1, s => s.signed || 0, [[ITEM_APPLE, 3], [B.FLOWER_YELLOW, 2]]],
   ['sleep', 'Make a bed and sleep in it till morning: tap it when it’s dark', 1, s => s.slept || 0, [[ITEM_MILK, 2], [B.WOOL, 2]]],
+  ['cook', 'Make a campfire and cook something on it', 1, s => sum(s.made, FOODS), [[ITEM_WHEAT, 4], [ITEM_EGG, 2]]],
+  ['party', 'Throw a party: use a party cake near your babies', 1, s => s.parties || 0, [[ITEM_MILK, 2], [B.FLOWER_RED, 3]]],
   ['chicks', 'Grow your nursery to 37 chickens', 37, s => s.chicks || 0, [[B.HAY, 4], [ITEM_APPLE, 5]]],
 ];
 export const GOAL_IDS = GOALS.map(g => g[0]);

@@ -490,3 +490,16 @@ body.in-wardrobe #tags, body.in-wardrobe #loading { display: none; }
 }
 #sleep.on { opacity: 1; }
 #sleep[hidden] { display: none; }
+
+/* ---------- keeping your world safe ---------- */
+.nudge {
+  width: 100%; margin: 6px 0; padding: 10px 12px; border-radius: 12px; text-align: left; font: inherit; font-size: 14px; font-weight: 700;
+  background: rgba(255, 207, 58, 0.16); border: 1px solid rgba(255, 207, 58, 0.55); color: #ffe79a;
+}
+.nudge[hidden] { display: none; }
+.warn-note { color: #ffcf7a; }
+
+/* ---------- a snack's boost, counting down ---------- */
+#nursery .pill.boost { order: 100; gap: 4px; font-size: 13px; border-color: rgba(255, 176, 46, 0.6); }
+#nursery .pill.boost img { width: 22px; height: 22px; }
+#nursery .pill.boost[hidden] { display: none; }

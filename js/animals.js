@@ -150,6 +150,19 @@ export class Nursery {
   }
 
   // A baby in the nursery grows up a bit (by a fraction of the way). Tells everyone when it's all grown.
+  // A party cake: every tame animal close by joins in. Babies grow a good bit, everyone gets hearts and a happy hop.
+  party(p, r = 14) {
+    let n = 0;
+    for (const a of this.animals) {
+      if (!a.tame || dist2(a.p, p) > r * r || Math.abs(a.p[1] - p[1]) > 6) continue;
+      n++;
+      if (a.grow < 1) this.growBy(a, MILK_GROW * 0.6);
+      a.wag = 1; a.peck = 0.6; a.sleep = false;
+      if (a.onGround) a.v[1] = 4.5 + Math.random() * 1.5;
+      this.events.push({ type: 'party', sp: a.sp, p: [...a.p] });
+    }
+    return n;
+  }
   growBy(a, f) {
     if (a.grow >= 1) return;
     a.grow = Math.min(1, a.grow + f);

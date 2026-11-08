@@ -1,11 +1,18 @@
 // The game's version and what changed in each one. Shown on the front screen ("What's new")
 // and in CHANGELOG.md. When you release: bump VERSION, add an entry at the top of CHANGES,
 // and set the same number in sw.js (CACHE = 'blockwild-v<VERSION>') so phones pick it up.
-export const VERSION = 31;
+export const VERSION = 32;
 export const RELEASED = '8 Nov 2026';
 
 // [version, date, headline, [details]]
 export const CHANGES = [
+  [32, '8 Nov 2026', 'Cooking, the theme song, and keeping your world safe', [
+    'Cooking! Make a campfire from 2 logs and 3 cobble, then cook in the bag’s new Cooking tab: bread, grilled fish, apple pie and a party cake.',
+    'Eat bread to run faster, grilled fish to jump twice as high, or apple pie for both. A little timer shows how long it lasts.',
+    'A party cake throws a party: your animals close by hop about with hearts, and the babies grow a good bit.',
+    'The Baby Chicken Empire song now plays on the menu, and now and then while you play. Switch it off in Settings (Theme song).',
+    'Keeping your world safe: the game asks your browser not to clear it, and the menu reminds you to download a backup now and then.',
+  ]],
   [31, '8 Nov 2026', 'Beds, signs and mountain snow', [
     'Make a bed from 3 wood and 3 wool. Tap it when it’s dark to sleep till morning. Playing together, anyone can go to bed and everyone wakes up at sunrise.',
     'Put down a sign and write on it. Your words float over it when you’re close by, so you can name your farm, your pens and your house. Tap a sign to change what it says.',

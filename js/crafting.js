@@ -1,5 +1,5 @@
 // Collecting and crafting: what each block gives you when you dig it, and what you can make.
-import { B, ITEM_SEEDS, ITEM_WHEAT, ITEM_APPLE, ITEM_CLOVER, ITEM_BONE, ITEM_SWORD, ITEM_STICK, ITEM_HOUSE, ITEM_ROD } from './blocks.js';
+import { B, ITEM_SEEDS, ITEM_WHEAT, ITEM_APPLE, ITEM_CLOVER, ITEM_BONE, ITEM_SWORD, ITEM_STICK, ITEM_HOUSE, ITEM_ROD, ITEM_FISH, ITEM_EGG, ITEM_MILK, ITEM_BREAD, ITEM_GRILLED, ITEM_PIE, ITEM_CAKE } from './blocks.js';
 
 // What you get for digging a block. Extra treats turn up now and then.
 export function drops(id) {
@@ -30,8 +30,9 @@ export function drops(id) {
 
 // Each recipe: what it makes, how many, what it needs, which tab of the bag it's on,
 // and whether you have to be standing at a crafting table to make it.
+// table: true needs a crafting table close by, 'fire' needs a campfire.
 const R = (out, n, needs, tab, table = false) => ({ out, n, needs, tab, table });
-export const TABS = [['wood', 'Wood & tools'], ['farm', 'Farm'], ['build', 'Building']];
+export const TABS = [['wood', 'Wood & tools'], ['farm', 'Farm'], ['build', 'Building'], ['cook', 'Cooking']];
 export const RECIPES = [
   R(B.PLANKS, 4, [[B.LOG, 1]], 'wood'),
   R(ITEM_STICK, 4, [[B.PLANKS, 2]], 'wood'),
@@ -62,6 +63,12 @@ export const RECIPES = [
   R(B.WOOL_YELLOW, 2, [[B.WOOL, 2], [B.FLOWER_YELLOW, 1]], 'build'),
   R(B.WOOL_PINK, 2, [[B.WOOL, 2], [B.FLOWER_RED, 1], [B.FLOWER_WHITE, 1]], 'build'),
   R(B.WOOL_GREEN, 2, [[B.WOOL, 2], [ITEM_CLOVER, 1]], 'build'),
+  // cooking: make a campfire, then cook on it
+  R(B.CAMPFIRE, 1, [[B.LOG, 2], [B.COBBLE, 3]], 'cook'),
+  R(ITEM_BREAD, 1, [[ITEM_WHEAT, 2]], 'cook', 'fire'),
+  R(ITEM_GRILLED, 1, [[ITEM_FISH, 1]], 'cook', 'fire'),
+  R(ITEM_PIE, 1, [[ITEM_APPLE, 3], [ITEM_WHEAT, 1], [ITEM_EGG, 1]], 'cook', 'fire'),
+  R(ITEM_CAKE, 1, [[ITEM_WHEAT, 3], [ITEM_MILK, 1], [ITEM_EGG, 2]], 'cook', 'fire'),
 ];
 // How close (in blocks) you need to be to a crafting table.
 export const TABLE_REACH = 4;

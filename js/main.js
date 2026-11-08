@@ -1,5 +1,5 @@
 // Baby Chicken Empire: bootstrap, game loop, streaming, interaction, UI and saving.
-import { B, T, BLOCKS, SOLID, PLACEABLE, TILE_COUNT, ITEM_SEEDS, ITEM_WHEAT, ITEM_SWORD, ITEM_BONE, ITEM_APPLE, ITEM_CLOVER, ITEM_STICK, ITEM_EGG, ITEM_MILK, ITEM_HOUSE, ITEM_ROD, ITEM_FISH, IS_DOOR, DOOR_TOPS, TREATS, ITEM_NAMES, SHAPED, FEEDER_OF, FEEDER_TREAT, IS_FEEDER } from './blocks.js';
+import { B, T, BLOCKS, SOLID, PLACEABLE, TILE_COUNT, ITEM_SEEDS, ITEM_WHEAT, ITEM_SWORD, ITEM_BONE, ITEM_APPLE, ITEM_CLOVER, ITEM_STICK, ITEM_EGG, ITEM_MILK, ITEM_HOUSE, ITEM_ROD, ITEM_FISH, ITEM_BREAD, ITEM_GRILLED, ITEM_PIE, ITEM_CAKE, FOODS, IS_DOOR, DOOR_TOPS, TREATS, ITEM_NAMES, SHAPED, FEEDER_OF, FEEDER_TREAT, IS_FEEDER } from './blocks.js';
 import { Snakes, SNAKE_KINDS, K_POISON, K_FLYING, K_DIGGER, K_BOOM } from './snakes.js';
 import { Raiders } from './raiders.js';
 import { Weather } from './weather.js';
@@ -12,6 +12,7 @@ import { buildTextures, blockIcon } from './textures.js';
 import * as M from './models.js';
 import { Nursery, SPECIES, SPECIES_ORDER, isTreat, GIFTS, BABY_NAMES, cleanAnimalNick, ANIMAL_HATS } from './animals.js';
 import { Sfx } from './audio.js';
+import { Music } from './music.js';
 import { World, CS, CH } from './world.js';
 import { buildMesh } from './mesher.js';
 import { Renderer } from './renderer.js';
@@ -30,7 +31,7 @@ const store = {
 const coarse = matchMedia('(pointer: coarse)').matches;
 // iPads report themselves as Macs, so also check for a touch screen
 const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-const settings = Object.assign({ view: coarse ? 5 : 7, sens: 1, autoJump: true, showFps: false, sound: true, char: 'lachie', nick: '', fits: {} }, store.get(SET_KEY) || {});
+const settings = Object.assign({ view: coarse ? 5 : 7, sens: 1, autoJump: true, showFps: false, sound: true, music: true, char: 'lachie', nick: '', fits: {} }, store.get(SET_KEY) || {});
 // Clothes patterns arrived in v26: a device from before then keeps what it has sewn and what anyone is wearing.
 if (!Array.isArray(settings.patterns)) {
   const keep = new Set(settings.sewn || []);
@@ -98,6 +99,9 @@ let selected = 0;
 let target = null, breakT = { key: '', p: 0 };
 let milestone = 0, throwCool = 0, feederTimer = 0;
 const sfx = new Sfx();
+const music = new Music(sfx);
+// the first tap anywhere wakes the sound up, so the theme song can play on the front screen
+for (const ev of ['pointerdown', 'keydown']) document.addEventListener(ev, () => { sfx.unlock(); music.unlock(); }, true);
 
 // play together
 const net = new Net();
@@ -106,12 +110,12 @@ let myNetId = 0, netTimer = 0, poseTimer = 0, shownOthers = -1, pendingEdits = {
 const netEdits = [], netEvents = [];
 
 const icons = {};
-const SHAPE_ICON = { [B.FENCE]: 'fence', [B.GATE]: 'gate', [B.DOOR]: 'door', [B.BED]: 'bed', [B.SIGN]: 'sign', [B.PLANTER]: 'planter', [B.TABLE]: 'table', [B.LADDER]: 'ladder', [B.FEEDER]: 'feeder',
+const SHAPE_ICON = { [B.FENCE]: 'fence', [B.GATE]: 'gate', [B.DOOR]: 'door', [B.BED]: 'bed', [B.SIGN]: 'sign', [B.CAMPFIRE]: 'campfire', [B.PLANTER]: 'planter', [B.TABLE]: 'table', [B.LADDER]: 'ladder', [B.FEEDER]: 'feeder',
   [B.FLOWER_RED]: 'flower-red', [B.FLOWER_YELLOW]: 'flower-yellow', [B.FLOWER_WHITE]: 'flower-white' };
 if (textures) for (const id of [...PLACEABLE, B.THRONE]) {
   icons[id] = SHAPED[id] ? M.treatIcon(SHAPE_ICON[id], 64).toDataURL() : blockIcon(BLOCKS[id], textures.tiles, 64).toDataURL();
 }
-for (const id of [...TREATS, ITEM_SWORD, ITEM_STICK, ITEM_EGG, ITEM_MILK, ITEM_HOUSE, ITEM_ROD, ITEM_FISH]) icons[id] = M.treatIcon(ITEM_NAMES[id].toLowerCase(), 64).toDataURL();
+for (const id of [...TREATS, ITEM_SWORD, ITEM_STICK, ITEM_EGG, ITEM_MILK, ITEM_HOUSE, ITEM_ROD, ITEM_FISH, ...FOODS]) icons[id] = M.treatIcon(ITEM_NAMES[id].toLowerCase(), 64).toDataURL();
 $('#held').src = icons[ITEM_SWORD] || '';
 const itemName = id => ITEM_NAMES[id] || BLOCKS[id]?.name || '';
 const isItem = id => !!icons[id];
@@ -254,16 +258,19 @@ function pickupPop(at, got) {
 
 // How many times you could make a recipe with what's in your bag.
 const timesYouCan = r => Math.min(...r.needs.map(([id, k]) => Math.floor(have(id) / k)));
-// Is there a crafting table close by?
-function atTable() {
+// Is there a crafting table (or a campfire) close by?
+function atTable(block = B.TABLE) {
   if (!world || !player) return false;
   const [x, y, z] = player.pos;
-  return world.placedNear(x, z, TABLE_REACH, id => id === B.TABLE).some(t => Math.abs(t[1] - y) <= 3);
+  return world.placedNear(x, z, TABLE_REACH, id => id === block).some(t => Math.abs(t[1] - y) <= 3);
 }
-function canMake(r) { return knows(r) && timesYouCan(r) > 0 && (!r.table || atTable()); }
+const atFire = () => atTable(B.CAMPFIRE);
+// Can you make it here? Some things need a table close by, food needs a campfire.
+const atPlace = r => !r.table || (r.table === 'fire' ? atFire() : atTable());
+function canMake(r) { return knows(r) && timesYouCan(r) > 0 && atPlace(r); }
 function craft(r, times = 1) {
   times = Math.min(times, timesYouCan(r));
-  if (times <= 0 || !knows(r) || (r.table && !atTable())) return 0;
+  if (times <= 0 || !knows(r) || !atPlace(r)) return 0;
   for (const [id, k] of r.needs) useItem(id, k * times);
   addItem(r.out, r.n * times, true);
   bump(stats, 'made', r.out, times);
@@ -412,6 +419,7 @@ function startWorld(save) {
   nights = save?.nights || 0;
   crown = !!save?.crown;
   loadSigns(save?.signs);
+  snackT = 0; boostEl.hidden = true;
   seat = null;
   showCrown();
   // a few wild babies of each kind close by, so there's someone to feed straight away
@@ -678,6 +686,7 @@ function handleChickEvents() {
     }
     if (ev.type === 'work') { if (d < 14) sfx.knock(ev.job, 0.3 * (1 - d / 14)); continue; }
     if (ev.type === 'trained') { if (d < 20) floatFx(ev.p, 'heart'); continue; }
+    if (ev.type === 'party') { if (d < 24) { floatFx(ev.p, 'heart'); if (Math.random() < 0.5) floatFx(ev.p, 'heart'); } continue; }
     if (d > 40) continue;
     if (ev.type === 'grown') {
       bump(stats, 'grown');
@@ -1024,6 +1033,8 @@ function placeBlock() {
   if (!id) return;
   if (!have(id)) { emptyHint(id); return; }
   if (id === ITEM_SWORD) { swing(); return; }
+  if (id === ITEM_CAKE) { party(); return; }
+  if (SNACK[id]) { eat(id); return; }
   if (isTreat(id)) {
     if (throwCool > 0) return;
     throwCool = id === ITEM_SEEDS ? 0.2 : 0.3;
@@ -1384,7 +1395,8 @@ function buildMake() {
     c.innerHTML = `<div class="card-out"><img alt="" src="${icons[r.out]}">${r.n > 1 ? `<b class="times">×${r.n}</b>` : ''}</div>` +
       `<div class="card-name">${itemName(r.out)}</div>` +
       `<div class="card-needs">${r.needs.map(([id, k]) => `<span data-id="${id}" data-k="${k}"><img alt="" src="${icons[id]}"><em></em></span>`).join('')}</div>` +
-      `<div class="card-table"><img alt="" src="${icons[B.TABLE]}">Needs a table</div>` +
+      (r.table === 'fire' ? `<div class="card-table"><img alt="" src="${icons[B.CAMPFIRE]}">Needs a campfire</div>`
+        : `<div class="card-table"><img alt="" src="${icons[B.TABLE]}">Needs a table</div>`) +
       `<div class="card-go"><button class="make">Make</button><button class="all"></button></div>`;
     c.querySelector('.make').setAttribute('aria-label', `Make ${r.n} ${itemName(r.out)} from ${r.needs.map(([id, k]) => k + ' ' + stickName(id, k)).join(' and ')}`);
     holdToRepeat(c.querySelector('.make'), () => makeIt(r, 1));
@@ -1396,12 +1408,14 @@ function buildMake() {
 }
 // Updates the cards' counts and buttons without rebuilding them (so a held button keeps working).
 function refreshMake() {
-  const table = atTable();
-  $('#table-note').textContent = table ? 'You’re at a crafting table: you can make everything.'
-    : 'Some things need a crafting table close by. Make one from 4 wood and place it.';
-  $('#table-note').classList.toggle('ok', table);
+  const table = atTable(), fire = atFire(), cook = bagTab === 'cook';
+  $('#table-note').textContent = cook
+    ? (fire ? 'You’re at a campfire: you can cook everything.' : 'Food needs a campfire close by. Make one from 2 logs and 3 cobble and place it.')
+    : table ? 'You’re at a crafting table: you can make everything.'
+      : 'Some things need a crafting table close by. Make one from 4 wood and place it.';
+  $('#table-note').classList.toggle('ok', cook ? fire : table);
   for (const [c, r] of cards) {
-    const n = timesYouCan(r), blocked = r.table && !table;
+    const n = timesYouCan(r), blocked = r.table && !(r.table === 'fire' ? fire : table);
     c.classList.toggle('ready', n > 0 && !blocked);
     c.classList.toggle('locked', blocked);
     for (const s of c.querySelectorAll('.card-needs span')) {
@@ -1469,6 +1483,8 @@ function pause() {
   $('#menu').hidden = false;
   $('#btn-play').textContent = 'Resume';
   $('#menu').classList.add('paused');
+  music.setMode('menu');
+  updateBackupUi();
 }
 
 function resume() {
@@ -1476,6 +1492,7 @@ function resume() {
   $('#new-world').hidden = true;
   $('#hud').hidden = false;
   running = true; input.enabled = true;
+  music.setMode('game');
   input.look.dx = input.look.dy = 0;
   if (!input.usingTouch && !coarse) canvas.requestPointerLock?.();
 }
@@ -1690,6 +1707,7 @@ $('#btn-play').addEventListener('click', () => {
   if (!renderer) return;
   sfx.unlock();
   enterFullscreen();
+  keepSafe();
   if (!world) startWorld(store.get(SAVE_KEY));
   if (coarse) input.setTouchMode(true);
   resume();
@@ -1810,6 +1828,7 @@ $('#btn-export').addEventListener('click', () => {
   a.href = url; a.download = `baby-chicken-empire-${new Date().toISOString().slice(0, 10)}.json`;
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 5000);
+  settings.lastBackup = Date.now(); store.set(SET_KEY, settings); updateBackupUi();
   saveMsg('Backup downloaded. Keep the file somewhere safe: Load a backup brings it back, on this device or another one.');
 });
 $('#btn-import').addEventListener('click', () => { if (!saveBusy()) $('#import-file').click(); });
@@ -1831,7 +1850,31 @@ $('#import-file').addEventListener('change', async e => {
   store.set(SET_KEY, settings);
   saveMsg(`Backup loaded. Tap ${world ? 'Resume' : 'Continue'} to play.`);
 });
-$('#saves').addEventListener('toggle', () => { if ($('#saves').open) buildSlots(); });
+$('#saves').addEventListener('toggle', () => { if ($('#saves').open) { buildSlots(); updateBackupUi(); } });
+
+// ---------- keeping your world safe ----------
+// Browsers can clear a website's storage (Safari does after about a week without a visit, unless the game is on
+// the Home Screen). So: ask the browser to keep it, and nudge now and then to download a backup file.
+const BACKUP_DAYS = 5;
+const onIos = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const installed = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+function keepSafe() {
+  navigator.storage?.persisted?.().then(yes => { if (!yes) return navigator.storage.persist(); }).catch(() => {});
+}
+// Worth backing up: a world you've put some time into.
+const worldWorth = () => world && !net.isGuest && ((stats?.tamed || 0) + nights + (goalsDone?.length || 0) >= 4);
+function backupDue() {
+  return !!worldWorth() && !saveBusy() && (!settings.lastBackup || Date.now() - settings.lastBackup > BACKUP_DAYS * 864e5);
+}
+function updateBackupUi() {
+  $('#backup-nudge').hidden = !backupDue();
+  $('#save-last').textContent = settings.lastBackup ? `Last backup: ${savedWhen(settings.lastBackup)}.` : 'You haven’t downloaded a backup yet.';
+  $('#save-ios').hidden = !(onIos && !installed);
+}
+$('#backup-nudge').addEventListener('click', () => {
+  $('#saves').open = true;
+  $('#saves').scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
 
 // ---------- signs ----------
 // What's written on each sign, by "x,y,z". Saved with the world; the host shares them with friends who visit.
@@ -1906,6 +1949,64 @@ function updateSignTags(box, eye) {
   }
 }
 
+// ---------- cooking: eat a snack for a boost, or throw a party ----------
+const SNACK = {
+  [ITEM_BREAD]: { boost: 1.5, t: 60, say: 'Yum, fresh bread! Zoomies: you run faster for a minute.' },
+  [ITEM_GRILLED]: { spring: 1.35, t: 60, say: 'Tasty grilled fish! Springy: you jump twice as high for a minute.' },
+  [ITEM_PIE]: { boost: 1.5, spring: 1.35, t: 90, say: 'Apple pie! Zoomies and springy, for a minute and a half.' },
+};
+let snackT = 0, snackOf = 0;
+const boostEl = document.createElement('div');
+boostEl.className = 'pill boost'; boostEl.hidden = true;
+$('#nursery').appendChild(boostEl);
+function eat(id) {
+  const s = SNACK[id];
+  useItem(id); bump(stats, 'ate', id);
+  player.boost = s.boost || 1; player.spring = s.spring || 1;
+  snackT = s.t; snackOf = id;
+  boostEl.innerHTML = `<img alt="" src="${icons[id]}"><span></span>`;
+  sfx.munch(); buzz(12);
+  toast(s.say);
+}
+function snackStep(dt) {
+  if (snackT <= 0) return;
+  snackT -= dt;
+  if (snackT <= 0) { player.boost = player.spring = 1; boostEl.hidden = true; toast(`Your ${itemName(snackOf).toLowerCase()} has worn off.`, 2500); return; }
+  boostEl.hidden = false;
+  const left = Math.ceil(snackT) + 's';
+  const span = boostEl.querySelector('span');
+  if (span.textContent !== left) span.textContent = left;
+}
+// A campfire close by crackles now and then.
+let fireNear = 0, fireLook = 0, fireT = 0;
+function campfireCrackle(dt) {
+  if (!running || !world) return;
+  if ((fireLook -= dt) <= 0) {
+    fireLook = 0.6;
+    const [x, y, z] = player.pos;
+    const f = world.placedNear(x, z, 6, id => id === B.CAMPFIRE).filter(t => Math.abs(t[1] - y) <= 4)
+      .map(t => Math.hypot(t[0] + 0.5 - x, t[2] + 0.5 - z));
+    fireNear = f.length ? Math.max(0.05, Math.min(...f)) : 0;
+  }
+  if (!fireNear || (fireT -= dt) > 0) return;
+  fireT = 0.15 + Math.random() * 0.5;
+  sfx.crackle(0.09 * (1 - fireNear / 7));
+}
+// A party cake: every tame animal close by comes to the party. Babies grow a good bit.
+function party() {
+  useItem(ITEM_CAKE); bump(stats, 'parties');
+  const p = [...player.pos];
+  if (net.isGuest) net.toHost({ t: 'party', p });
+  else partyAt(p);
+  sfx.fanfare(); buzz(30);
+  if (net.isGuest) toast('Party time! Your babies close by get cake, and they grow a little.');
+}
+function partyAt(p, who) {
+  const n = flock.party(p);
+  if (who) toast(`${nameOf(who)} threw a party!`, 2500);
+  else toast(n ? `Party time! ${n} ${n === 1 ? 'animal came' : 'animals came'} for cake, and the babies grew a little.` : 'Party time! But nobody came… throw a party close to your babies.');
+}
+
 // ---------- sleeping ----------
 // Tap a bed when it's dark: the screen fades out and you wake up at sunrise.
 // Playing together, anyone can sleep: the host moves the clock on for everybody.
@@ -1940,11 +2041,14 @@ function hideHintLater() { setTimeout(() => $('#touch-hint').classList.add('gone
 
 // settings
 const sView = $('#set-view'), sSens = $('#set-sens'), sAuto = $('#set-autojump'), sFps = $('#set-fps'), sSound = $('#set-sound');
+const sMusic = $('#set-music');
 function applySettings() {
   sView.value = settings.view; $('#view-val').textContent = settings.view + ' chunks';
   sSens.value = settings.sens; $('#sens-val').textContent = (+settings.sens).toFixed(1) + '×';
   sAuto.checked = settings.autoJump; sFps.checked = settings.showFps; sSound.checked = settings.sound;
   sfx.enabled = settings.sound;
+  sMusic.checked = settings.music; sMusic.disabled = !settings.sound;
+  music.enabled = settings.sound && settings.music;
   input.touchSens = input.mouseSens = +settings.sens;
   if (player) player.autoJump = settings.autoJump;
   $('#info').hidden = !settings.showFps;
@@ -1957,6 +2061,7 @@ sSens.addEventListener('input', () => { settings.sens = +sSens.value; applySetti
 sAuto.addEventListener('change', () => { settings.autoJump = sAuto.checked; applySettings(); });
 sFps.addEventListener('change', () => { settings.showFps = sFps.checked; applySettings(); });
 sSound.addEventListener('change', () => { settings.sound = sSound.checked; applySettings(); });
+sMusic.addEventListener('change', () => { settings.music = sMusic.checked; applySettings(); });
 for (const b of document.querySelectorAll('#set-char .char')) {
   b.querySelector('svg').innerHTML = M.KID_FACE_SVG[b.dataset.char];
   b.addEventListener('click', () => { settings.char = b.dataset.char; applySettings(); });
@@ -2193,6 +2298,7 @@ function hostMessage(from, msg) {
     case 'hat': if (typeof msg.id === 'number') flock.setHat(msg.id, msg.hat); break;
     case 'sign': if (Array.isArray(msg.at)) { const [x, y, z] = msg.at; if (setSign(x, y, z, msg.text, true)) net.broadcast(msg, from); } break;
     case 'sleep': if (o) sleepInBed(o); break;
+    case 'party': if (o && Array.isArray(msg.p) && msg.p.length === 3 && msg.p.every(Number.isFinite)) partyAt(msg.p, o); break;
     case 'sit': flock.gatherAt(msg.seat, msg.front); break;
     case 'stand': flock.endGather(); break;
   }
@@ -2426,6 +2532,9 @@ function frame(now, photo = false) {
   fishStep(dt);
   if (fishing) s.groups.push(bobberGroup());
   sfx.rain(running && !underwater && !weather.snowing ? weather.amount : 0);
+  music.day = skyAt(clock).night < 0.3;
+  if (running) snackStep(dt);
+  campfireCrackle(dt);
   if (weather.snowing && weather.amount > 0.3 && running && !firsts.includes('snow')) { firsts.push('snow'); toast('It’s snowing up here on the mountain! Down in the valley it’s only rain.'); }
   // birds singing by day, crickets at night (only on the surface, away from heavy rain)
   ambientT -= dt;
@@ -2455,7 +2564,7 @@ function frame(now, photo = false) {
 requestAnimationFrame(loop);
 
 // handy for debugging from the console
-window.blockwild = { fishTap, get fishing() { return fishing; }, selectSlot, get hotbar() { return hotbar; }, get known() { return knownList(); }, learn, unlearned: () => unlearned(knownList(), settings.patterns || []), get settings() { return settings; }, get world() { return world; }, get player() { return player; }, get target() { return target; }, get flock() { return flock; }, get nursery() { return flock; }, get snakes() { return snakes; }, get raiders() { return raiders; }, get weather() { return weather; }, get critters() { return critters; }, wardrobe, selfieCam, petBaby, openJobs, get inv() { return inv; }, addItem, RECIPES, craft, input, raycast,
+window.blockwild = { fishTap, get fishing() { return fishing; }, selectSlot, get hotbar() { return hotbar; }, get known() { return knownList(); }, learn, unlearned: () => unlearned(knownList(), settings.patterns || []), get settings() { return settings; }, get world() { return world; }, get player() { return player; }, get target() { return target; }, get flock() { return flock; }, get nursery() { return flock; }, get snakes() { return snakes; }, get raiders() { return raiders; }, get weather() { return weather; }, get critters() { return critters; }, music, wardrobe, selfieCam, petBaby, openJobs, get inv() { return inv; }, addItem, RECIPES, craft, input, raycast,
   get clock() { return clock; }, setTime(t) { clock = t; }, swing: () => swing(),
   net, others, get myNetId() { return myNetId; },
   get seat() { return seat; }, awardCrown: () => awardCrown(), sit: (x, y, z) => sit(x, y, z), standUp: () => standUp(),

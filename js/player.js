@@ -39,7 +39,7 @@ export class Player {
     if (len > 1) { mx /= len; mz /= len; }
     let speed = this.flying ? (input.sprint ? 16 : 9) : input.sprint ? 5.8 : 4.4;
     if (this.inWater && !this.flying) speed *= 0.55;
-    speed *= this.slow ?? 1;   // e.g. stuck in poison goo
+    speed *= (this.slow ?? 1) * (this.boost || 1);   // stuck in poison goo; full of bread or pie
     const wx = (-sy * mz + cy * mx) * speed, wz = (-cy * mz - sy * mx) * speed;
     const accel = this.onGround || this.flying ? 14 : this.inWater ? 6 : 3.5;
     const k = 1 - Math.exp(-accel * dt);
@@ -61,7 +61,7 @@ export class Player {
       if (input.jump) v[1] = Math.min(v[1] + 30 * dt, 3.8);
     } else {
       v[1] = Math.max(v[1] - GRAVITY * dt, -55);
-      if (input.jump && this.onGround) v[1] = JUMP_V;
+      if (input.jump && this.onGround) v[1] = JUMP_V * (this.spring || 1); // spring: a snack of grilled fish or pie
     }
 
     // integrate with sub-steps so nothing tunnels through blocks

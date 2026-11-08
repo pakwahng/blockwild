@@ -2,6 +2,13 @@
 
 The same list is in the game: tap the version number on the front screen, or open **What’s new**.
 
+## 32. Cooking, the theme song, and keeping your world safe (8 Nov 2026)
+- Cooking! Make a campfire from 2 logs and 3 cobble, then cook in the bag’s new Cooking tab: bread, grilled fish, apple pie and a party cake.
+- Eat bread to run faster, grilled fish to jump twice as high, or apple pie for both. A little timer shows how long it lasts.
+- A party cake throws a party: your animals close by hop about with hearts, and the babies grow a good bit.
+- The Baby Chicken Empire song now plays on the menu, and now and then while you play. Switch it off in Settings (Theme song).
+- Keeping your world safe: the game asks your browser not to clear it, and the menu reminds you to download a backup now and then.
+
 ## 31. Beds, signs and mountain snow (8 Nov 2026)
 - Make a bed from 3 wood and 3 wool. Tap it when it’s dark to sleep till morning. Playing together, anyone can go to bed and everyone wakes up at sunrise.
 - Put down a sign and write on it. Your words float over it when you’re close by, so you can name your farm, your pens and your house. Tap a sign to change what it says.

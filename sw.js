@@ -1,9 +1,9 @@
 // Network-first service worker: always fresh when online, still playable offline.
-const CACHE = 'blockwild-v31';
+const CACHE = 'blockwild-v32';
 const ASSETS = [
   './', 'index.html', 'css/style.css', 'manifest.webmanifest',
   'js/main.js', 'js/blocks.js', 'js/textures.js', 'js/noise.js', 'js/world.js',
-  'js/renderer.js', 'js/player.js', 'js/input.js', 'js/mesher.js', 'js/models.js', 'js/animals.js', 'js/snakes.js', 'js/sky.js', 'js/net.js', 'js/raiders.js', 'js/crafting.js', 'js/goals.js', 'js/audio.js', 'js/version.js', 'js/weather.js', 'js/critters.js', 'js/recipes.js',
+  'js/renderer.js', 'js/player.js', 'js/input.js', 'js/mesher.js', 'js/models.js', 'js/animals.js', 'js/snakes.js', 'js/sky.js', 'js/net.js', 'js/raiders.js', 'js/crafting.js', 'js/goals.js', 'js/audio.js', 'js/version.js', 'js/weather.js', 'js/critters.js', 'js/recipes.js', 'js/music.js',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png',
 ];
 
@@ -20,6 +20,8 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET' || new URL(req.url).origin !== location.origin) return;
+  // the theme song streams straight from the network: phones fetch media in pieces (range requests), which a cache copy can't serve
+  if (new URL(req.url).pathname.endsWith('.m4a')) return;
   e.respondWith(
     // 'no-cache' revalidates with the server, so a new release shows up on the next load
     // (page navigations can't be re-wrapped with options, so they're rebuilt from the URL)
