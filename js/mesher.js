@@ -1,6 +1,6 @@
 // Chunk mesher: turns block data into triangles. Blocks get soft rounded edges and
 // corners wherever two or three visible faces meet, giving the clay-toy look.
-import { B, BLOCKS, OPAQUE, KIND } from './blocks.js';
+import { B, BLOCKS, OPAQUE, KIND, SHAPED, JOINS } from './blocks.js';
 import { CS, CH, index } from './world.js';
 
 const PX = CS + 2, PA = PX * PX;
@@ -107,6 +107,7 @@ export function buildMesh(world, chunk) {
     const p = pidx(x, y, z);
     const id = padded[p];
     if (id === B.AIR) continue;
+    if (SHAPED[id]) { shapeMesh(opaqueBuf, id, p, ox + x, y, oz + z); continue; }
     let any = 0;
     for (let f = 0; f < 6; f++) {
       const nb = padded[p + FACES[f].nd];
@@ -226,4 +227,56 @@ export function buildMesh(world, chunk) {
     }
   }
   return { opaque: opaqueBuf.out(), liquid: liquidBuf.out() };
+}
+
+// ---- fences and gates: little posts, rails and boards instead of a full cube ----
+// An axis-aligned box from (x0,y0,z0) to (x1,y1,z1) in block-local coordinates; swap exchanges x and z.
+function shapeBox(buf, wx, wy, wz, layer, x0, y0, z0, x1, y1, z1, swap) {
+  if (swap) { [x0, z0] = [z0, x0]; [x1, z1] = [z1, x1]; }
+  const lo = [x0, y0, z0], hi = [x1, y1, z1], pos = [0, 0, 0];
+  for (let f = 0; f < 6; f++) {
+    const F = FACES[f], axis = f >> 1;
+    buf.reserve(4, 6);
+    const s = buf.vc;
+    for (let k = 0; k < 4; k++) {
+      const c = F.c[k];
+      for (let a = 0; a < 3; a++) pos[a] = c[a] ? hi[a] : lo[a];
+      const uv = faceUV(f, pos[0], pos[1], pos[2]);
+      buf.vert(wx + pos[0], wy + pos[1], wz + pos[2], uv[0], uv[1], layer, F.shade * (f === 3 ? 0.9 : 1));
+    }
+    const I = buf.i;
+    I[buf.in++] = s; I[buf.in++] = s + 1; I[buf.in++] = s + 2;
+    I[buf.in++] = s; I[buf.in++] = s + 2; I[buf.in++] = s + 3;
+  }
+}
+
+function shapeMesh(buf, id, p, wx, wy, wz) {
+  const layer = BLOCKS[id].tiles[0];
+  const box = (...a) => shapeBox(buf, wx, wy, wz, layer, ...a);
+  const px = JOINS(padded[p + 1]), nx = JOINS(padded[p - 1]), pz = JOINS(padded[p + PX]), nz = JOINS(padded[p - PX]);
+  if (id === B.FENCE) {
+    box(0.375, 0, 0.375, 0.625, 1, 0.625);                                    // post
+    for (const [y0, y1] of [[0.36, 0.5], [0.7, 0.84]]) {                       // two rails towards each neighbour
+      if (px) box(0.625, y0, 0.44, 1, y1, 0.56);
+      if (nx) box(0, y0, 0.44, 0.375, y1, 0.56);
+      if (pz) box(0.44, y0, 0.625, 0.56, y1, 1);
+      if (nz) box(0.44, y0, 0, 0.56, y1, 0.375);
+    }
+    return;
+  }
+  // gates run between the fences beside them: along x unless the neighbours are along z
+  const swap = !(px || nx) && (pz || nz);
+  box(0, 0, 0.42, 0.14, 1, 0.58, swap);                                        // hinge post
+  box(0.86, 0, 0.42, 1, 1, 0.58, swap);                                        // latch post
+  const bands = [[0.2, 0.34], [0.48, 0.62], [0.76, 0.9]];
+  if (id === B.GATE) {
+    for (const [y0, y1] of bands) box(0.14, y0, 0.45, 0.86, y1, 0.55, swap);
+    box(0.45, 0.2, 0.44, 0.55, 0.9, 0.56, swap);                               // middle slat
+  } else {
+    // open: two halves swung back against the posts
+    for (const [y0, y1] of bands) {
+      box(0.14, y0, 0.58, 0.24, y1, 0.96, swap);
+      box(0.76, y0, 0.58, 0.86, y1, 0.96, swap);
+    }
+  }
 }

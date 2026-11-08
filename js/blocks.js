@@ -10,7 +10,7 @@ export const TILE_COUNT = 25;
 export const B = {
   AIR: 0, GRASS: 1, DIRT: 2, STONE: 3, SAND: 4, LOG: 5, LEAVES: 6, PLANKS: 7,
   GLASS: 8, WATER: 9, COBBLE: 10, BRICK: 11, SNOW: 12, BEDROCK: 13, LAMP: 14, CLAY: 15,
-  HAY: 16, ROOF: 17, CREAM: 18, MUD: 19, THRONE: 20,
+  HAY: 16, ROOF: 17, CREAM: 18, MUD: 19, THRONE: 20, FENCE: 21, GATE: 22, GATE_OPEN: 23,
 };
 
 // kind: 'opaque' | 'cutout' (alpha-tested, e.g. leaves) | 'liquid' (translucent pass)
@@ -36,6 +36,10 @@ const defs = [
   { id: B.CREAM, name: 'Wall', kind: 'opaque', all: T.CREAM, hard: 0.6 },
   { id: B.THRONE, name: 'Throne', kind: 'opaque', top: T.THRONE_TOP, side: T.THRONE_SIDE, bottom: T.HAY_TOP, hard: 0.5, round: 0.16 },
   { id: B.MUD, name: 'Mud', kind: 'opaque', top: T.MUD, side: T.DIRT, bottom: T.DIRT, hard: 0.35, round: 0.2 },
+  // wooden fences and gates: drawn as posts and rails (shape), see mesher.js
+  { id: B.FENCE, name: 'Fence', kind: 'cutout', all: T.PLANKS, hard: 0.45, shape: 'fence' },
+  { id: B.GATE, name: 'Gate', kind: 'cutout', all: T.PLANKS, hard: 0.45, shape: 'gate' },
+  { id: B.GATE_OPEN, name: 'Gate', kind: 'cutout', all: T.PLANKS, hard: 0.45, shape: 'gateOpen', passable: true },
 ];
 
 export const BLOCKS = [];
@@ -52,11 +56,11 @@ export const KIND = new Uint8Array(256);     // 0 air, 1 opaque, 2 cutout, 3 liq
 for (const b of BLOCKS) {
   if (!b) continue;
   OPAQUE[b.id] = b.kind === 'opaque' ? 1 : 0;
-  SOLID[b.id] = b.kind === 'opaque' || b.kind === 'cutout' ? 1 : 0;
+  SOLID[b.id] = (b.kind === 'opaque' || b.kind === 'cutout') && !b.passable ? 1 : 0;
   KIND[b.id] = { air: 0, opaque: 1, cutout: 2, liquid: 3 }[b.kind];
 }
 
-export const PLACEABLE = [B.GRASS, B.DIRT, B.PLANKS, B.LOG, B.HAY, B.MUD, B.ROOF, B.CREAM, B.BRICK,
+export const PLACEABLE = [B.FENCE, B.GATE, B.GRASS, B.DIRT, B.PLANKS, B.LOG, B.HAY, B.MUD, B.ROOF, B.CREAM, B.BRICK,
   B.STONE, B.COBBLE, B.GLASS, B.LEAVES, B.SAND, B.SNOW, B.CLAY, B.LAMP, B.WATER];
 // Non-block items (animal treats) share the hotbar with blocks; their ids sit above the block range.
 export const ITEM_SEEDS = 200, ITEM_WHEAT = 201, ITEM_APPLE = 202, ITEM_CLOVER = 203, ITEM_BONE = 204;
@@ -64,3 +68,9 @@ export const TREATS = [ITEM_SEEDS, ITEM_WHEAT, ITEM_APPLE, ITEM_CLOVER, ITEM_BON
 export const ITEM_SWORD = 205;
 export const ITEM_NAMES = { [ITEM_SEEDS]: 'Seeds', [ITEM_WHEAT]: 'Wheat', [ITEM_APPLE]: 'Apple', [ITEM_CLOVER]: 'Clover', [ITEM_BONE]: 'Bone', [ITEM_SWORD]: 'Sword' };
 export const DEFAULT_HOTBAR = [ITEM_SEEDS, ITEM_WHEAT, ITEM_APPLE, ITEM_CLOVER, ITEM_BONE, ITEM_SWORD, B.PLANKS, B.HAY, B.MUD];
+export const ITEM_STICK = 206;
+ITEM_NAMES[ITEM_STICK] = 'Sticks';
+export const SHAPED = new Uint8Array(256); // fences and gates: thin shapes, not full cubes
+for (const b of BLOCKS) if (b?.shape) SHAPED[b.id] = 1;
+// Fences and gates join up with each other and with solid full blocks.
+export const JOINS = id => SHAPED[id] || OPAQUE[id];

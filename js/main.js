@@ -1,6 +1,8 @@
 // Baby Chicken Empire: bootstrap, game loop, streaming, interaction, UI and saving.
-import { B, T, BLOCKS, SOLID, PLACEABLE, TILE_COUNT, DEFAULT_HOTBAR, ITEM_SEEDS, ITEM_SWORD, TREATS, ITEM_NAMES } from './blocks.js';
+import { B, T, BLOCKS, SOLID, PLACEABLE, TILE_COUNT, ITEM_SEEDS, ITEM_SWORD, ITEM_BONE, ITEM_STICK, TREATS, ITEM_NAMES, SHAPED } from './blocks.js';
 import { Snakes } from './snakes.js';
+import { Raiders } from './raiders.js';
+import { drops, RECIPES, TOOLS, STARTER, OLD_SAVE_BAG } from './crafting.js';
 import { skyAt, CYCLE } from './sky.js';
 import { buildTextures, blockIcon } from './textures.js';
 import * as M from './models.js';
@@ -50,15 +52,20 @@ try {
   M.CONFETTI_COLORS.forEach((c, k) => renderer.addModel('confetti' + k, M.confettiModel(c)));
   renderer.addModel('lachie', M.lachieModel());
   renderer.addModel('charli', M.charliModel());
+  renderer.addModel('fox', M.foxModel());
+  renderer.addModel('crow', M.crowModel());
 } catch (err) {
   console.error(err);
   showError('This device or browser cannot run Baby Chicken Empire (WebGL2 is required). ' + err.message);
 }
 
-let world = null, player = null, flock = null, snakes = null, running = false, firsts = [];
+let world = null, player = null, flock = null, snakes = null, raiders = null, running = false, firsts = [];
 let clock = 0.08, nights = 0, swingCool = 0, wasBreaking = false;
 let crown = false, seat = null;
-let hotbar = [...DEFAULT_HOTBAR];
+// hotbar: nine slots holding item ids (0 = empty); inv: how many of each item you're carrying
+const NEW_HOTBAR = [ITEM_SEEDS, ITEM_SWORD, 0, 0, 0, 0, 0, 0, 0];
+let hotbar = [...NEW_HOTBAR];
+let inv = { ...STARTER };
 let selected = 0;
 let target = null, breakT = { key: '', p: 0 };
 let milestone = 0, throwCool = 0;
@@ -71,11 +78,48 @@ let myNetId = 0, netTimer = 0, poseTimer = 0, shownOthers = -1, pendingEdits = {
 const netEdits = [], netEvents = [];
 
 const icons = {};
-if (textures) for (const id of [...PLACEABLE, B.THRONE]) icons[id] = blockIcon(BLOCKS[id], textures.tiles, 64).toDataURL();
-for (const id of [...TREATS, ITEM_SWORD]) icons[id] = M.treatIcon(ITEM_NAMES[id].toLowerCase(), 64).toDataURL();
+if (textures) for (const id of [...PLACEABLE, B.THRONE]) {
+  icons[id] = SHAPED[id] ? M.treatIcon(id === B.FENCE ? 'fence' : 'gate', 64).toDataURL() : blockIcon(BLOCKS[id], textures.tiles, 64).toDataURL();
+}
+for (const id of [...TREATS, ITEM_SWORD, ITEM_STICK]) icons[id] = M.treatIcon(ITEM_NAMES[id].toLowerCase(), 64).toDataURL();
 $('#held').src = icons[ITEM_SWORD] || '';
-const itemName = id => ITEM_NAMES[id] || BLOCKS[id].name;
-const isItem = id => isTreat(id) || id === ITEM_SWORD || !!BLOCKS[id];
+const itemName = id => ITEM_NAMES[id] || BLOCKS[id]?.name || '';
+const isItem = id => !!icons[id];
+// the order things are listed in your bag
+const BAG_ORDER = [...TREATS, ITEM_SWORD, ITEM_STICK, B.THRONE, ...PLACEABLE];
+
+// ---------- your bag: collecting and using things up ----------
+const have = id => inv[id] || 0;
+function addItem(id, n = 1, quiet = false) {
+  if (!isItem(id) || n <= 0) return;
+  inv[id] = have(id) + n;
+  let slot = hotbar.indexOf(id);
+  if (slot < 0) {
+    // new things go into an empty slot, or one whose item has run out
+    slot = hotbar.indexOf(0);
+    if (slot < 0) slot = hotbar.findIndex((h, i) => i !== selected && !have(h));
+    if (slot >= 0) hotbar[slot] = id;
+  }
+  buildHotbar();
+  if (slot >= 0 && !quiet) { const el = $('#hotbar').children[slot]; el?.classList.remove('got'); void el?.offsetWidth; el?.classList.add('got'); }
+}
+function useItem(id, n = 1) {
+  if (TOOLS.has(id)) return have(id) > 0;
+  if (have(id) < n) return false;
+  inv[id] -= n;
+  if (!inv[id]) delete inv[id];
+  updateCounts();
+  return true;
+}
+function canMake([, , needs]) { return needs.every(([id, n]) => have(id) >= n); }
+function craft(recipe) {
+  if (!canMake(recipe)) return false;
+  const [out, n, needs] = recipe;
+  for (const [id, k] of needs) useItem(id, k);
+  addItem(out, n, true);
+  sfx.place();
+  return true;
+}
 
 // Lines from the song, shown as the nursery grows.
 const MILESTONES = [
@@ -133,14 +177,23 @@ function startWorld(save) {
   }
   player = new Player(sx, sy, sz);
   if (save) { player.yaw = save.yaw || 0; player.pitch = save.pitch || 0; player.flying = !!save.flying; }
-  if (save?.hotbar?.length === 9) { hotbar = save.hotbar.filter(isItem); selected = save.selected || 0; }
-  if (save && !(save.v >= 2)) {
-    // older saves: hand out all the treats at the front of the hotbar
-    hotbar = [...TREATS, ...hotbar.filter(id => !isTreat(id))].slice(0, 9);
-  }
-  if (save && !(save.v >= 3) && !hotbar.includes(ITEM_SWORD)) hotbar[5] = ITEM_SWORD; // the toy sword arrives
   const guest = !!save?.guest;
-  while (hotbar.length < 9) hotbar.push(B.STONE);
+  // a guest brings their own bag along on the visit, so it stays as it is
+  if (!guest) {
+    if (save?.hotbar?.length === 9) { hotbar = save.hotbar.map(id => isItem(id) ? id : 0); selected = save.selected || 0; }
+    else { hotbar = [...NEW_HOTBAR]; selected = 0; }
+    const old = save?.edits !== undefined; // a real saved world, not just a seed for a new one
+    if (old && !(save.v >= 2)) hotbar = [...TREATS, ...hotbar.filter(id => !isTreat(id))].slice(0, 9);
+    if (old && !(save.v >= 3) && !hotbar.includes(ITEM_SWORD)) hotbar[5] = ITEM_SWORD; // the toy sword arrives
+    if (save?.inv) inv = { ...save.inv };
+    else if (old) {
+      // a world from before you had to collect things: a generous bag, plus a stack of what was on the hotbar
+      inv = { ...OLD_SAVE_BAG };
+      for (const id of hotbar) if (id && !TOOLS.has(id) && id !== B.THRONE) inv[id] = Math.max(have(id), 32);
+      if (save.crown) inv[B.THRONE] = Math.max(have(B.THRONE), 1);
+    } else inv = { ...STARTER };
+  }
+  while (hotbar.length < 9) hotbar.push(0);
   player.autoJump = settings.autoJump;
   document.body.classList.toggle('flying', player.flying);
   $('#btn-fly').classList.toggle('on', player.flying);
@@ -153,6 +206,7 @@ function startWorld(save) {
   milestone = save?.milestone || 0;
   firsts = save?.firsts || [];
   snakes = new Snakes(world);
+  raiders = new Raiders(world, snakes);
   clock = save?.clock ?? 0.08;
   nights = save?.nights || 0;
   crown = !!save?.crown;
@@ -169,9 +223,15 @@ function startWorld(save) {
 }
 
 function saveGame() {
-  if (!world || !player || net.isGuest) return; // a guest's own world stays saved while they visit
+  if (!world || !player) return;
+  if (net.isGuest) {
+    // a guest's own world stays as it was while they visit; only the bag they carry is kept
+    const own = store.get(SAVE_KEY);
+    if (own?.seed !== undefined) store.set(SAVE_KEY, { ...own, v: 4, inv, hotbar, selected });
+    return;
+  }
   store.set(SAVE_KEY, {
-    v: 3, seed: world.seed, clock: +clock.toFixed(4), nights, crown, pos: player.pos.map(v => +v.toFixed(2)), yaw: player.yaw, pitch: player.pitch,
+    v: 4, inv, seed: world.seed, clock: +clock.toFixed(4), nights, crown, pos: player.pos.map(v => +v.toFixed(2)), yaw: player.yaw, pitch: player.pitch,
     flying: player.flying, hotbar, selected, edits: world.serializeEdits(),
     animals: flock ? flock.serialize() : [], milestone, firsts,
   });
@@ -221,7 +281,7 @@ function awardCrown() {
   crown = true;
   showCrown();
   crownEl.classList.remove('bump'); void crownEl.offsetWidth; crownEl.classList.add('bump');
-  if (!hotbar.includes(B.THRONE)) { hotbar[8] = B.THRONE; buildHotbar(); }
+  if (!have(B.THRONE)) addItem(B.THRONE, 1);
   sfx.royal();
   snakes.burst(player.pos, 90, undefined, false);
   if (net.isHost) netEvents.push({ type: 'crown' });
@@ -311,6 +371,7 @@ function handleChickEvents() {
     // guests hear and see the same things
     for (const ev of flock.events) netEvents.push({ ...ev, f: 1 });
     for (const ev of snakes.events) netEvents.push(ev);
+    for (const ev of raiders.events) netEvents.push({ ...ev, r: 1 });
     if (netEvents.length > 120) netEvents.splice(0, netEvents.length - 120);
   }
   for (const ev of flock.events) {
@@ -354,6 +415,35 @@ function handleChickEvents() {
     }
   }
   snakes.events.length = 0;
+
+  // the daytime raiders
+  for (const ev of raiders.events) {
+    const d = ev.p ? Math.hypot(ev.p[0] - eye[0], ev.p[1] - eye[1], ev.p[2] - eye[2]) : 0;
+    if (ev.type === 'fox') {
+      sfx.yelp(0.35);
+      if (!firsts.includes('fox')) { firsts.push('fox'); toast('A sneaky fox is creeping up on your nursery! Bonk it twice with the sword, or build a wooden fence to keep it out.'); }
+      else toast('A fox is sneaking up on the nursery!');
+    } else if (ev.type === 'crow') {
+      sfx.caw(0.3);
+      if (!firsts.includes('crow')) { firsts.push('crow'); toast('Caw! A crow is swooping down to pinch a treat. Bonk it before it flies off!'); }
+    } else if (ev.type === 'caw') { if (d < 30) sfx.caw(0.3 * (1 - d / 30)); }
+    else if (ev.type === 'steal') { if (d < 40) { sfx.caw(0.3); toast('A crow pinched a treat and flew off!'); } }
+    else if (ev.type === 'foxSpook') {
+      sfx.yelp(0.4); sfx.call(ev.sp, 0.5);
+      toast(`The fox spooked a ${SPECIES[ev.sp].name} out of your nursery! Feed it again to bring it back.`);
+    } else if (ev.type === 'foxGiveUp') { if (d < 60) toast('The fox couldn’t get past your fence and slunk off home.'); }
+    else if (ev.type === 'bonk') { sfx.bonk(); floatFx(ev.p, 'bonk'); buzz(30); }
+    else if (ev.type === 'rpoof') {
+      sfx.poof(); buzz(60);
+      const fox = ev.kind === 0;
+      if (ev.by === myNetId) {
+        // whoever bonked it gets what it dropped
+        if (fox) addItem(ITEM_BONE, 2); else addItem(ITEM_SEEDS, 4);
+        toast(fox ? 'Bonk, bonk, poof! The fox dropped 2 bones.' : 'Bonk, poof! The crow dropped 4 seeds.');
+      }
+    }
+  }
+  raiders.events.length = 0;
   updateNursery();
 }
 
@@ -364,9 +454,9 @@ function swing() {
   const held = $('#held');
   held.classList.remove('swing'); void held.offsetWidth; held.classList.add('swing');
   if (net.isGuest) { net.toHost({ t: 'swing', eye: player.eye(), fwd: player.forward() }); sfx.whoosh(); return; }
-  if (!snakes.swing(player.eye(), player.forward())) sfx.whoosh();
+  if (!snakes.swing(player.eye(), player.forward()) && !raiders.swing(player.eye(), player.forward(), myNetId)) sfx.whoosh();
 }
-function updateHeld() { $('#held').hidden = hotbar[selected] !== ITEM_SWORD; }
+function updateHeld() { $('#held').hidden = hotbar[selected] !== ITEM_SWORD || !have(ITEM_SWORD); }
 
 // ---------- chunk streaming ----------
 const OFFSETS = [];
@@ -415,10 +505,21 @@ function placeBlock() {
   if (!running) return;
   const id = hotbar[selected];
   if (target && target.id === B.THRONE && !seat) { sit(target.x, target.y, target.z); return; }
+  if (target && (target.id === B.GATE || target.id === B.GATE_OPEN)) {
+    // tap a gate to swing it open or shut
+    const open = target.id === B.GATE;
+    if (!open && player.intersectsBlock(target.x, target.y, target.z)) return;
+    editBlock(target.x, target.y, target.z, open ? B.GATE_OPEN : B.GATE);
+    remeshAround(target.x, target.z); sfx.place(); buzz(8);
+    return;
+  }
+  if (!id) return;
+  if (!have(id)) { emptyHint(id); return; }
   if (id === ITEM_SWORD) { swing(); return; }
   if (isTreat(id)) {
     if (throwCool > 0) return;
     throwCool = id === ITEM_SEEDS ? 0.2 : 0.3;
+    useItem(id);
     if (net.isGuest) net.toHost({ t: 'throw', item: id, eye: player.eye(), fwd: player.forward() });
     else flock.throwTreat(id, player.eye(), player.forward());
     sfx.toss();
@@ -430,6 +531,7 @@ function placeBlock() {
   if (here !== B.AIR && here !== B.WATER) return;
   if (SOLID[id] && player.intersectsBlock(x, y, z)) return;
   if (editBlock(x, y, z, id)) {
+    useItem(id);
     if (id === B.THRONE) buildThrone(x, y, z);
     remeshAround(x, z); buzz(8); sfx.place();
   }
@@ -437,7 +539,7 @@ function placeBlock() {
 
 function updateBreaking(dt) {
   const ring = $('#crosshair');
-  if (hotbar[selected] === ITEM_SWORD) {
+  if (hotbar[selected] === ITEM_SWORD && have(ITEM_SWORD)) {
     // with the sword, a click or press swings instead of digging
     if (input.state.breaking && !wasBreaking) swing();
     wasBreaking = input.state.breaking;
@@ -451,6 +553,7 @@ function updateBreaking(dt) {
   const hard = BLOCKS[target.id].hard;
   breakT.p += Number.isFinite(hard) ? dt / Math.max(0.05, hard) : 0;
   if (breakT.p >= 1) {
+    for (const [item, n] of drops(target.id)) addItem(item, n);
     // let water flow back into a hole next to water
     const nearWater = [[1, 0, 0], [-1, 0, 0], [0, 0, 1], [0, 0, -1], [0, 1, 0]]
       .some(([dx, dy, dz]) => world.getBlock(target.x + dx, target.y + dy, target.z + dz) === B.WATER);
@@ -480,12 +583,32 @@ function buildHotbar() {
   hotbar.forEach((id, i) => {
     const b = document.createElement('button');
     b.className = 'slot' + (i === selected ? ' sel' : '');
-    b.setAttribute('aria-label', itemName(id));
-    b.innerHTML = `<img alt="" src="${icons[id]}">`;
+    b.innerHTML = id ? `<img alt="" src="${icons[id]}"><span class="n"></span>` : '';
     b.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); selectSlot(i); });
     bar.appendChild(b);
   });
+  updateCounts();
+}
+// Shows how many of each hotbar item you have; run-out items go grey.
+function updateCounts() {
+  const slots = $('#hotbar').children;
+  hotbar.forEach((id, i) => {
+    const el = slots[i];
+    if (!el) return;
+    const n = have(id);
+    el.classList.toggle('none', !!id && !n);
+    el.setAttribute('aria-label', id ? `${itemName(id)}${TOOLS.has(id) ? '' : ', ' + n}` : 'Empty slot');
+    const c = el.querySelector('.n');
+    if (c) c.textContent = !n || TOOLS.has(id) ? '' : n > 999 ? '999+' : n;
+  });
   updateHeld();
+}
+let hintCool = 0;
+function emptyHint(id) {
+  if (performance.now() < hintCool) return;
+  hintCool = performance.now() + 4000;
+  const made = RECIPES.find(r => r[0] === id);
+  toast(made ? `You’re out of ${itemName(id).toLowerCase()}. Open your bag to make more.` : `You’re out of ${itemName(id).toLowerCase()}. Dig or find some more.`);
 }
 function selectSlot(i) {
   selected = i;
@@ -497,16 +620,51 @@ function openPicker() {
   if (!running) return;
   running = false; input.enabled = false;
   if (document.pointerLockElement) { pickerOpenFromLock = true; document.exitPointerLock(); }
+  buildBag();
+  $('#picker').hidden = false;
+}
+function buildBag() {
   const grid = $('#picker-grid');
   grid.innerHTML = '';
-  for (const id of [...TREATS, ITEM_SWORD, ...(crown ? [B.THRONE] : []), ...PLACEABLE]) {
+  const owned = BAG_ORDER.filter(id => have(id) > 0);
+  for (const id of owned) {
     const b = document.createElement('button');
+    const n = have(id);
     b.className = 'pick' + (hotbar[selected] === id ? ' cur' : '');
-    b.innerHTML = `<img alt="" src="${icons[id]}"><span>${itemName(id)}</span>`;
-    b.addEventListener('click', () => { hotbar[selected] = id; buildHotbar(); closePicker(); });
+    b.innerHTML = `<img alt="" src="${icons[id]}"><span>${itemName(id)}</span>${TOOLS.has(id) ? '' : `<span class="n">${n}</span>`}`;
+    b.addEventListener('click', () => {
+      // put it in the chosen slot (swapping if it's already elsewhere on the hotbar)
+      const was = hotbar.indexOf(id);
+      if (was >= 0 && was !== selected) hotbar[was] = hotbar[selected];
+      hotbar[selected] = id; buildHotbar(); closePicker();
+    });
     grid.appendChild(b);
   }
-  $('#picker').hidden = false;
+  if (!owned.length) grid.innerHTML = '<p class="bag-empty">Your bag is empty. Dig some blocks!</p>';
+
+  const list = $('#craft-list');
+  list.innerHTML = '';
+  // things you can make first, then the rest
+  const sorted = [...RECIPES].sort((a, b) => canMake(b) - canMake(a));
+  for (const r of sorted) {
+    const [out, n, needs] = r;
+    const ok = canMake(r);
+    const b = document.createElement('button');
+    b.className = 'recipe';
+    b.disabled = !ok;
+    b.innerHTML = `<span class="out"><img alt="" src="${icons[out]}">${n > 1 ? n + ' ' : ''}${itemName(out)}</span>` +
+      `<span class="needs">${needs.map(([id, k]) => `<span class="${have(id) >= k ? '' : 'short'}"><img alt="" src="${icons[id]}">${k} ${id === ITEM_STICK && k === 1 ? 'Stick' : itemName(id)}</span>`).join('')}</span>` +
+      `<span class="go">${ok ? 'Make' : ''}</span>`;
+    b.setAttribute('aria-label', `Make ${n} ${itemName(out)} from ${needs.map(([id, k]) => k + ' ' + itemName(id)).join(' and ')}`);
+    b.addEventListener('click', () => {
+      if (!craft(r)) return;
+      const y = $('#bag-body').scrollTop;
+      buildBag();
+      $('#bag-body').scrollTop = y;
+      if (!firsts.includes('craft')) { firsts.push('craft'); toast('You made something! Tap it in your bag to hold it.'); }
+    });
+    list.appendChild(b);
+  }
 }
 let pickerOpenFromLock = false;
 function closePicker() {
@@ -565,7 +723,6 @@ $('#btn-create').addEventListener('click', () => {
   if (raw) seed = /^\d+$/.test(raw) ? (+raw >>> 0) : [...raw].reduce((h, ch) => (Math.imul(h, 31) + ch.charCodeAt(0)) >>> 0, 7);
   sfx.unlock();
   enterFullscreen();
-  hotbar = [...DEFAULT_HOTBAR]; selected = 0;
   startWorld(seed === undefined ? null : { seed });
   saveGame();
   if (coarse) input.setTouchMode(true);
@@ -722,7 +879,7 @@ function netStep(dt) {
   const pl = [[0, settings.char, ...myPose()]];
   for (const o of others.values()) pl.push([o.id, o.char, ...o.tp, o.tyaw, o.pitch, o.held, o.sit ? 1 : 0]);
   const ev = netEvents.splice(0);
-  const common = { t: 's', clock: +clock.toFixed(5), nights, crown, counts: flock.counts(), pl, sn: snakes.snapshot(), tr: flock.treatSnapshot(), ev };
+  const common = { t: 's', clock: +clock.toFixed(5), nights, crown, counts: flock.counts(), pl, sn: snakes.snapshot(), rd: raiders.snapshot(), tr: flock.treatSnapshot(), ev };
   for (const [id] of net.conns) {
     const o = others.get(id);
     // animals go every other update (about 4 a second): the copies glide in between
@@ -772,7 +929,7 @@ function hostMessage(from, msg) {
       net.broadcast(msg, from);
       break;
     case 'throw': if (isTreat(msg.item)) flock.throwTreat(msg.item, msg.eye, msg.fwd); break;
-    case 'swing': snakes.swing(msg.eye, msg.fwd); break;
+    case 'swing': if (!snakes.swing(msg.eye, msg.fwd)) raiders.swing(msg.eye, msg.fwd, from); break;
     case 'sit': flock.gatherAt(msg.seat, msg.front); break;
     case 'stand': flock.endGather(); break;
   }
@@ -799,9 +956,11 @@ function guestMessage(msg) {
       for (const ev of msg.ev || []) {
         if (ev.type === 'crown') { if (!crown) awardCrown(); continue; }
         if (ev.f) flock.events.push(ev);
+        else if (ev.r) { raiders.remoteEvent(ev); raiders.events.push(ev); }
         else { snakes.remoteEvent(ev); snakes.events.push(ev); }
       }
       snakes.applySnapshot(msg.sn || []);
+      raiders.applySnapshot(msg.rd || []);
       const seen = new Set();
       for (const [id, char, x, y, z, yaw, pitch, held, sit] of msg.pl || []) {
         if (id === myNetId) continue;
@@ -830,7 +989,11 @@ function startGuestWorld(w) {
 
 function backToOwnWorld() {
   myNetId = 0;
+  const bag = { inv, hotbar, selected }; // what you collected on the visit comes home with you
   startWorld(store.get(SAVE_KEY));
+  inv = bag.inv; hotbar = bag.hotbar; selected = bag.selected;
+  buildHotbar();
+  saveGame();
   updateRoomUi();
 }
 
@@ -930,11 +1093,13 @@ function frame(now) {
     if (net.isGuest) {
       flock.puppetStep(dt);
       snakes.puppetStep(dt);
+      raiders.puppetStep(dt);
     } else {
       const isNight = skyAt(clock).night > 0.5;
       const players = [{ pos: player.pos, holding: running ? hotbar[selected] : null }];
       for (const o of others.values()) players.push({ pos: o.p, holding: o.held });
-      flock.update(dt, players, snakes.heads(), isNight);
+      flock.update(dt, players, [...snakes.heads(), ...raiders.threats()], isNight);
+      raiders.update(dt, flock, players.map(q => q.pos), skyAt(clock).night < 0.3, nights);
       snakes.update(dt, flock, player, isNight, nights);
     }
     handleChickEvents();
@@ -952,6 +1117,8 @@ function frame(now) {
   const far = settings.view * CS - 6;
   const waterFog = WATER_FOG.map((v, i) => v * sky.tint[i]);
   const a = flock.instances(eye, far + 8, now / 1000), s = snakes.instances(eye, far + 8, now / 1000);
+  const r = raiders.instances(eye, far + 8, now / 1000);
+  s.groups.push(...r.groups); s.shadowGroups.push(...r.shadowGroups);
   const k = kidInstances(dt);
   s.groups.push(...k.groups); s.shadowGroups.push(...k.shadowGroups);
   renderer.render({
@@ -973,7 +1140,7 @@ function frame(now) {
 requestAnimationFrame(loop);
 
 // handy for debugging from the console
-window.blockwild = { get world() { return world; }, get player() { return player; }, get target() { return target; }, get flock() { return flock; }, get nursery() { return flock; }, get snakes() { return snakes; }, input, raycast,
+window.blockwild = { get world() { return world; }, get player() { return player; }, get target() { return target; }, get flock() { return flock; }, get nursery() { return flock; }, get snakes() { return snakes; }, get raiders() { return raiders; }, get inv() { return inv; }, addItem, RECIPES, craft, input, raycast,
   get clock() { return clock; }, setTime(t) { clock = t; }, swing: () => swing(),
   net, others, get myNetId() { return myNetId; },
   get seat() { return seat; }, awardCrown: () => awardCrown(), sit: (x, y, z) => sit(x, y, z), standUp: () => standUp(),

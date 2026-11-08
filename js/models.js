@@ -319,6 +319,20 @@ export function treatIcon(kind, px = 64) {
         g.fillStyle = '#4cc25a'; g.beginPath(); g.arc(x - 5, y, 9, 0, Math.PI * 2); g.arc(x + 5, y, 9, 0, Math.PI * 2); g.fill();
       }
       g.fillStyle = '#7fe08a'; g.beginPath(); g.arc(32, 28, 4, 0, Math.PI * 2); g.fill();
+    } else if (kind === 'sticks') {
+      for (const [x, a] of [[24, -0.35], [34, 0.1], [42, 0.45]]) {
+        g.save(); g.translate(x, 34); g.rotate(a);
+        rr(g, -3.5, -22, 7, 44, 3, '#8a5a30'); rr(g, -2, -21, 3, 42, 1.5, '#b07a45');
+        g.restore();
+      }
+    } else if (kind === 'fence') {
+      for (const x of [10, 44]) { rr(g, x, 8, 11, 50, 3, '#8f5f34'); rr(g, x + 2, 9, 5, 48, 2, '#c08850'); }
+      for (const y of [20, 38]) { rr(g, 6, y, 52, 8, 3, '#9a6a3c'); rr(g, 7, y + 1, 50, 3, 1.5, '#c99558'); }
+    } else if (kind === 'gate') {
+      for (const x of [4, 50]) rr(g, x, 6, 10, 52, 3, '#7e5230');
+      for (const y of [14, 28, 42]) rr(g, 13, y, 38, 8, 3, '#b07a45');
+      g.save(); g.translate(32, 32); g.rotate(-0.62); rr(g, -24, -3.5, 48, 7, 3, '#9a6a3c'); g.restore();
+      rr(g, 47, 30, 5, 6, 2, '#3a3a3c');
     } else if (kind === 'sword') {
       // wooden toy sword
       g.translate(32, 32); g.rotate(Math.PI / 4);
@@ -440,3 +454,49 @@ export const KID_FACE_SVG = {
   lachie: '<rect x="3" y="6" width="26" height="24" rx="9" fill="#f3c9a6"/><path d="M2 15q-1-12 14-12t14 12l-3-2-2 3-3-3-3 3-3-3-3 3-3-3-2 3z" fill="#1b1818"/><path d="M8 4l2-3 2 3M15 3l2-3 2 3M22 4l2-2 1 3" fill="#1b1818"/>' + FACE_EYES,
   charli: '<rect x="1" y="12" width="5" height="15" rx="2" fill="#1b1818"/><rect x="3" y="6" width="26" height="24" rx="9" fill="#f3c9a6"/><path d="M3 17q-1-14 13-14t13 14q-2-8-13-10-11 2-13 10z" fill="#1b1818"/><circle cx="3.2" cy="24" r="1" fill="#8d8f96"/><circle cx="28.8" cy="24" r="1" fill="#8d8f96"/>' + FACE_EYES,
 };
+
+// ---- daytime raiders ----
+// A sneaky orange fox with a white-tipped bushy tail. It's after your babies.
+export function foxModel() {
+  const m = new ModelBuilder();
+  const orange = '#f07a2a', dark = '#c95a16', white = '#fff4e6', black = '#2a1e1a', H = 10;
+  m.legs(0.1, 0.15, -0.17, [0.1, 0.24, 0.1], dark, black, 0.09);
+  m.box([0, 0.36, -0.02], [0.32, 0.26, 0.54], 0.09, orange);
+  m.box([0, 0.27, 0.1], [0.22, 0.1, 0.3], 0.04, white, 0, false);          // pale belly
+  m.box([0, 0.36, 0.25], [0.22, 0.2, 0.08], 0.06, white);                  // chest fluff
+  // head with a long pointy snout
+  m.box([0, 0.6, 0.26], [0.38, 0.3, 0.3], 0.08, orange, H);
+  m.box([0, 0.53, 0.46], [0.18, 0.14, 0.16], 0.05, white, H);
+  m.box([0, 0.57, 0.545], [0.07, 0.06, 0.04], 0.02, black, H, false);      // nose
+  for (const sx of [-1, 1]) {
+    m.box([sx * 0.13, 0.55, 0.39], [0.12, 0.12, 0.04], 0.04, white, H, false); // cheeks
+    m.box([sx * 0.12, 0.81, 0.22], [0.13, 0.16, 0.07], 0.03, orange, H, false); // tall ears
+    m.box([sx * 0.12, 0.92, 0.22], [0.07, 0.08, 0.06], 0.025, black, H, false);
+    m.box([sx * 0.12, 0.8, 0.256], [0.07, 0.1, 0.01], 0.01, white, H, false);
+    m.box([sx * 0.1, 0.7, 0.405], [0.1, 0.03, 0.01], 0.01, black, H, false); // sly brows
+  }
+  m.eyes(0.095, 0.65, 0.41, 0.075, 0.07, H);
+  // big bushy tail
+  m.box([0, 0.42, -0.36], [0.16, 0.16, 0.22], 0.07, orange, 8);
+  m.box([0, 0.47, -0.52], [0.2, 0.2, 0.2], 0.09, orange, 8);
+  m.box([0, 0.5, -0.66], [0.15, 0.15, 0.12], 0.06, white, 8);
+  return m.done({ wing: [0, 0], leg: [0.24, 0.15, -0.17], head: [0.5, 0.14], tail: [-0.3] });
+}
+
+// A cheeky black crow that swoops down to pinch treats.
+export function crowModel() {
+  const m = new ModelBuilder();
+  const black = '#26262e', sheen = '#3a3f5c', beak = '#f2a33a';
+  m.box([0, 0.3, 0], [0.3, 0.28, 0.42], 0.1, black);
+  m.box([0, 0.46, 0.17], [0.26, 0.24, 0.24], 0.09, black);                 // head
+  m.box([0, 0.43, 0.33], [0.09, 0.07, 0.14], 0.025, beak, 0, false);
+  for (const sx of [-1, 1]) {
+    m.box([sx * 0.085, 0.5, 0.29], [0.06, 0.065, 0.02], 0.02, '#ffffff', 0, false);
+    m.box([sx * 0.085, 0.5, 0.302], [0.035, 0.04, 0.01], 0.012, '#111111', 0, false);
+  }
+  m.box([0, 0.3, -0.27], [0.18, 0.05, 0.2], 0.02, sheen, 8, false);        // tail feathers
+  m.box([0.19, 0.33, -0.02], [0.3, 0.05, 0.3], 0.02, sheen, 1, false);     // wings stick out to the sides
+  m.box([-0.19, 0.33, -0.02], [0.3, 0.05, 0.3], 0.02, sheen, 2, false);
+  for (const sx of [-1, 1]) m.box([sx * 0.07, 0.07, 0.04], [0.04, 0.14, 0.04], 0.015, beak, 3, false);
+  return m.done({ wing: [0.06, 0.34], leg: [0, 0, 0], head: [0, 0], tail: [-0.2] });
+}

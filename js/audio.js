@@ -83,6 +83,19 @@ export class Sfx {
     }
   }
 
+  // The fox's sly little yelp and the crow's caw.
+  yelp(vol = 0.3) {
+    if (!this.ready || vol < 0.02) return;
+    const t = this.ctx.currentTime + 0.01;
+    this.voice('sawtooth', 700, 1500, t, 0.12, vol * 0.6, 3000);
+    this.voice('sawtooth', 1400, 600, t + 0.13, 0.22, vol * 0.5, 2600);
+  }
+  caw(vol = 0.3) {
+    if (!this.ready || vol < 0.02) return;
+    const t = this.ctx.currentTime + 0.01;
+    for (let k = 0; k < 2; k++) this.voice('sawtooth', 520, 380, t + k * 0.26, 0.2, vol * 0.7, 1400, 40, 30);
+  }
+
   splash() {
     if (!this.ready) return;
     const t = this.ctx.currentTime + 0.01;

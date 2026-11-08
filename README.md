@@ -35,6 +35,40 @@ Based on the music video *Baby Chicken Empire*: build a nursery for baby animals
 - Animals hop up natural steps, but can't climb **wood, logs, hay, walls, roof, glass or brick**. A one-block fence keeps them in.
 - Milestones at 10, 37, 67 and 100 chicks, the first of each other baby, and a full set of all five quote the song.
 
+## Collecting and crafting
+
+- A new world starts with 10 seeds and the toy sword. Everything else you collect.
+- Hold to **dig** a block and it goes in your bag. Grass gives dirt (and sometimes seeds, wheat or clover), stone gives cobble, leaves can drop apples and sticks, and dirt now and then hides a bone.
+- The hotbar shows how many you have. Placing a block or throwing a treat uses one up; the sword is never used up. Things you've run out of go grey.
+- Open the **bag** (top right, or E) to pick what's in the selected slot and to **make** things:
+
+| Make | From |
+|---|---|
+| 4 Wood | 1 Log |
+| 4 Sticks | 2 Wood |
+| 4 Fence | 2 Wood + 2 Sticks |
+| 1 Gate | 2 Wood + 4 Sticks |
+| Sword | 2 Wood + 1 Stick |
+| Hay | 4 Wheat |
+| 3 Seeds | 1 Wheat |
+| Glass | 2 Sand |
+| Brick | 2 Clay |
+| 2 Wall | 1 Sand + 1 Clay |
+| 2 Roof | 1 Brick + 1 Wood |
+| Lamp | 1 Glass + 1 Stick + 1 Apple |
+| Water | 2 Snow |
+| 2 Mud | 2 Dirt + 1 Water |
+
+- **Fences** join up with each other, gates and solid blocks. **Gates** turn to line up with the fence; tap one to open or shut it. Animals and foxes can't get past either.
+- Worlds saved before crafting existed get a generous starter bag.
+- A visitor in Play together brings their own bag and takes home what they collected.
+
+## Day raiders
+
+- **Foxes** sneak up on your tame babies by day. One that reaches a baby spooks it out of the nursery. Babies run from a fox that gets close. Foxes hop up natural ground but can't climb anything you've built, so a fence keeps them out; one that spends ages bumping into fences gives up and goes home. Two sword bonks and a fox poofs, dropping **2 bones** for whoever bonked it.
+- **Crows** swoop down on treats lying on the ground, peck for a moment, then fly off with them. One bonk while it pecks and it poofs, dropping **4 seeds**.
+- Raiders go home at dusk, when the snake takes over.
+
 ## Night and the block snake
 
 A full day lasts 10 minutes: about 6 minutes of daylight, a pink dusk, roughly 3 minutes of night under the square moon, then sunrise.
@@ -67,9 +101,9 @@ A full day lasts 10 minutes: about 6 minutes of daylight, a pink dusk, roughly 3
 |---|---|
 | Drag left side: walk (push far to sprint) | WASD, Ctrl to sprint |
 | Drag right side: look | Mouse (click to capture) |
-| Tap: place block · Hold: break | Right click: place · Left hold: break |
+| Tap: place block / open gate · Hold: dig | Right click: place · Left hold: break |
 | ⬆ jump / fly up, ⬇ fly down, **Fly** toggle | Space, Shift, F |
-| Hotbar tap, ▦ for all blocks | 1–9, wheel, E |
+| Hotbar tap, bag button | 1–9, wheel, E |
 
 ## Code map
 
@@ -79,6 +113,8 @@ A full day lasts 10 minutes: about 6 minutes of daylight, a pink dusk, roughly 3
 | `js/world.js` | Chunk storage, terrain/caves/trees generation, player edits |
 | `js/mesher.js` | Turns chunks into triangles, with rounded block edges and ambient occlusion |
 | `js/animals.js` | Baby animal behaviour: species table, wandering, treats, taming, breeding, hay and mud habits, pens |
+| `js/raiders.js` | Daytime foxes and crows: sneaking, stealing treats, fences, sword hits |
+| `js/crafting.js` | What digging gives you, crafting recipes, starter bag |
 | `js/snakes.js` | The night snake: spawning, slithering body, spooking babies, sword hits, confetti |
 | `js/sky.js` | Day/night clock: sky colours, light tint, sun and moon |
 | `js/net.js` | Play together: room codes, hosting and joining (PeerJS / WebRTC) |

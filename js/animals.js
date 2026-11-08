@@ -22,7 +22,7 @@ export const isTreat = id => id in TREAT_MODEL;
 
 // Built blocks animals can't hop onto, so a one-block fence keeps them in.
 const NO_CLIMB = new Uint8Array(256);
-for (const id of [B.PLANKS, B.LOG, B.HAY, B.ROOF, B.CREAM, B.GLASS, B.BRICK, B.COBBLE, B.LAMP, B.CLAY, B.LEAVES]) NO_CLIMB[id] = 1;
+for (const id of [B.PLANKS, B.LOG, B.HAY, B.ROOF, B.CREAM, B.GLASS, B.BRICK, B.COBBLE, B.LAMP, B.CLAY, B.LEAVES, B.FENCE, B.GATE]) NO_CLIMB[id] = 1;
 
 export class Nursery {
   constructor(world) {
