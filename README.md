@@ -70,6 +70,16 @@ Based on the music video *Baby Chicken Empire*: build a nursery for baby animals
 - Worlds saved before crafting existed get a generous starter bag.
 - A visitor in Play together brings their own bag and takes home what they collected.
 
+## Goals
+
+- The star line under the nursery counters shows your **next goal** (tap it to see them all in the bag's **★ Goals** tab).
+- Goals lead from digging your first blocks to chopping a tree, building a crafting table, penning your babies in with fences and a gate, filling a feeder, climbing a ladder, bonking a raider, keeping the nursery safe for a night and growing to 37 chickens.
+- Each goal gives a reward (seeds, wheat, apples, bones, wood, a gate, hay or lamps) when you finish it.
+
+## Flowers
+
+- Red, yellow and white **wild flowers** grow in clumps on the grass. Dig one to pick it, and place it anywhere to plant it. You can walk through them.
+
 ## Day raiders
 
 - **Foxes** sneak up on your tame babies by day. One that reaches a baby spooks it out of the nursery. Babies run from a fox that gets close. Foxes hop up natural ground but can't climb anything you've built, so a fence keeps them out; one that spends ages bumping into fences gives up and goes home. Two sword bonks and a fox poofs, dropping **2 bones** for whoever bonked it.
@@ -121,6 +131,7 @@ A full day lasts 10 minutes: about 6 minutes of daylight, a pink dusk, roughly 3
 | `js/mesher.js` | Turns chunks into triangles, with rounded block edges and ambient occlusion |
 | `js/animals.js` | Baby animal behaviour: species table, wandering, treats, taming, breeding, hay and mud habits, pens |
 | `js/raiders.js` | Daytime foxes and crows: sneaking, stealing treats, fences, sword hits |
+| `js/goals.js` | The goals list, progress and rewards |
 | `js/crafting.js` | What digging gives you, crafting recipes, starter bag |
 | `js/snakes.js` | The night snake: spawning, slithering body, spooking babies, sword hits, confetti |
 | `js/sky.js` | Day/night clock: sky colours, light tint, sun and moon |

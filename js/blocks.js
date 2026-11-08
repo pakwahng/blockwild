@@ -12,6 +12,7 @@ export const B = {
   GLASS: 8, WATER: 9, COBBLE: 10, BRICK: 11, SNOW: 12, BEDROCK: 13, LAMP: 14, CLAY: 15,
   HAY: 16, ROOF: 17, CREAM: 18, MUD: 19, THRONE: 20, FENCE: 21, GATE: 22, GATE_OPEN: 23,
   TABLE: 24, LADDER: 25, FEEDER: 26, FEEDER_SEEDS: 27, FEEDER_WHEAT: 28, FEEDER_APPLE: 29, FEEDER_CLOVER: 30, FEEDER_BONE: 31,
+  FLOWER_RED: 32, FLOWER_YELLOW: 33, FLOWER_WHITE: 34,
 };
 
 // kind: 'opaque' | 'cutout' (alpha-tested, e.g. leaves) | 'liquid' (translucent pass)
@@ -52,6 +53,10 @@ const defs = [
   { id: B.FEEDER_APPLE, name: 'Feeder', kind: 'cutout', all: T.PLANKS, fill: T.THRONE_TOP, hard: 0.45, shape: 'feeder' },
   { id: B.FEEDER_CLOVER, name: 'Feeder', kind: 'cutout', all: T.PLANKS, fill: T.LEAVES, hard: 0.45, shape: 'feeder' },
   { id: B.FEEDER_BONE, name: 'Feeder', kind: 'cutout', all: T.PLANKS, fill: T.SNOW, hard: 0.45, shape: 'feeder' },
+  // wild flowers: little blocky blooms you can pick and plant (walk straight through them)
+  { id: B.FLOWER_RED, name: 'Red flower', kind: 'cutout', all: T.LEAVES, petal: T.THRONE_TOP, middle: T.SAND, hard: 0.05, shape: 'flower', passable: true },
+  { id: B.FLOWER_YELLOW, name: 'Yellow flower', kind: 'cutout', all: T.LEAVES, petal: T.SAND, middle: T.DIRT, hard: 0.05, shape: 'flower', passable: true },
+  { id: B.FLOWER_WHITE, name: 'White flower', kind: 'cutout', all: T.LEAVES, petal: T.SNOW, middle: T.SAND, hard: 0.05, shape: 'flower', passable: true },
 ];
 
 export const BLOCKS = [];
@@ -72,7 +77,7 @@ for (const b of BLOCKS) {
   KIND[b.id] = { air: 0, opaque: 1, cutout: 2, liquid: 3 }[b.kind];
 }
 
-export const PLACEABLE = [B.FENCE, B.GATE, B.TABLE, B.LADDER, B.FEEDER, B.GRASS, B.DIRT, B.PLANKS, B.LOG, B.HAY, B.MUD, B.ROOF, B.CREAM, B.BRICK,
+export const PLACEABLE = [B.FENCE, B.GATE, B.TABLE, B.LADDER, B.FEEDER, B.FLOWER_RED, B.FLOWER_YELLOW, B.FLOWER_WHITE, B.GRASS, B.DIRT, B.PLANKS, B.LOG, B.HAY, B.MUD, B.ROOF, B.CREAM, B.BRICK,
   B.STONE, B.COBBLE, B.GLASS, B.LEAVES, B.SAND, B.SNOW, B.CLAY, B.LAMP, B.WATER];
 // Non-block items (animal treats) share the hotbar with blocks; their ids sit above the block range.
 export const ITEM_SEEDS = 200, ITEM_WHEAT = 201, ITEM_APPLE = 202, ITEM_CLOVER = 203, ITEM_BONE = 204;

@@ -334,6 +334,12 @@ export function treatIcon(kind, px = 64) {
       rr(g, 12, 44, 40, 5, 2, '#9a6a3c');                                              // shelf
       rr(g, 14, 10, 18, 8, 2, '#b8bcc4'); rr(g, 30, 11, 6, 6, 2, '#7e5230');           // little saw
       rr(g, 38, 12, 16, 6, 2, '#e8c890');
+    } else if (kind.startsWith('flower')) {
+      const [petal, mid] = { 'flower-red': ['#e8443a', '#ffd23c'], 'flower-yellow': ['#ffd23c', '#8a5a30'], 'flower-white': ['#f7f5ef', '#ffd23c'] }[kind];
+      rr(g, 29, 26, 6, 34, 3, '#3a9a46');
+      rr(g, 35, 40, 14, 6, 3, '#4cc25a'); rr(g, 15, 46, 14, 6, 3, '#4cc25a');
+      for (const [x, y] of [[18, 14], [36, 14], [27, 4], [27, 24]]) rr(g, x, y, 14, 14, 6, petal);
+      rr(g, 25, 12, 14, 14, 5, mid);
     } else if (kind === 'ladder') {
       for (const x of [14, 42]) rr(g, x, 4, 8, 56, 3, '#8f5f34');
       for (const y of [12, 26, 40, 52]) rr(g, 20, y, 24, 6, 2, '#c08850');

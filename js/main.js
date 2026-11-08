@@ -2,6 +2,7 @@
 import { B, T, BLOCKS, SOLID, PLACEABLE, TILE_COUNT, ITEM_SEEDS, ITEM_SWORD, ITEM_BONE, ITEM_STICK, TREATS, ITEM_NAMES, SHAPED, FEEDER_OF, FEEDER_TREAT, IS_FEEDER } from './blocks.js';
 import { Snakes } from './snakes.js';
 import { Raiders } from './raiders.js';
+import { GOALS, newStats, bump } from './goals.js';
 import { drops, RECIPES, TABS, TOOLS, STARTER, OLD_SAVE_BAG, TABLE_REACH, FEEDER_FILL } from './crafting.js';
 import { skyAt, CYCLE } from './sky.js';
 import { buildTextures, blockIcon } from './textures.js';
@@ -66,6 +67,7 @@ let crown = false, seat = null;
 const NEW_HOTBAR = [ITEM_SEEDS, ITEM_SWORD, 0, 0, 0, 0, 0, 0, 0];
 let hotbar = [...NEW_HOTBAR];
 let inv = { ...STARTER };
+let stats = newStats(), goalsDone = [], goalTimer = 0, climbT = 0;
 let selected = 0;
 let target = null, breakT = { key: '', p: 0 };
 let milestone = 0, throwCool = 0, feederTimer = 0;
@@ -78,7 +80,8 @@ let myNetId = 0, netTimer = 0, poseTimer = 0, shownOthers = -1, pendingEdits = {
 const netEdits = [], netEvents = [];
 
 const icons = {};
-const SHAPE_ICON = { [B.FENCE]: 'fence', [B.GATE]: 'gate', [B.TABLE]: 'table', [B.LADDER]: 'ladder', [B.FEEDER]: 'feeder' };
+const SHAPE_ICON = { [B.FENCE]: 'fence', [B.GATE]: 'gate', [B.TABLE]: 'table', [B.LADDER]: 'ladder', [B.FEEDER]: 'feeder',
+  [B.FLOWER_RED]: 'flower-red', [B.FLOWER_YELLOW]: 'flower-yellow', [B.FLOWER_WHITE]: 'flower-white' };
 if (textures) for (const id of [...PLACEABLE, B.THRONE]) {
   icons[id] = SHAPED[id] ? M.treatIcon(SHAPE_ICON[id], 64).toDataURL() : blockIcon(BLOCKS[id], textures.tiles, 64).toDataURL();
 }
@@ -112,6 +115,63 @@ function useItem(id, n = 1) {
   updateCounts();
   return true;
 }
+// ---------- goals ----------
+const goalProgress = g => Math.min(g[2], g[3](stats));
+const nextGoal = () => GOALS.find(g => !goalsDone.includes(g[0]));
+const rewardText = rw => rw.map(([id, k]) => `${k} ${itemName(id).toLowerCase()}`).join(' and ');
+let shownGoal = '';
+function checkGoals() {
+  if (!world) return;
+  let finished = null;
+  for (const g of GOALS) {
+    if (goalsDone.includes(g[0]) || goalProgress(g) < g[2]) continue;
+    goalsDone.push(g[0]);
+    for (const [id, k] of g[4]) addItem(id, k, true);
+    finished = g;
+  }
+  if (finished) {
+    sfx.fanfare();
+    const next = nextGoal();
+    toast(`★ Goal done: ${finished[1]}! You got ${rewardText(finished[4])}.` + (next ? '' : ' That’s every goal. Chicken king!'));
+    const el = $('#goal'); el.classList.remove('done'); void el.offsetWidth; el.classList.add('done');
+    saveGame();
+  }
+  const g = nextGoal(), el = $('#goal');
+  const text = g ? `★ ${g[1]}${g[2] > 1 ? ` · ${goalProgress(g)}/${g[2]}` : ''}` : '';
+  if (text !== shownGoal) { shownGoal = text; el.querySelector('span').textContent = text; el.hidden = !g; }
+}
+$('#goal').addEventListener('click', () => { bagTab = 'goals'; openPicker(); });
+function buildGoals() {
+  const list = $('#goal-list');
+  list.innerHTML = '';
+  for (const g of GOALS) {
+    const done = goalsDone.includes(g[0]), p = goalProgress(g);
+    const row = document.createElement('div');
+    row.className = 'goal-row' + (done ? ' done' : g === nextGoal() ? ' next' : '');
+    row.innerHTML = `<span class="tick" aria-hidden="true">${done ? '✓' : '★'}</span>` +
+      `<span class="what">${g[1]}${!done && g[2] > 1 ? ` <em>${p}/${g[2]}</em>` : ''}</span>` +
+      `<span class="prize">${g[4].map(([id, k]) => `<img alt="" src="${icons[id]}">${k}`).join(' ')}</span>`;
+    row.setAttribute('aria-label', `${g[1]}. ${done ? 'Done.' : `${p} of ${g[2]}.`} Reward: ${rewardText(g[4])}.`);
+    list.appendChild(row);
+  }
+}
+
+// A little "+1 Dirt" that floats up from where you dug.
+function pickupPop(at, got) {
+  if (!got.length) return;
+  const sp = project(at.x + 0.5, at.y + 0.8, at.z + 0.5);
+  if (!sp) return;
+  got.forEach(([id, k], i) => {
+    const el = document.createElement('div');
+    el.className = 'fx pick';
+    el.innerHTML = `<img alt="" src="${icons[id]}">+${k}`;
+    el.style.left = sp[0] + 'px'; el.style.top = (sp[1] - i * 30) + 'px';
+    el.style.animationDelay = i * 0.12 + 's';
+    $('#fx').appendChild(el);
+    setTimeout(() => el.remove(), 1500 + i * 120);
+  });
+}
+
 // How many times you could make a recipe with what's in your bag.
 const timesYouCan = r => Math.min(...r.needs.map(([id, k]) => Math.floor(have(id) / k)));
 // Is there a crafting table close by?
@@ -126,6 +186,7 @@ function craft(r, times = 1) {
   if (times <= 0 || (r.table && !atTable())) return 0;
   for (const [id, k] of r.needs) useItem(id, k * times);
   addItem(r.out, r.n * times, true);
+  bump(stats, 'made', r.out, times);
   sfx.place();
   return times;
 }
@@ -194,6 +255,7 @@ function startWorld(save) {
     const old = save?.edits !== undefined; // a real saved world, not just a seed for a new one
     if (old && !(save.v >= 2)) hotbar = [...TREATS, ...hotbar.filter(id => !isTreat(id))].slice(0, 9);
     if (old && !(save.v >= 3) && !hotbar.includes(ITEM_SWORD)) hotbar[5] = ITEM_SWORD; // the toy sword arrives
+    stats = Object.assign(newStats(), save?.stats || {}); goalsDone = [...(save?.goals || [])];
     if (save?.inv) inv = { ...save.inv };
     else if (old) {
       // a world from before you had to collect things: a generous bag, plus a stack of what was on the hotbar
@@ -236,11 +298,11 @@ function saveGame() {
   if (net.isGuest) {
     // a guest's own world stays as it was while they visit; only the bag they carry is kept
     const own = store.get(SAVE_KEY);
-    if (own?.seed !== undefined) store.set(SAVE_KEY, { ...own, v: 4, inv, hotbar, selected });
+    if (own?.seed !== undefined) store.set(SAVE_KEY, { ...own, v: 4, inv, hotbar, selected, stats, goals: goalsDone });
     return;
   }
   store.set(SAVE_KEY, {
-    v: 4, inv, seed: world.seed, clock: +clock.toFixed(4), nights, crown, pos: player.pos.map(v => +v.toFixed(2)), yaw: player.yaw, pitch: player.pitch,
+    v: 4, inv, stats, goals: goalsDone, seed: world.seed, clock: +clock.toFixed(4), nights, crown, pos: player.pos.map(v => +v.toFixed(2)), yaw: player.yaw, pitch: player.pitch,
     flying: player.flying, hotbar, selected, edits: world.serializeEdits(),
     animals: flock ? flock.serialize() : [], milestone, firsts,
   });
@@ -275,6 +337,7 @@ function updateNursery() {
     if (n.chick >= at && milestone < at) { milestone = at; if (shownCounts) { toast(text); if (at > 1) sfx.fanfare(); } }
   }
   if (shownCounts && n.chick >= 100 && !crown && !net.isGuest) awardCrown();
+  stats.chicks = Math.max(stats.chicks || 0, n.chick || 0);
   shownCounts = n;
 }
 
@@ -284,6 +347,7 @@ crownEl.className = 'pill crown';
 crownEl.setAttribute('aria-label', 'Chicken king crown');
 crownEl.innerHTML = `<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M4 11l6 6 6-10 6 10 6-6-2 15H6z" fill="#ffcf3a" stroke="#c98a00" stroke-width="1.6" stroke-linejoin="round"/><rect x="6" y="23" width="20" height="4" rx="1.5" fill="#ffb800"/><circle cx="16" cy="18" r="2.4" fill="#e8443a"/><circle cx="10" cy="20" r="1.6" fill="#4aa8ff"/><circle cx="22" cy="20" r="1.6" fill="#4cc25a"/><circle cx="4" cy="10" r="1.8" fill="#ffcf3a"/><circle cx="16" cy="6" r="1.8" fill="#ffcf3a"/><circle cx="28" cy="10" r="1.8" fill="#ffcf3a"/></svg>`;
 nurseryEl.prepend(crownEl);
+{ const br = document.createElement('div'); br.className = 'break'; nurseryEl.append(br, $('#goal')); }
 function showCrown() { crownEl.hidden = !crown; }
 
 function awardCrown() {
@@ -387,7 +451,8 @@ function handleChickEvents() {
     const d = Math.hypot(ev.p[0] - eye[0], ev.p[1] - eye[1], ev.p[2] - eye[2]);
     if (ev.type === 'call') { if (d < 20) sfx.call(ev.sp, 0.35 * (1 - d / 20)); continue; }
     if (d > 40) continue;
-    if (ev.type === 'hatch') { sfx.hatch(); sfx.call(ev.sp, 0.45); floatFx(ev.p, 'hatch'); buzz(20); }
+    if (ev.type === 'tame') bump(stats, 'tamed');
+    if (ev.type === 'hatch') { bump(stats, 'hatched'); sfx.hatch(); sfx.call(ev.sp, 0.45); floatFx(ev.p, 'hatch'); buzz(20); }
     else if (ev.type === 'splash') { if (d < 16) sfx.splash(); }
     else if (ev.type === 'munch') { if (d < 12) sfx.munch(); }
     else { sfx.happy(); floatFx(ev.p, 'heart'); }
@@ -402,6 +467,7 @@ function handleChickEvents() {
         ? 'Night falls under the square moon… a block snake is coming for the nursery! Grab your toy sword and guard the gate.'
         : 'Night falls. Watch out for the block snake!');
     } else if (ev.type === 'dawn') {
+      if (ev.spooked === 0) bump(stats, 'nights');
       if (net.isGuest) {
         toast(ev.spooked ? `Sunrise! The snake spooked ${ev.spooked} ${ev.spooked === 1 ? 'baby' : 'babies'}, but the nursery made it.` : 'Sunrise! Every baby made it safely through the night.');
         if (!(ev.spooked === 0 && !crown)) sfx.fanfare();
@@ -419,7 +485,7 @@ function handleChickEvents() {
       toast(`The snake spooked a ${SPECIES[ev.sp].name} out of your nursery! Feed it again to bring it back.`);
     } else if (ev.type === 'bonk') { sfx.bonk(); floatFx(ev.p, 'bonk'); buzz(30); }
     else if (ev.type === 'poof') {
-      sfx.poof(); buzz(60);
+      sfx.poof(); buzz(60); bump(stats, 'bonked');
       if (!firsts.includes('poof')) { firsts.push('poof'); toast('Swung once, swung twice: bonk! The snake poofed into confetti cubes.'); }
     }
   }
@@ -446,6 +512,7 @@ function handleChickEvents() {
       sfx.poof(); buzz(60);
       const fox = ev.kind === 0;
       if (ev.by === myNetId) {
+        bump(stats, 'bonked');
         // whoever bonked it gets what it dropped
         if (fox) addItem(ITEM_BONE, 2); else addItem(ITEM_SEEDS, 4);
         toast(fox ? 'Bonk, bonk, poof! The fox dropped 2 bones.' : 'Bonk, poof! The crow dropped 4 seeds.');
@@ -526,7 +593,7 @@ function placeBlock() {
     // fill a feeder with the treat you're holding
     if (FEEDER_TREAT[target.id] === id) { toast(`That feeder’s already full of ${itemName(id).toLowerCase()}.`); return; }
     if (have(id) < FEEDER_FILL) { toast(`You need ${FEEDER_FILL} ${itemName(id).toLowerCase()} to fill a feeder.`); return; }
-    useItem(id, FEEDER_FILL);
+    useItem(id, FEEDER_FILL); bump(stats, 'filled');
     editBlock(target.x, target.y, target.z, FEEDER_OF[id]);
     remeshAround(target.x, target.z); sfx.munch(); buzz(10);
     if (!firsts.includes('feeder')) { firsts.push('feeder'); toast('Feeder filled! It puts treats out when a baby that likes them comes by.'); }
@@ -550,7 +617,7 @@ function placeBlock() {
   if (here !== B.AIR && here !== B.WATER) return;
   if (SOLID[id] && player.intersectsBlock(x, y, z)) return;
   if (editBlock(x, y, z, id)) {
-    useItem(id);
+    useItem(id); bump(stats, 'placed', id);
     if (id === B.THRONE) buildThrone(x, y, z);
     remeshAround(x, z); buzz(8); sfx.place();
   }
@@ -572,7 +639,10 @@ function updateBreaking(dt) {
   const hard = BLOCKS[target.id].hard;
   breakT.p += Number.isFinite(hard) ? dt / Math.max(0.05, hard) : 0;
   if (breakT.p >= 1) {
-    for (const [item, n] of drops(target.id)) addItem(item, n);
+    bump(stats, 'dug', target.id);
+    const got = drops(target.id);
+    for (const [item, n] of got) { addItem(item, n); bump(stats, 'got', item, n); }
+    pickupPop(target, got);
     // let water flow back into a hole next to water
     const nearWater = [[1, 0, 0], [-1, 0, 0], [0, 0, 1], [0, 0, -1], [0, 1, 0]]
       .some(([dx, dy, dz]) => world.getBlock(target.x + dx, target.y + dy, target.z + dz) === B.WATER);
@@ -669,7 +739,7 @@ const stickName = (id, k) => id === ITEM_STICK && k === 1 ? 'Stick' : itemName(i
 function buildTabs() {
   const tabs = $('#craft-tabs');
   tabs.innerHTML = '';
-  for (const [key, label] of [['have', 'Your things'], ...TABS]) {
+  for (const [key, label] of [['have', 'Your things'], ...TABS, ['goals', '★ Goals']]) {
     const t = document.createElement('button');
     t.className = 'tab' + (key === bagTab ? ' on' : '');
     t.setAttribute('role', 'tab'); t.setAttribute('aria-selected', key === bagTab);
@@ -681,9 +751,11 @@ function buildTabs() {
 }
 function buildMake() {
   buildTabs();
-  const mine = bagTab === 'have';
+  const mine = bagTab === 'have', goals = bagTab === 'goals';
   $('#bag-tip').hidden = $('#picker-grid').hidden = !mine;
-  $('#table-note').hidden = $('#craft-list').hidden = mine;
+  $('#table-note').hidden = $('#craft-list').hidden = mine || goals;
+  $('#goal-list').hidden = !goals;
+  if (goals) buildGoals();
   const list = $('#craft-list');
   list.innerHTML = '';
   cards = [];
@@ -1080,9 +1152,9 @@ function startGuestWorld(w) {
 
 function backToOwnWorld() {
   myNetId = 0;
-  const bag = { inv, hotbar, selected }; // what you collected on the visit comes home with you
+  const bag = { inv, hotbar, selected, stats, goalsDone }; // what you collected on the visit comes home with you
   startWorld(store.get(SAVE_KEY));
-  inv = bag.inv; hotbar = bag.hotbar; selected = bag.selected;
+  inv = bag.inv; hotbar = bag.hotbar; selected = bag.selected; stats = bag.stats; goalsDone = bag.goalsDone;
   buildHotbar();
   saveGame();
   updateRoomUi();
@@ -1175,6 +1247,9 @@ function frame(now) {
     }
     if (!seat && world.getChunk(Math.floor(player.pos[0] / CS), Math.floor(player.pos[2] / CS))) player.update(dt, input.state, world);
     if (player.pos[1] < -20) { player.pos[1] = CH; player.vel[1] = 0; }
+    if (player.onLadder && player.vel[1] > 1) { climbT += dt; if (climbT > 0.8 && !stats.climbed) stats.climbed = 1; }
+    goalTimer -= dt;
+    if (goalTimer <= 0) { goalTimer = 0.5; checkGoals(); }
     throwCool = Math.max(0, throwCool - dt);
     swingCool = Math.max(0, swingCool - dt);
   }

@@ -284,6 +284,16 @@ function shapeMesh(buf, id, p, wx, wy, wz) {
     for (const y of [0.12, 0.37, 0.62, 0.87]) lb(0.22, y, 0.04, 0.78, y + 0.08, 0.11); // rungs
     return;
   }
+  if (BLOCKS[id].shape === 'flower') {
+    const { petal, middle } = BLOCKS[id];
+    const pb = (l, ...a) => shapeBox(buf, wx, wy, wz, l, ...a, false);
+    box(0.46, 0, 0.46, 0.54, 0.6, 0.54);                                       // stem
+    box(0.54, 0.2, 0.47, 0.74, 0.27, 0.53); box(0.26, 0.32, 0.47, 0.46, 0.39, 0.53); // leaves
+    pb(petal, 0.24, 0.58, 0.41, 0.43, 0.72, 0.59); pb(petal, 0.57, 0.58, 0.41, 0.76, 0.72, 0.59);
+    pb(petal, 0.41, 0.58, 0.24, 0.59, 0.72, 0.43); pb(petal, 0.41, 0.58, 0.57, 0.59, 0.72, 0.76);
+    pb(middle, 0.42, 0.6, 0.42, 0.58, 0.76, 0.58);
+    return;
+  }
   if (BLOCKS[id].shape === 'feeder') {
     box(0.05, 0, 0.2, 0.95, 0.1, 0.8);                                         // floor
     box(0.05, 0.1, 0.2, 0.95, 0.46, 0.28); box(0.05, 0.1, 0.72, 0.95, 0.46, 0.8); // long sides

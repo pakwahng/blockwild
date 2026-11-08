@@ -92,6 +92,16 @@ export class World {
       }
     }
 
+    // wild flowers dotted about the grass, in little clumps
+    for (let lz = 0; lz < CS; lz++) for (let lx = 0; lx < CS; lx++) {
+      const wx = x0 + lx, wz = z0 + lz, h = heights[lx + lz * CS];
+      if (h + 1 >= CH || data[index(lx, h, lz)] !== B.GRASS || data[index(lx, h + 1, lz)] !== B.AIR) continue;
+      const clump = n2.perlin2(wx / 9 + 33.3, wz / 9 - 71.7);
+      if (clump < 0.25 || hash3(wx, 7, wz, this.seed) > 0.12) continue;
+      const kind = n.perlin2(wx / 23 - 5.5, wz / 23 + 9.1);
+      data[index(lx, h + 1, lz)] = kind < -0.15 ? B.FLOWER_RED : kind < 0.15 ? B.FLOWER_YELLOW : B.FLOWER_WHITE;
+    }
+
     const chunk = { cx, cz, data, dirty: true, gpu: null };
     const edits = this.edits.get(World.key(cx, cz));
     if (edits) for (const [i, id] of edits) data[i] = id;
