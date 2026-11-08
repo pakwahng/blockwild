@@ -51,6 +51,15 @@ A full day lasts 10 minutes: about 6 minutes of daylight, a pink dusk, roughly 3
 - Place the throne: it builds a red-cushioned seat with a hay back (facing you) and arms.
 - Tap the throne to sit. Every baby in your nursery nearby gathers in rows in front of it, hopping and wagging. Walk or jump to stand up.
 
+## Play together
+
+- Pick **Lachie** or **Charli** in Settings. That's how other players see you.
+- One player opens **Play together** and taps **Host my world** to get a four-letter room code.
+- Friends (up to three) type the code and tap **Join**. They arrive in the host's world, next to the host.
+- Everyone shares the nursery, treats, blocks, day and night, and the snakes. The host's device runs the animals and snakes, so the host keeps the game open.
+- A visitor's own world isn't touched; **Leave** takes them back to it.
+- Needs the internet: the free PeerJS service introduces the devices, then game data goes directly between them (WebRTC).
+
 ## Controls
 
 | Phone | Keyboard / mouse |
@@ -71,7 +80,8 @@ A full day lasts 10 minutes: about 6 minutes of daylight, a pink dusk, roughly 3
 | `js/animals.js` | Baby animal behaviour: species table, wandering, treats, taming, breeding, hay and mud habits, pens |
 | `js/snakes.js` | The night snake: spawning, slithering body, spooking babies, sword hits, confetti |
 | `js/sky.js` | Day/night clock: sky colours, light tint, sun and moon |
-| `js/models.js` | Rounded-box 3D models for the babies and treats (with leg, head and tail rigs), treat icons, counter faces |
+| `js/net.js` | Play together: room codes, hosting and joining (PeerJS / WebRTC) |
+| `js/models.js` | Rounded-box 3D models for the babies, Lachie and Charli, and treats (with leg, head and tail rigs), treat icons, counter faces |
 | `js/audio.js` | Synthesized cheeps, moos, oinks, baas, yips and sound effects |
 | `js/renderer.js` | WebGL2 shaders, texture array, frustum culling, water pass, block outline |
 | `js/player.js` | Movement, collision, swimming, flying, voxel raycast |

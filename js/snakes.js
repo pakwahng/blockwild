@@ -22,6 +22,7 @@ export class Snakes {
     this.timer = 0;
     this.spooked = 0;
     this.time = 0;
+    this.nextId = 1;
   }
 
   heads() { return this.list.map(s => s.p); }
@@ -69,18 +70,67 @@ export class Snakes {
       const y = nursery.surface(x, z);
       if (y < 0 || !GROUND.has(this.world.getBlock(x, y - 1, z))) continue;
       const yaw = Math.atan2(c[0] - x, c[1] - z);
-      const s = {
-        p: [x + 0.5, y, z + 0.5], v: [0, 0, 0], yaw, onGround: false,
-        hp: 2, hit: 0, knock: 0, pause: 0, target: null, retarget: 0,
-        wig: Math.random() * 6, detour: 0, detourDir: 1, hiss: 2, gone: false, trail: [], segs: [],
-      };
-      for (let d = 0; d <= SEGMENTS * SPACING + 1; d += 0.1) s.trail.push([s.p[0] - Math.sin(yaw) * d, y, s.p[2] - Math.cos(yaw) * d]);
-      this.layout(s);
+      const s = this.make([x + 0.5, y, z + 0.5], yaw);
       this.list.push(s);
       this.events.push({ type: 'spawn', p: [...s.p] });
       return true;
     }
     return false;
+  }
+
+  make(p, yaw) {
+    const y = p[1];
+    const s = {
+      id: this.nextId++,
+      p: [...p], v: [0, 0, 0], yaw, onGround: false,
+      hp: 2, hit: 0, knock: 0, pause: 0, target: null, retarget: 0,
+      wig: Math.random() * 6, detour: 0, detourDir: 1, hiss: 2, gone: false, trail: [], segs: [],
+    };
+    for (let d = 0; d <= SEGMENTS * SPACING + 1; d += 0.1) s.trail.push([s.p[0] - Math.sin(yaw) * d, y, s.p[2] - Math.cos(yaw) * d]);
+    this.layout(s);
+    return s;
+  }
+
+  // Records the head's path, which the body follows.
+  track(s) {
+    const head = s.trail[0];
+    if (Math.hypot(s.p[0] - head[0], s.p[1] - head[1], s.p[2] - head[2]) > 0.08) {
+      s.trail.unshift([...s.p]);
+      if (s.trail.length > 200) s.trail.length = 200;
+    }
+    this.layout(s);
+  }
+
+  // ---- play together: the host sends its snakes, a guest shows copies ----
+  snapshot() { return this.list.map(s => [s.id, +s.p[0].toFixed(2), +s.p[1].toFixed(2), +s.p[2].toFixed(2), +s.yaw.toFixed(3), +s.hit.toFixed(2)]); }
+  applySnapshot(list) {
+    const byId = new Map(this.list.map(s => [s.id, s]));
+    this.list = list.map(([id, x, y, z, yaw, hit]) => {
+      let s = byId.get(id);
+      if (!s) { s = this.make([x, y, z], yaw); s.id = id; }
+      s.tp = [x, y, z]; s.tyaw = yaw; s.hit = hit;
+      return s;
+    });
+  }
+  puppetStep(dt) {
+    this.time += dt;
+    const k = Math.min(1, dt * 12);
+    for (const s of this.list) {
+      s.hit = Math.max(0, s.hit - dt);
+      if (!s.tp) continue;
+      for (let i = 0; i < 3; i++) s.p[i] += (s.tp[i] - s.p[i]) * k;
+      s.yaw += Math.atan2(Math.sin(s.tyaw - s.yaw), Math.cos(s.tyaw - s.yaw)) * k;
+      this.track(s);
+    }
+    this.updateConfetti(dt);
+  }
+  // Snake events from the host that need the copies changed too.
+  remoteEvent(ev) {
+    if (ev.type === 'poof') {
+      const s = this.list.find(q => q.id === ev.id);
+      if (s) { this.poof(s, true); this.list = this.list.filter(q => q !== s); }
+    } else if (ev.type === 'dawn') { for (const s of this.list) this.poof(s, false); this.list = []; }
+    else if (ev.type === 'burst') this.burst(ev.p, ev.n, ev.colors, false);
   }
 
   step(s, dt, nursery, player) {
@@ -146,12 +196,7 @@ export class Snakes {
       this.events.push({ type: 'spook', sp: t.sp, p: [...t.p] });
     }
 
-    const head = s.trail[0];
-    if (Math.hypot(s.p[0] - head[0], s.p[1] - head[1], s.p[2] - head[2]) > 0.08) {
-      s.trail.unshift([...s.p]);
-      if (s.trail.length > 200) s.trail.length = 200;
-    }
-    this.layout(s);
+    this.track(s);
 
     s.hiss -= dt;
     if (s.hiss <= 0) { s.hiss = 4 + Math.random() * 5; this.events.push({ type: 'hiss', p: [...s.p] }); }
@@ -197,7 +242,7 @@ export class Snakes {
     if (s.hp <= 0) {
       this.poof(s, true);
       s.gone = true;
-      this.events.push({ type: 'poof', p: [...s.p] });
+      this.events.push({ type: 'poof', p: [...s.p], id: s.id });
     }
     return true;
   }
@@ -217,7 +262,8 @@ export class Snakes {
   }
 
   // A celebration burst (gold, red and blue by default) around a point.
-  burst(p, n = 60, colors = [1, 1, 0, 3]) {
+  burst(p, n = 60, colors = [1, 1, 0, 3], share = true) {
+    if (share) this.events.push({ type: 'burst', p: [...p], n, colors });
     for (let k = 0; k < n; k++) {
       const a = Math.random() * 6.28, sp = 1.5 + Math.random() * 3;
       this.confetti.push({

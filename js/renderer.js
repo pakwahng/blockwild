@@ -126,6 +126,7 @@ uniform float uFogNear, uFogFar;
 uniform vec2 uWing;  // wing pivot x, y
 uniform vec3 uLeg;   // hip y, front leg z, back leg z
 uniform vec3 uRig;   // head pivot y, z; tail pivot z
+uniform float uArmY; // shoulder height: when set, parts 6/7 are arms swinging from the shoulder
 out vec3 vColor;
 out float vFog;
 vec2 rot(vec2 v, float a) { float c = cos(a), s = sin(a); return vec2(c * v.x - s * v.y, s * v.x + c * v.y); }
@@ -139,7 +140,7 @@ void main() {
     p.xy = piv + rot(p.xy - piv, a);
     n.xy = rot(n.xy, a);
   } else if (part >= 4 && part <= 7) {         // legs swing from the hip, diagonal pairs together
-    vec2 piv = vec2(uLeg.x, part <= 5 ? uLeg.y : uLeg.z);
+    vec2 piv = vec2(part >= 6 && uArmY > 0.0 ? uArmY : uLeg.x, part <= 5 ? uLeg.y : uLeg.z);
     float a = iAnim.z * ((part == 4 || part == 7) ? 1.0 : -1.0);
     p.yz = piv + rot(p.yz - piv, a);
     n.yz = rot(n.yz, a);
@@ -320,7 +321,7 @@ export class Renderer {
     gl.enableVertexAttribArray(6); gl.vertexAttribPointer(6, 4, gl.FLOAT, false, 48, 32); gl.vertexAttribDivisor(6, 1);
     gl.bindVertexArray(null);
     const r = mesh.rig || { wing: [0, 0], leg: [0, 0, 0], head: [0, 0], tail: [0] };
-    this.models[name] = { vao, inst, instSize: 4096, count: mesh.idx.length, rig: { wing: r.wing, leg: r.leg, rig: [r.head[0], r.head[1], r.tail[0]] } };
+    this.models[name] = { vao, inst, instSize: 4096, count: mesh.idx.length, rig: { wing: r.wing, leg: r.leg, rig: [r.head[0], r.head[1], r.tail[0]], arm: r.arm || 0 } };
   }
 
   drawModel(name, data, n) {
@@ -329,6 +330,7 @@ export class Renderer {
     gl.uniform2fv(u.uWing, m.rig.wing);
     gl.uniform3fv(u.uLeg, m.rig.leg);
     gl.uniform3fv(u.uRig, m.rig.rig);
+    if (u.uArmY) gl.uniform1f(u.uArmY, m.rig.arm);
     gl.bindVertexArray(m.vao);
     gl.bindBuffer(gl.ARRAY_BUFFER, m.inst);
     const bytes = n * 48;

@@ -11,6 +11,7 @@ import { buildMesh } from './mesher.js';
 import { Renderer } from './renderer.js';
 import { Player, raycast } from './player.js';
 import { Input } from './input.js';
+import { Net, cleanCode } from './net.js';
 
 const $ = s => document.querySelector(s);
 const SAVE_KEY = 'blockwild.save.v1', SET_KEY = 'blockwild.settings.v1';
@@ -22,7 +23,9 @@ const store = {
 const coarse = matchMedia('(pointer: coarse)').matches;
 // iPads report themselves as Macs, so also check for a touch screen
 const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-const settings = Object.assign({ view: coarse ? 5 : 7, sens: 1, autoJump: true, showFps: false, sound: true }, store.get(SET_KEY) || {});
+const settings = Object.assign({ view: coarse ? 5 : 7, sens: 1, autoJump: true, showFps: false, sound: true, char: 'lachie' }, store.get(SET_KEY) || {});
+const CHARS = ['lachie', 'charli'], CHAR_NAMES = { lachie: 'Lachie', charli: 'Charli' };
+const charOf = c => CHARS.includes(c) ? c : 'lachie';
 const WATER_FOG = [0.1, 0.24, 0.45];
 const REACH = 6;
 
@@ -45,6 +48,8 @@ try {
   renderer.addModel('snakeHead', M.snakeHeadModel());
   renderer.addModel('snakeSeg', M.snakeSegModel());
   M.CONFETTI_COLORS.forEach((c, k) => renderer.addModel('confetti' + k, M.confettiModel(c)));
+  renderer.addModel('lachie', M.lachieModel());
+  renderer.addModel('charli', M.charliModel());
 } catch (err) {
   console.error(err);
   showError('This device or browser cannot run Baby Chicken Empire (WebGL2 is required). ' + err.message);
@@ -58,6 +63,12 @@ let selected = 0;
 let target = null, breakT = { key: '', p: 0 };
 let milestone = 0, throwCool = 0;
 const sfx = new Sfx();
+
+// play together
+const net = new Net();
+const others = new Map();   // id → another player: { id, char, p, tp, yaw, tyaw, pitch, held, sit, phase, speed }
+let myNetId = 0, netTimer = 0, poseTimer = 0, shownOthers = -1;
+const netEdits = [], netEvents = [];
 
 const icons = {};
 if (textures) for (const id of [...PLACEABLE, B.THRONE]) icons[id] = blockIcon(BLOCKS[id], textures.tiles, 64).toDataURL();
@@ -128,6 +139,7 @@ function startWorld(save) {
     hotbar = [...TREATS, ...hotbar.filter(id => !isTreat(id))].slice(0, 9);
   }
   if (save && !(save.v >= 3) && !hotbar.includes(ITEM_SWORD)) hotbar[5] = ITEM_SWORD; // the toy sword arrives
+  const guest = !!save?.guest;
   while (hotbar.length < 9) hotbar.push(B.STONE);
   player.autoJump = settings.autoJump;
   document.body.classList.toggle('flying', player.flying);
@@ -136,7 +148,8 @@ function startWorld(save) {
   stream(80);
 
   flock = new Nursery(world);
-  if (save?.animals) flock.load(save.animals); else flock.loadChicks(save?.chicks);
+  if (guest) flock.remoteCounts = { chick: 0, calf: 0, piglet: 0, lamb: 0, pup: 0 }; // the host's animals arrive over the network
+  else if (save?.animals) flock.load(save.animals); else flock.loadChicks(save?.chicks);
   milestone = save?.milestone || 0;
   firsts = save?.firsts || [];
   snakes = new Snakes(world);
@@ -146,7 +159,7 @@ function startWorld(save) {
   seat = null;
   showCrown();
   // a few wild babies of each kind close by, so there's someone to feed straight away
-  for (const sp of SPECIES_ORDER) {
+  if (!guest) for (const sp of SPECIES_ORDER) {
     if (flock.animals.some(a => a.sp === sp)) continue;
     if (sp === 'chick') flock.spawnGroup(sp, sx, sz, 6, 3, 9);
     else flock.spawnGroup(sp, sx, sz, 2, 7, 16);
@@ -156,7 +169,7 @@ function startWorld(save) {
 }
 
 function saveGame() {
-  if (!world || !player) return;
+  if (!world || !player || net.isGuest) return; // a guest's own world stays saved while they visit
   store.set(SAVE_KEY, {
     v: 3, seed: world.seed, clock: +clock.toFixed(4), nights, crown, pos: player.pos.map(v => +v.toFixed(2)), yaw: player.yaw, pitch: player.pitch,
     flying: player.flying, hotbar, selected, edits: world.serializeEdits(),
@@ -192,7 +205,7 @@ function updateNursery() {
   for (const [at, text] of MILESTONES) {
     if (n.chick >= at && milestone < at) { milestone = at; if (shownCounts) { toast(text); if (at > 1) sfx.fanfare(); } }
   }
-  if (shownCounts && n.chick >= 100 && !crown) awardCrown();
+  if (shownCounts && n.chick >= 100 && !crown && !net.isGuest) awardCrown();
   shownCounts = n;
 }
 
@@ -210,7 +223,8 @@ function awardCrown() {
   crownEl.classList.remove('bump'); void crownEl.offsetWidth; crownEl.classList.add('bump');
   if (!hotbar.includes(B.THRONE)) { hotbar[8] = B.THRONE; buildHotbar(); }
   sfx.royal();
-  snakes.burst(player.pos, 90);
+  snakes.burst(player.pos, 90, undefined, false);
+  if (net.isHost) netEvents.push({ type: 'crown' });
   toast('Chicken king! You earned the gold crown and a hay bale throne. Place the throne and tap it to sit.');
   saveGame();
 }
@@ -220,7 +234,7 @@ function buildThrone(x, y, z) {
   const dx = x + 0.5 - player.pos[0], dz = z + 0.5 - player.pos[2];
   const back = Math.abs(dx) > Math.abs(dz) ? [Math.sign(dx), 0] : [0, Math.sign(dz) || 1];
   const side = [-back[1], back[0]];
-  const put = (px, py, pz, id) => { if (world.getBlock(px, py, pz) === B.AIR) world.setBlock(px, py, pz, id); };
+  const put = (px, py, pz, id) => { if (world.getBlock(px, py, pz) === B.AIR) editBlock(px, py, pz, id); };
   for (let s = -1; s <= 1; s++) for (let h = 0; h < 2; h++) put(x + back[0] + side[0] * s, y + h, z + back[1] + side[1] * s, B.HAY);
   put(x + back[0], y + 2, z + back[1], B.HAY);                      // a taller middle for the back
   for (const s of [-1, 1]) put(x + side[0] * s, y, z + side[1] * s, B.HAY); // arms
@@ -242,13 +256,21 @@ function sit(x, y, z) {
   document.body.classList.remove('flying'); $('#btn-fly').classList.remove('on');
   player.pos = [x + 0.5, y + 1, z + 0.5]; player.vel = [0, 0, 0];
   player.yaw = Math.atan2(-front[0], -front[1]); player.pitch = -0.42;
-  const n = flock.gatherAt([x + 0.5, y, z + 0.5], front);
+  let n = flock.gatherAt([x + 0.5, y, z + 0.5], front);
+  if (net.isGuest) { net.toHost({ t: 'sit', seat: [x + 0.5, y, z + 0.5], front }); n = Object.values(flock.counts()).reduce((a, b) => a + b, 0); }
   sfx.royal();
-  snakes.burst(player.pos, 50);
+  snakes.burst(player.pos, 50, undefined, net.isHost);
   toast(n ? `Chicken king! ${n} ${n === 1 ? 'baby gathers' : 'babies gather'} round your hay throne. Walk or jump to stand up.`
     : 'You sit on your hay throne. Walk or jump to stand up.');
 }
-function standUp() { seat = null; flock.endGather(); }
+function standUp() { seat = null; flock.endGather(); if (net.isGuest) net.toHost({ t: 'stand' }); }
+
+// Every block change goes through here so other players get it too.
+function editBlock(x, y, z, id) {
+  if (!world.setBlock(x, y, z, id)) return false;
+  if (net.active) netEdits.push([x, y, z, id]);
+  return true;
+}
 
 let toastTimer = 0;
 function toast(text) {
@@ -259,15 +281,22 @@ function toast(text) {
   toastTimer = setTimeout(() => t.classList.remove('show'), 4200);
 }
 
+// Screen position of a 3D point, or null when it's behind the camera or well off screen.
+function project(x, y, z) {
+  const m = renderer.mvp;
+  if (!m) return null;
+  const cx = m[0] * x + m[4] * y + m[8] * z + m[12], cy = m[1] * x + m[5] * y + m[9] * z + m[13], cw = m[3] * x + m[7] * y + m[11] * z + m[15];
+  if (cw <= 0.1) return null;
+  const sx = (cx / cw * 0.5 + 0.5) * window.innerWidth, sy = (1 - (cy / cw * 0.5 + 0.5)) * window.innerHeight;
+  if (sx < -40 || sy < -40 || sx > window.innerWidth + 40 || sy > window.innerHeight + 40) return null;
+  return [sx, sy];
+}
+
 // Floating hearts and "+1" pops above chicks, positioned by projecting the 3D point to the screen.
 function floatFx(p, kind) {
-  const m = renderer.mvp;
-  if (!m) return;
-  const x = p[0], y = p[1] + 0.8, z = p[2];
-  const cx = m[0] * x + m[4] * y + m[8] * z + m[12], cy = m[1] * x + m[5] * y + m[9] * z + m[13], cw = m[3] * x + m[7] * y + m[11] * z + m[15];
-  if (cw <= 0.1) return;
-  const sx = (cx / cw * 0.5 + 0.5) * window.innerWidth, sy = (1 - (cy / cw * 0.5 + 0.5)) * window.innerHeight;
-  if (sx < -40 || sy < -40 || sx > window.innerWidth + 40 || sy > window.innerHeight + 40) return;
+  const at = project(p[0], p[1] + 0.8, p[2]);
+  if (!at) return;
+  const [sx, sy] = at;
   const el = document.createElement('div');
   el.className = 'fx ' + kind;
   el.textContent = kind === 'hatch' ? '+1' : kind === 'bonk' ? 'BONK!' : '';
@@ -278,6 +307,12 @@ function floatFx(p, kind) {
 
 function handleChickEvents() {
   const eye = player.eye();
+  if (net.isHost && net.guests) {
+    // guests hear and see the same things
+    for (const ev of flock.events) netEvents.push({ ...ev, f: 1 });
+    for (const ev of snakes.events) netEvents.push(ev);
+    if (netEvents.length > 120) netEvents.splice(0, netEvents.length - 120);
+  }
   for (const ev of flock.events) {
     const d = Math.hypot(ev.p[0] - eye[0], ev.p[1] - eye[1], ev.p[2] - eye[2]);
     if (ev.type === 'call') { if (d < 20) sfx.call(ev.sp, 0.35 * (1 - d / 20)); continue; }
@@ -297,6 +332,11 @@ function handleChickEvents() {
         ? 'Night falls under the square moon… a block snake is coming for the nursery! Grab your toy sword and guard the gate.'
         : 'Night falls. Watch out for the block snake!');
     } else if (ev.type === 'dawn') {
+      if (net.isGuest) {
+        toast(ev.spooked ? `Sunrise! The snake spooked ${ev.spooked} ${ev.spooked === 1 ? 'baby' : 'babies'}, but the nursery made it.` : 'Sunrise! Every baby made it safely through the night.');
+        if (!(ev.spooked === 0 && !crown)) sfx.fanfare();
+        continue;
+      }
       nights++;
       const babies = Object.values(flock.counts()).reduce((a, b) => a + b, 0);
       if (!ev.spooked && babies > 0 && !crown) { awardCrown(); continue; }
@@ -323,6 +363,7 @@ function swing() {
   swingCool = 0.35;
   const held = $('#held');
   held.classList.remove('swing'); void held.offsetWidth; held.classList.add('swing');
+  if (net.isGuest) { net.toHost({ t: 'swing', eye: player.eye(), fwd: player.forward() }); sfx.whoosh(); return; }
   if (!snakes.swing(player.eye(), player.forward())) sfx.whoosh();
 }
 function updateHeld() { $('#held').hidden = hotbar[selected] !== ITEM_SWORD; }
@@ -378,7 +419,8 @@ function placeBlock() {
   if (isTreat(id)) {
     if (throwCool > 0) return;
     throwCool = id === ITEM_SEEDS ? 0.2 : 0.3;
-    flock.throwTreat(id, player.eye(), player.forward());
+    if (net.isGuest) net.toHost({ t: 'throw', item: id, eye: player.eye(), fwd: player.forward() });
+    else flock.throwTreat(id, player.eye(), player.forward());
     sfx.toss();
     return;
   }
@@ -387,7 +429,7 @@ function placeBlock() {
   const here = world.getBlock(x, y, z);
   if (here !== B.AIR && here !== B.WATER) return;
   if (SOLID[id] && player.intersectsBlock(x, y, z)) return;
-  if (world.setBlock(x, y, z, id)) {
+  if (editBlock(x, y, z, id)) {
     if (id === B.THRONE) buildThrone(x, y, z);
     remeshAround(x, z); buzz(8); sfx.place();
   }
@@ -412,7 +454,7 @@ function updateBreaking(dt) {
     // let water flow back into a hole next to water
     const nearWater = [[1, 0, 0], [-1, 0, 0], [0, 0, 1], [0, 0, -1], [0, 1, 0]]
       .some(([dx, dy, dz]) => world.getBlock(target.x + dx, target.y + dy, target.z + dz) === B.WATER);
-    world.setBlock(target.x, target.y, target.z, nearWater ? B.WATER : B.AIR);
+    editBlock(target.x, target.y, target.z, nearWater ? B.WATER : B.AIR);
     remeshAround(target.x, target.z);
     buzz(15);
     sfx.dig();
@@ -543,6 +585,8 @@ function applySettings() {
   input.touchSens = input.mouseSens = +settings.sens;
   if (player) player.autoJump = settings.autoJump;
   $('#info').hidden = !settings.showFps;
+  settings.char = charOf(settings.char);
+  for (const b of document.querySelectorAll('#set-char .char')) { const on = b.dataset.char === settings.char; b.classList.toggle('on', on); b.setAttribute('aria-checked', on); }
   store.set(SET_KEY, settings);
 }
 sView.addEventListener('input', () => { settings.view = +sView.value; applySettings(); });
@@ -550,6 +594,10 @@ sSens.addEventListener('input', () => { settings.sens = +sSens.value; applySetti
 sAuto.addEventListener('change', () => { settings.autoJump = sAuto.checked; applySettings(); });
 sFps.addEventListener('change', () => { settings.showFps = sFps.checked; applySettings(); });
 sSound.addEventListener('change', () => { settings.sound = sSound.checked; applySettings(); });
+for (const b of document.querySelectorAll('#set-char .char')) {
+  b.querySelector('svg').innerHTML = M.KID_FACE_SVG[b.dataset.char];
+  b.addEventListener('click', () => { settings.char = b.dataset.char; applySettings(); });
+}
 applySettings();
 
 if (store.get(SAVE_KEY)) $('#btn-play').textContent = 'Continue';
@@ -569,6 +617,241 @@ window.addEventListener('orientationchange', () => setTimeout(relayout, 300));
 window.addEventListener('resize', relayout);
 screen.orientation?.addEventListener?.('change', () => setTimeout(relayout, 300));
 setInterval(() => { if (running && world?.editsChanged !== undefined) saveGame(); }, 10000);
+
+// ---------- play together ----------
+
+// Other players drawn as Lachie or Charli, walking, looking about, with a name tag overhead.
+const tagEls = new Map();
+function kidInstances(dt) {
+  const lists = { lachie: [], charli: [] }, shadows = [];
+  for (const o of others.values()) {
+    if (o.id === myNetId) continue;
+    const k = Math.min(1, dt * 12);
+    const before = [o.p[0], o.p[2]];
+    const far = Math.hypot(o.tp[0] - o.p[0], o.tp[1] - o.p[1], o.tp[2] - o.p[2]) > 6;
+    for (let i = 0; i < 3; i++) o.p[i] = far ? o.tp[i] : o.p[i] + (o.tp[i] - o.p[i]) * k;
+    o.yaw += Math.atan2(Math.sin(o.tyaw - o.yaw), Math.cos(o.tyaw - o.yaw)) * k;
+    const sp = dt > 0 ? Math.hypot(o.p[0] - before[0], o.p[2] - before[1]) / dt : 0;
+    o.speed += (Math.min(sp, 8) - o.speed) * Math.min(1, dt * 8);
+    if (o.speed > 0.3 && !o.sit) o.phase += dt * (4 + o.speed * 1.6);
+    else o.phase += (Math.round(o.phase / Math.PI) * Math.PI - o.phase) * Math.min(1, dt * 10);
+    const stride = Math.sin(o.phase) * Math.min(0.75, o.speed * 0.22);
+    const bob = o.speed > 0.3 && !o.sit ? Math.abs(Math.sin(o.phase)) * 0.04 : 0;
+    const nod = Math.max(-0.5, Math.min(0.5, -o.pitch * 0.5));
+    lists[o.char].push(o.p[0], o.p[1], o.p[2], o.yaw + Math.PI, 1, bob, stride, 0, 0, nod, 0, 0);
+    shadows.push(o.p[0], o.p[1] + 0.015, o.p[2], 0, 0.75, 0, 0, 0, 0, 0, 0, 0);
+  }
+  return {
+    groups: CHARS.map(c => ({ model: c, data: new Float32Array(lists[c]), count: lists[c].length / 12 })),
+    shadowGroups: [{ data: new Float32Array(shadows), count: shadows.length / 12 }],
+  };
+}
+function updateTags() {
+  const box = $('#tags');
+  for (const [id, el] of tagEls) if (!others.has(id) || id === myNetId) { el.remove(); tagEls.delete(id); }
+  for (const o of others.values()) {
+    if (o.id === myNetId) continue;
+    let el = tagEls.get(o.id);
+    if (!el) { el = document.createElement('div'); box.appendChild(el); tagEls.set(o.id, el); }
+    el.className = 'tag ' + o.char;
+    el.textContent = CHAR_NAMES[o.char];
+    const d = Math.hypot(o.p[0] - player.pos[0], o.p[2] - player.pos[2]);
+    const at = d < 48 ? project(o.p[0], o.p[1] + 1.65, o.p[2]) : null;
+    el.hidden = !at;
+    if (at) { el.style.left = at[0] + 'px'; el.style.top = at[1] + 'px'; }
+  }
+}
+
+function addOther(id, char) {
+  const o = { id, char: charOf(char), p: [...player.pos], tp: [...player.pos], yaw: 0, tyaw: 0, pitch: 0, held: null, sit: false, phase: 0, speed: 0 };
+  others.set(id, o);
+  return o;
+}
+function setPose(o, p, yaw, pitch, held, sit, char) {
+  if (!o.seen) { o.p = [...p]; o.yaw = yaw; o.seen = true; }
+  o.tp = p; o.tyaw = yaw; o.pitch = pitch; o.held = held; o.sit = !!sit;
+  if (char) o.char = charOf(char);
+}
+function myPose() {
+  return [+player.pos[0].toFixed(2), +player.pos[1].toFixed(2), +player.pos[2].toFixed(2), +player.yaw.toFixed(3), +player.pitch.toFixed(2), running ? hotbar[selected] : null, seat ? 1 : 0];
+}
+
+// Sends what's changed: block edits straight away, poses and the world state a few times a second.
+function netStep(dt) {
+  if (!net.active) return;
+  if (netEdits.length) {
+    const msg = { t: 'e', b: netEdits.splice(0) };
+    if (net.isHost) net.broadcast(msg); else net.toHost(msg);
+  }
+  if (net.isGuest) {
+    poseTimer -= dt;
+    if (poseTimer <= 0) { poseTimer = 0.1; net.toHost({ t: 'p', pose: myPose(), char: settings.char }); }
+    return;
+  }
+  netTimer -= dt;
+  if (netTimer > 0 || !net.guests) return;
+  netTimer = 0.12;
+  const pl = [[0, settings.char, ...myPose()]];
+  for (const o of others.values()) pl.push([o.id, o.char, ...o.tp, o.tyaw, o.pitch, o.held, o.sit ? 1 : 0]);
+  const ev = netEvents.splice(0);
+  const common = { t: 's', clock: +clock.toFixed(5), nights, crown, counts: flock.counts(), pl, sn: snakes.snapshot(), tr: flock.treatSnapshot(), ev };
+  for (const [id] of net.conns) {
+    const o = others.get(id);
+    net.send(id, { ...common, a: flock.snapshot(o ? o.tp : player.pos, 72) });
+  }
+}
+
+net.on('message', (from, msg) => {
+  if (!msg || typeof msg !== 'object' || !world) return;
+  if (net.isHost) hostMessage(from, msg); else guestMessage(msg);
+});
+net.on('leave', id => {
+  const o = others.get(id);
+  others.delete(id);
+  if (o) toast(`${CHAR_NAMES[o.char]} left the game.`);
+  updateRoomUi();
+});
+net.on('lost', () => {
+  others.clear(); updateTags();
+  backToOwnWorld();
+  toast('Lost the connection to the host’s game. You’re back in your own world.');
+});
+
+function hostMessage(from, msg) {
+  const o = others.get(from);
+  switch (msg.t) {
+    case 'hello': {
+      const n = addOther(from, msg.char);
+      const f = player.forward(), pos = [player.pos[0] + f[0] * 2, player.pos[1] + 0.2, player.pos[2] + f[2] * 2];
+      n.p = [...pos]; n.tp = [...pos];
+      net.send(from, { t: 'w', id: from, seed: world.seed, edits: world.serializeEdits(), clock, nights, crown, pos, yaw: player.yaw + Math.PI });
+      toast(`${CHAR_NAMES[n.char]} joined your world!`);
+      sfx.happy();
+      updateRoomUi();
+      break;
+    }
+    case 'p': if (o && Array.isArray(msg.pose)) { const [x, y, z, yaw, pitch, held, sit] = msg.pose; setPose(o, [x, y, z], yaw, pitch, held, sit, msg.char); } break;
+    case 'e':
+      for (const [x, y, z, id] of msg.b || []) if (BLOCKS[id] || id === B.AIR) { world.applyEdit(x, y, z, id); remeshAround(x, z); }
+      net.broadcast(msg, from);
+      break;
+    case 'throw': if (isTreat(msg.item)) flock.throwTreat(msg.item, msg.eye, msg.fwd); break;
+    case 'swing': snakes.swing(msg.eye, msg.fwd); break;
+    case 'sit': flock.gatherAt(msg.seat, msg.front); break;
+    case 'stand': flock.endGather(); break;
+  }
+}
+
+function guestMessage(msg) {
+  switch (msg.t) {
+    case 'w': startGuestWorld(msg); break;
+    case 'full': setNetStatus('That game already has four players.', true); net.close(); updateRoomUi(); break;
+    case 'bye': net.close(); others.clear(); updateTags(); backToOwnWorld(); toast('The host stopped the game. You’re back in your own world.'); break;
+    case 'e': for (const [x, y, z, id] of msg.b || []) { world.applyEdit(x, y, z, id); remeshAround(x, z); } break;
+    case 's': {
+      if (Math.abs(msg.clock - clock) > 0.002 && Math.abs(msg.clock - clock) < 0.998) clock = msg.clock;
+      nights = msg.nights;
+      flock.remoteCounts = msg.counts;
+      if (msg.a) flock.applySnapshot(msg.a);
+      flock.applyTreats(msg.tr || []);
+      // events first, so a snake that just poofed is still here to burst into confetti
+      for (const ev of msg.ev || []) {
+        if (ev.type === 'crown') { if (!crown) awardCrown(); continue; }
+        if (ev.f) flock.events.push(ev);
+        else { snakes.remoteEvent(ev); snakes.events.push(ev); }
+      }
+      snakes.applySnapshot(msg.sn || []);
+      const seen = new Set();
+      for (const [id, char, x, y, z, yaw, pitch, held, sit] of msg.pl || []) {
+        if (id === myNetId) continue;
+        seen.add(id);
+        const o = others.get(id) || addOther(id, char);
+        setPose(o, [x, y, z], yaw, pitch, held, sit, char);
+      }
+      for (const id of [...others.keys()]) if (!seen.has(id)) others.delete(id);
+      if (others.size !== shownOthers) { shownOthers = others.size; updateRoomUi(); }
+      if (msg.crown && !crown) { crown = true; showCrown(); }
+      break;
+    }
+  }
+}
+
+function startGuestWorld(w) {
+  myNetId = w.id;
+  startWorld({ v: 3, guest: true, seed: w.seed, edits: w.edits, pos: w.pos, yaw: w.yaw, pitch: 0, clock: w.clock, nights: w.nights, crown: w.crown });
+  setNetStatus(`Playing in a friend’s world (room ${net.code}).`);
+  updateRoomUi();
+  if (coarse) input.setTouchMode(true);
+  resume();
+  hideHintLater();
+  toast('You joined your friend’s world! Their babies are your babies.');
+}
+
+function backToOwnWorld() {
+  myNetId = 0;
+  startWorld(store.get(SAVE_KEY));
+  updateRoomUi();
+}
+
+function setNetStatus(text, bad = false) {
+  const el = $('#net-status');
+  el.textContent = text || ''; el.hidden = !text; el.classList.toggle('bad', bad);
+}
+function updateRoomUi() {
+  const host = net.isHost, guest = net.isGuest;
+  $('#host-info').hidden = !host;
+  $('#btn-host').hidden = host || guest;
+  $('#join-box').hidden = host || guest;
+  $('#btn-leave').hidden = !host && !guest;
+  $('#btn-leave').textContent = host ? 'Stop hosting' : 'Leave and go back to my world';
+  $('#room-code').textContent = net.code || '····';
+  const count = 1 + (host ? net.guests : others.size);
+  $('#room-count').textContent = host ? (net.guests ? `· ${count} playing` : '· waiting for friends') : '';
+  const pill = $('#room-pill');
+  pill.hidden = !net.active;
+  pill.textContent = `${net.code} · ${count} 🐥`;
+  $('#btn-new').hidden = host || guest;
+  if (host || guest) $('#new-world').hidden = true;
+  $('#footnote').textContent = guest ? 'You’re visiting, so nothing here saves to your device. Your own world is safe.' : 'Your world saves on this device automatically.';
+}
+
+$('#btn-host').addEventListener('click', async () => {
+  if (!renderer) return;
+  setNetStatus('Making a room…');
+  try {
+    if (!world) startWorld(store.get(SAVE_KEY));
+    await net.host();
+    myNetId = 0;
+    setNetStatus('Tell your friend the room code. They tap Play together → Join on their device.');
+  } catch (err) { setNetStatus(err.message, true); }
+  updateRoomUi();
+});
+$('#join-code').addEventListener('input', e => { e.target.value = cleanCode(e.target.value); });
+$('#btn-join').addEventListener('click', async () => {
+  if (!renderer) return;
+  const code = cleanCode($('#join-code').value);
+  if (code.length !== 4) { setNetStatus('Type the four letters from your friend’s screen.', true); return; }
+  saveGame(); // keep your own world safe while you visit
+  sfx.unlock();
+  setNetStatus('Joining…');
+  try {
+    await net.join(code);
+    net.toHost({ t: 'hello', char: settings.char });
+    setNetStatus('Connected! Loading your friend’s world…');
+  } catch (err) { setNetStatus(err.message, true); }
+  updateRoomUi();
+});
+$('#btn-leave').addEventListener('click', () => {
+  const wasGuest = net.isGuest;
+  if (net.isHost) net.broadcast({ t: 'bye' });
+  setTimeout(() => net.close(), 150);
+  others.clear(); updateTags();
+  net.role = null; // stop sending straight away
+  if (wasGuest) backToOwnWorld();
+  setNetStatus(wasGuest ? 'You’re back in your own world.' : 'Stopped hosting.');
+  updateRoomUi();
+});
+window.addEventListener('pagehide', () => { if (net.isHost) net.broadcast({ t: 'bye' }); });
 
 // ---------- main loop ----------
 let last = performance.now(), fpsAcc = 0, fpsN = 0, fps = 0;
@@ -597,12 +880,23 @@ function frame(now) {
     if (player.pos[1] < -20) { player.pos[1] = CH; player.vel[1] = 0; }
     throwCool = Math.max(0, throwCool - dt);
     swingCool = Math.max(0, swingCool - dt);
+  }
+  // the host keeps the world going while friends are visiting, even from the pause menu
+  if (running || net.isGuest || (net.isHost && net.guests)) {
     clock = (clock + dt / CYCLE) % 1;
-    const isNight = skyAt(clock).night > 0.5;
-    flock.update(dt, player, hotbar[selected], snakes.heads(), isNight);
-    snakes.update(dt, flock, player, isNight, nights);
+    if (net.isGuest) {
+      flock.puppetStep(dt);
+      snakes.puppetStep(dt);
+    } else {
+      const isNight = skyAt(clock).night > 0.5;
+      const players = [{ pos: player.pos, holding: running ? hotbar[selected] : null }];
+      for (const o of others.values()) players.push({ pos: o.p, holding: o.held });
+      flock.update(dt, players, snakes.heads(), isNight);
+      snakes.update(dt, flock, player, isNight, nights);
+    }
     handleChickEvents();
   }
+  netStep(dt);
   const sky = skyAt(clock);
   const pending = stream(running ? 5 : 10);
   $('#loading').hidden = pending === 0 || running;
@@ -615,6 +909,8 @@ function frame(now) {
   const far = settings.view * CS - 6;
   const waterFog = WATER_FOG.map((v, i) => v * sky.tint[i]);
   const a = flock.instances(eye, far + 8, now / 1000), s = snakes.instances(eye, far + 8, now / 1000);
+  const k = kidInstances(dt);
+  s.groups.push(...k.groups); s.shadowGroups.push(...k.shadowGroups);
   renderer.render({
     eye, forward: fwd, fov: 70 * Math.PI / 180,
     fogColor: underwater ? waterFog : sky.horizon, zenith: underwater ? waterFog : sky.zenith,
@@ -624,6 +920,7 @@ function frame(now) {
     entTint: sky.entTint, glowLayer: T.LAMP,
   }, world.chunks.values(), target, now / 1000, { groups: [...a.groups, ...s.groups], shadowGroups: [...a.shadowGroups, ...s.shadowGroups] });
 
+  if (net.active) updateTags();
   if (settings.showFps) {
     const p = player.pos;
     $('#info').textContent = `${fps} fps  ${renderer.stats.chunks} chunks  ${Math.round(renderer.stats.tris / 1000)}k tris\n` +
@@ -635,6 +932,7 @@ requestAnimationFrame(loop);
 // handy for debugging from the console
 window.blockwild = { get world() { return world; }, get player() { return player; }, get target() { return target; }, get flock() { return flock; }, get nursery() { return flock; }, get snakes() { return snakes; }, input, raycast,
   get clock() { return clock; }, setTime(t) { clock = t; }, swing: () => swing(),
+  net, others, get myNetId() { return myNetId; },
   get seat() { return seat; }, awardCrown: () => awardCrown(), sit: (x, y, z) => sit(x, y, z), standUp: () => standUp(),
   // advance n frames by hand (useful when the page is in a background tab)
   step(n = 1) { for (let i = 0; i < n; i++) { last = performance.now() - 33; frame(performance.now()); } } };

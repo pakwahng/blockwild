@@ -2,7 +2,7 @@
 // They wander, follow you while you hold their favourite treat, eat it to join your nursery,
 // pair up for a baby, and each kind has its own habits (calves munch by hay, piglets roll in mud,
 // lambs bounce, pups wag their tails).
-import { B, SOLID, ITEM_SEEDS, ITEM_WHEAT, ITEM_APPLE, ITEM_CLOVER, ITEM_BONE } from './blocks.js';
+import { B, SOLID, ITEM_SEEDS, ITEM_WHEAT, ITEM_APPLE, ITEM_CLOVER, ITEM_BONE, TREATS as TREATS_ORDER } from './blocks.js';
 import { CS } from './world.js';
 
 const GRAVITY = 20, HOP_V = 6.8;
@@ -32,9 +32,12 @@ export class Nursery {
     this.events = [];
     this.spawnTimer = 3;
     this.grid = new Map();
+    this.nextId = 1;
+    this.remoteCounts = null; // on a guest: the host's nursery tally
   }
 
   counts() {
+    if (this.remoteCounts) return this.remoteCounts;
     const n = { chick: 0, calf: 0, piglet: 0, lamb: 0, pup: 0 };
     for (const a of this.animals) if (a.tame) n[a.sp]++;
     return n;
@@ -44,7 +47,7 @@ export class Nursery {
     if (this.animals.length >= MAX_ANIMALS) return null;
     const S = SPECIES[sp];
     const a = {
-      sp, S, p: [x, y, z], v: [0, 0, 0], yaw: Math.random() * 6.28, onGround: false, gy: y,
+      id: this.nextId++, sp, S, p: [x, y, z], v: [0, 0, 0], yaw: Math.random() * 6.28, onGround: false, gy: y,
       mode: 'wander', t: Math.random() * 2, dir: [0, 0], speed: 0,
       hop: Math.random() * 6, squash: 0, peck: 0, love: 0, cool: 0, wag: 0, wagT: Math.random() * 6,
       spot: null, enjoy: 0, look: Math.random() * 3,
@@ -95,11 +98,12 @@ export class Nursery {
     if (this.treats.length > 150) this.treats.splice(0, this.treats.length - 150);
   }
 
+  // players: [{ pos, holding }] for everyone in the world (the first is this device's player).
   // threats: positions of snake heads; night: animals doze off when they have nothing to do.
-  update(dt, player, holding, threats = [], night = false) {
+  update(dt, players, threats = [], night = false) {
     const world = this.world;
     this.updateTreats(dt);
-    this.spawnWild(dt, player);
+    this.spawnWild(dt, players);
 
     // spatial grid for neighbour checks
     const grid = this.grid;
@@ -160,10 +164,16 @@ export class Nursery {
           }
         }
       }
-      if (!goal && !cheering && holding === S.treat) {
-        const d2 = dist2(a.p, player.pos);
+      // the nearest player holding this baby's favourite treat
+      let lure = null, ld = 14 * 14;
+      for (const pl of players) {
+        if (pl.holding !== S.treat) continue;
+        const d = dist2(a.p, pl.pos);
+        if (d < ld) { ld = d; lure = pl; }
+      }
+      if (!goal && !cheering && lure) {
         const near = 1.4 + S.half * 2;
-        if (d2 < 14 * 14 && d2 > near * near) { goal = player.pos; speed = S.run * 0.9; a.spot = null; a.enjoy = 0; }
+        if (ld > near * near) { goal = lure.pos; speed = S.run * 0.9; a.spot = null; a.enjoy = 0; }
       }
       // favourite spot: calves munch next to hay, piglets roll in mud
       if (!goal && !cheering && a.spot) {
@@ -264,7 +274,7 @@ export class Nursery {
       // ---- animation ----
       const hs = Math.hypot(v[0], v[2]);
       let ty = hs > 0.15 ? Math.atan2(v[0], v[2]) : a.yaw;
-      if (a.mode === 'goal' && holding === S.treat && hs <= 0.15) ty = Math.atan2(player.pos[0] - a.p[0], player.pos[2] - a.p[2]);
+      if (a.mode === 'goal' && lure && hs <= 0.15) ty = Math.atan2(lure.pos[0] - a.p[0], lure.pos[2] - a.p[2]);
       if (a.mode === 'cheer') ty = Math.atan2(this.gather.seat[0] - a.p[0], this.gather.seat[2] - a.p[2]);
       let dy = ty - a.yaw;
       dy = Math.atan2(Math.sin(dy), Math.cos(dy));
@@ -276,8 +286,9 @@ export class Nursery {
       if (a.look <= 0) a.look = 2 + Math.random() * 5;
 
       if (S.wags) {
-        const pd2 = dist2(a.p, player.pos);
-        const target = (holding === S.treat && pd2 < 14 * 14) || a.mode === 'cheer' ? 1 : a.tame && pd2 < 6 * 6 ? 0.6 : a.love > 0 ? 0.8 : 0.12;
+        let pd2 = Infinity;
+        for (const pl of players) pd2 = Math.min(pd2, dist2(a.p, pl.pos));
+        const target = lure || a.mode === 'cheer' ? 1 : a.tame && pd2 < 6 * 6 ? 0.6 : a.love > 0 ? 0.8 : 0.12;
         a.wag += (target - a.wag) * Math.min(1, dt * 3);
       } else a.wag += ((a.love > 0 || a.mode === 'goal' ? 0.5 : 0.15) - a.wag) * Math.min(1, dt * 3);
       a.wagT += dt * (4 + a.wag * 14);
@@ -312,10 +323,12 @@ export class Nursery {
   endGather() { this.gather = null; for (const a of this.animals) a.gatherSlot = null; }
 
   // Keep a few wild animals of each kind around the player; far-off wild ones wander away.
-  spawnWild(dt, player) {
+  spawnWild(dt, players) {
     this.spawnTimer -= dt;
     if (this.spawnTimer > 0) return;
     this.spawnTimer = 6;
+    // take turns topping up the wild animals around each player
+    const player = players[(this.spawnTurn = ((this.spawnTurn || 0) + 1) % players.length)];
     const near = { chick: 0, calf: 0, piglet: 0, lamb: 0, pup: 0 };
     for (const a of this.animals) if (!a.tame && dist2(a.p, player.pos) < 64 * 64) near[a.sp]++;
     const want = SPECIES_ORDER.filter(sp => near[sp] < SPECIES[sp].wild);
@@ -326,7 +339,67 @@ export class Nursery {
       if (S.likes === B.MUD) { const m = this.findMudNear(x, z, 10); if (m) { x = m[0]; z = m[1]; } }
       this.spawnGroup(sp, x, z, S.group[0] + (Math.random() * (S.group[1] - S.group[0] + 1) | 0), 0, 3);
     }
-    this.animals = this.animals.filter(a => a.tame || dist2(a.p, player.pos) < 96 * 96);
+    this.animals = this.animals.filter(a => a.tame || players.some(pl => dist2(a.p, pl.pos) < 96 * 96));
+  }
+
+  // ---- play together: the host sends its animals, a guest shows copies of them ----
+  // 14 numbers each: id, species + flags, x, y, z, yaw, vx, vz, hop, squash, peck, wag, age, ground y.
+  snapshot(centre, r) {
+    const list = this.animals.filter(a => dist2(a.p, centre) < r * r);
+    const f = new Float32Array(list.length * 14);
+    let i = 0;
+    for (const a of list) {
+      const flags = (a.onGround ? 1 : 0) | (a.tame ? 2 : 0) | (a.sleep ? 4 : 0) | (a.enjoy > 0 ? 8 : 0) | (a.love > 0 ? 16 : 0) | (a.mode === 'cheer' ? 32 : 0);
+      f[i++] = a.id; f[i++] = SPECIES_ORDER.indexOf(a.sp) + flags * 8;
+      f[i++] = a.p[0]; f[i++] = a.p[1]; f[i++] = a.p[2]; f[i++] = a.yaw;
+      f[i++] = a.v[0]; f[i++] = a.v[2]; f[i++] = a.hop; f[i++] = a.squash; f[i++] = a.peck; f[i++] = a.wag;
+      f[i++] = Math.min(9999, a.age); f[i++] = a.gy;
+    }
+    return f.buffer;
+  }
+  applySnapshot(buf) {
+    const f = new Float32Array(buf), byId = new Map(this.animals.map(a => [a.id, a]));
+    const keep = [];
+    for (let i = 0; i < f.length; i += 14) {
+      const id = f[i], spf = f[i + 1], spi = spf % 8, flags = Math.floor(spf / 8);
+      let a = byId.get(id);
+      if (!a) {
+        a = this.add(SPECIES_ORDER[spi], f[i + 2], f[i + 3], f[i + 4], false, f[i + 12]);
+        if (!a) continue;
+        this.animals.pop(); a.id = id; a.yaw = f[i + 5];
+      }
+      a.tp = [f[i + 2], f[i + 3], f[i + 4]]; a.tyaw = f[i + 5];
+      a.v[0] = f[i + 6]; a.v[2] = f[i + 7]; a.hop = f[i + 8]; a.squash = f[i + 9]; a.peck = f[i + 10]; a.wag = f[i + 11];
+      a.age = f[i + 12]; a.gy = f[i + 13];
+      a.onGround = !!(flags & 1); a.tame = !!(flags & 2); a.sleep = !!(flags & 4); a.enjoy = flags & 8 ? 1 : 0;
+      a.love = flags & 16 ? 1 : 0; a.mode = flags & 32 ? 'cheer' : 'wander';
+      a.born = Math.max(0, 0.6 - a.age);
+      keep.push(a);
+    }
+    this.animals = keep;
+  }
+  // Between snapshots: glide the copies towards where the host last saw them and keep them animated.
+  puppetStep(dt) {
+    const k = Math.min(1, dt * 12);
+    for (const a of this.animals) {
+      if (!a.tp) continue;
+      const dx = a.tp[0] - a.p[0], dy = a.tp[1] - a.p[1], dz = a.tp[2] - a.p[2];
+      if (dx * dx + dy * dy + dz * dz > 16) a.p = [...a.tp];
+      else { a.p[0] += dx * k; a.p[1] += dy * k; a.p[2] += dz * k; }
+      const dyaw = Math.atan2(Math.sin(a.tyaw - a.yaw), Math.cos(a.tyaw - a.yaw));
+      a.yaw += dyaw * k;
+      const hs = Math.hypot(a.v[0], a.v[2]);
+      if (hs > 0.2 && a.onGround) a.hop += dt * (a.S.legs ? 5 + hs * 4 : 8 + hs * 4);
+      a.wagT += dt * (4 + a.wag * 14);
+      a.age += dt; a.born = Math.max(0, a.born - dt);
+      a.look -= dt;
+      if (a.look <= 0) a.look = 2 + Math.random() * 5;
+    }
+    this.updateTreats(dt);
+  }
+  treatSnapshot() { return this.treats.map(s => [TREATS_ORDER.indexOf(s.item), +s.p[0].toFixed(2), +s.p[1].toFixed(2), +s.p[2].toFixed(2), +s.yaw.toFixed(2), s.rest ? 1 : 0, +s.v[0].toFixed(2), +s.v[1].toFixed(2), +s.v[2].toFixed(2)]); }
+  applyTreats(list) {
+    this.treats = list.map(([t, x, y, z, yaw, rest, vx, vy, vz]) => ({ item: TREATS_ORDER[t], p: [x, y, z], v: [vx, vy, vz], yaw, rest: !!rest, life: 5 }));
   }
 
   findMudNear(x, z, r) {

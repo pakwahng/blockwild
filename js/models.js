@@ -345,3 +345,98 @@ export const FACE_SVG = {
   lamb: `<rect x="1" y="12" width="8" height="4" rx="2" fill="#d6c6c3"/><rect x="23" y="12" width="8" height="4" rx="2" fill="#d6c6c3"/><rect x="9" y="9" width="14" height="19" rx="5" fill="#d6c6c3"/><circle cx="10" cy="8" r="5" fill="#fbf8f2"/><circle cx="16" cy="6" r="5.5" fill="#fbf8f2"/><circle cx="22" cy="8" r="5" fill="#fbf8f2"/><rect x="10.5" y="15" width="3.5" height="4.5" rx="1.6" fill="#1c1a1a"/><rect x="18" y="15" width="3.5" height="4.5" rx="1.6" fill="#1c1a1a"/><path d="M14 24q2 1.6 4 0" stroke="#4a3434" stroke-width="1.3" fill="none" stroke-linecap="round"/>`,
   pup: `<path d="M6 12V2l8 6zM26 12V2l-8 6z" fill="#6f625c"/><rect x="4" y="7" width="24" height="20" rx="5" fill="#8d7f78"/><rect x="9" y="18" width="14" height="9" rx="3" fill="#f2e0cc"/><rect x="9.5" y="12" width="3.5" height="4" rx="1.6" fill="#1c1a1a"/><rect x="19" y="12" width="3.5" height="4" rx="1.6" fill="#1c1a1a"/><rect x="13.5" y="17.5" width="5" height="3.5" rx="1.5" fill="#1d1a1a"/><rect x="16" y="23" width="3" height="4" rx="1.4" fill="#f27f8c"/>`,
 };
+
+// ---- the kids: Lachie and Charli, the two players from the video (the cute chibi look) ----
+// Parts: 4/5 legs swing from the hip, 6/7 arms swing from the shoulder (opposite the leg on the same side),
+// 10 is the big round head, which tilts with where the player is looking.
+const SKIN = '#f3c9a6', SKIN_DARK = '#e8ae8c', HAIR = '#1b1818', SHORTS = '#cfa978', SOCK = '#f6f4ef', SHOE = '#f1f1ee';
+const HIP = 0.46, SHOULDER = 0.78, NECK = 0.8;
+function kidBody(m, shirt, sleeve) {
+  const legX = 0.085, legW = 0.14, armX = 0.215, armW = 0.1, chest = 0.34, chestD = 0.26;
+  for (const [sx, part] of [[1, 4], [-1, 5]]) {
+    const x = sx * legX;
+    m.box([x, 0.05, 0.03], [legW + 0.035, 0.1, legW + 0.11], 0.045, SHOE, part, false);         // chunky sneakers
+    m.box([x, 0.135, 0], [legW + 0.01, 0.08, legW + 0.01], 0.03, SOCK, part, false);             // socks
+    m.box([x, 0.24, 0], [legW, 0.14, legW], 0.03, SKIN, part, false);
+    m.box([x, HIP - 0.07, 0], [legW + 0.035, 0.16, legW + 0.035], 0.04, SHORTS, part, false);     // shorts legs
+  }
+  m.box([0, HIP + 0.02, 0], [legX * 2 + legW + 0.035, 0.1, chestD], 0.04, SHORTS);
+  m.box([0, (HIP + 0.05 + NECK) / 2, 0], [chest, NECK - HIP - 0.05, chestD], 0.07, shirt);
+  for (const [sx, part] of [[1, 6], [-1, 7]]) {
+    const x = sx * armX;
+    m.box([x, SHOULDER - 0.06, 0], [armW + 0.04, 0.13, armW + 0.04], 0.05, sleeve, part, false);  // puffy short sleeves
+    m.box([x, 0.56, 0], [armW, 0.16, armW], 0.035, SKIN, part, false);
+    m.box([x, 0.47, 0.01], [armW + 0.015, 0.08, armW + 0.02], 0.04, SKIN, part, false);           // little hands
+  }
+  return chestD;
+}
+// Big round head: huge shiny eyes, rosy cheeks and an open happy smile.
+function kidHead(m, w, h, d, girl) {
+  const H = 10, y0 = NECK, zf = d / 2, cy = y0 + h * 0.42;
+  m.box([0, y0 + h / 2, 0], [w, h, d], 0.2, SKIN, H);
+  for (const sx of [-1, 1]) {
+    m.box([sx * (w / 2 + 0.02), cy, -0.02], [0.07, 0.12, 0.09], 0.035, SKIN, H, false);          // ears
+    if (girl) m.box([sx * (w / 2 + 0.03), cy - 0.08, 0], [0.03, 0.03, 0.03], 0.012, '#8d8f96', H, false); // stud earrings
+    const ex = sx * w * 0.22, ey = cy + 0.03;
+    m.box([ex, ey, zf + 0.004], [0.14, 0.15, 0.02], 0.06, '#ffffff', H, false);                  // whites
+    m.box([ex, ey - 0.005, zf + 0.014], [0.12, 0.135, 0.02], 0.055, '#3a1f14', H, false);         // big brown eyes
+    m.box([ex, ey - 0.01, zf + 0.022], [0.065, 0.075, 0.01], 0.03, '#140c08', H, false);
+    m.box([ex - 0.025, ey + 0.03, zf + 0.03], [0.035, 0.035, 0.01], 0.015, '#ffffff', H, false);  // catchlights
+    m.box([ex + 0.03, ey - 0.035, zf + 0.03], [0.016, 0.016, 0.01], 0.007, '#ffffff', H, false);
+    if (girl) m.box([ex + sx * 0.065, ey + 0.05, zf + 0.012], [0.04, 0.02, 0.01], 0.008, HAIR, H, false); // lashes
+    m.box([ex, ey + 0.115, zf + 0.008], [0.11, 0.028, 0.02], 0.012, HAIR, H, false);              // brows
+    m.box([sx * w * 0.33, cy - 0.08, zf + 0.002], [0.1, 0.06, 0.01], 0.028, '#f6a3a0', H, false); // rosy cheeks
+  }
+  m.box([0, cy - 0.05, zf + 0.02], [0.05, 0.04, 0.04], 0.02, SKIN_DARK, H, false);               // button nose
+  m.box([0, cy - 0.14, zf + 0.004], [0.13, 0.07, 0.02], 0.03, '#a8323a', H, false);               // open smile
+  m.box([0, cy - 0.12, zf + 0.012], [0.1, 0.022, 0.01], 0.01, '#ffffff', H, false);               // teeth
+  m.box([0, cy - 0.155, zf + 0.012], [0.07, 0.025, 0.01], 0.012, '#f07a80', H, false);           // tongue
+  return { y0, top: y0 + h };
+}
+export function lachieModel() {
+  const m = new ModelBuilder(), H = 10;
+  const chestD = kidBody(m, '#d83a2c', '#cf3527');
+  // black bum bag slung across the chest
+  for (let k = 0; k < 6; k++) m.box([-0.13 + k * 0.05, 0.77 - k * 0.045, chestD / 2 + 0.008], [0.06, 0.035, 0.016], 0.008, '#1f1f22', 0, false);
+  m.box([0.05, 0.56, chestD / 2 + 0.04], [0.21, 0.1, 0.08], 0.045, '#2f3034', 0, false);
+  m.box([0.05, 0.58, chestD / 2 + 0.082], [0.17, 0.012, 0.01], 0.004, '#c8c8c8', 0, false);      // zip
+  // round head with spiky black hair on top and a choppy fringe
+  const w = 0.62, h = 0.6, d = 0.56, { y0, top } = kidHead(m, w, h, d, false);
+  m.box([0, top - 0.02, -0.02], [w + 0.06, 0.16, d + 0.06], 0.08, HAIR, H);
+  m.box([0, y0 + h * 0.58, -d / 2 - 0.02], [w + 0.05, h * 0.8, 0.08], 0.06, HAIR, H, false);
+  for (const sx of [-1, 1]) m.box([sx * (w / 2 + 0.02), y0 + h * 0.74, -0.06], [0.06, h * 0.42, d - 0.1], 0.03, HAIR, H, false);
+  for (let k = 0; k < 5; k++) {                                                                   // fringe points
+    const x = -0.24 + k * 0.12;
+    m.box([x, top - 0.11 - (k % 2) * 0.03, d / 2 + 0.02], [0.13, 0.1 + (k % 2) * 0.04, 0.06], 0.04, HAIR, H, false);
+  }
+  for (const [x, z, s] of [[-0.18, 0.12, 0.1], [0.02, 0.18, 0.12], [0.2, 0.08, 0.1], [-0.08, -0.08, 0.12], [0.14, -0.16, 0.1], [-0.22, -0.18, 0.09]])
+    m.box([x, top + 0.07, z], [s, 0.1, s], 0.04, HAIR, H, false);                                  // spikes
+  return m.done({ wing: [0, 0], leg: [HIP, 0, 0], head: [NECK, 0], tail: [0], arm: SHOULDER - 0.02 });
+}
+export function charliModel() {
+  const m = new ModelBuilder(), H = 10;
+  const chestD = kidBody(m, '#7fd0c0', '#76c6b6');
+  m.box([0, NECK - 0.02, 0], [0.32, 0.06, chestD + 0.02], 0.03, '#d9466e', 0, false);              // pink collar
+  // little black bag on a thin strap
+  for (let k = 0; k < 7; k++) m.box([0.12 - k * 0.04, 0.76 - k * 0.04, chestD / 2 + 0.008], [0.03, 0.04, 0.014], 0.006, '#26252a', 0, false);
+  m.box([-0.17, 0.5, chestD / 2 + 0.02], [0.1, 0.12, 0.07], 0.03, '#2a292e', 0, false);
+  m.box([-0.17, 0.52, chestD / 2 + 0.058], [0.02, 0.025, 0.01], 0.006, '#9a9aa0', 0, false);
+  // round head with smooth hair, a middle part, side strands and a ponytail
+  const w = 0.6, h = 0.62, d = 0.56, { y0, top } = kidHead(m, w, h, d, true);
+  m.box([0, top - 0.02, -0.02], [w + 0.05, 0.13, d + 0.05], 0.07, HAIR, H);
+  m.box([0, y0 + h * 0.55, -d / 2 - 0.02], [w + 0.05, h * 0.9, 0.08], 0.06, HAIR, H, false);
+  for (const sx of [-1, 1]) {
+    m.box([sx * (w / 2 + 0.018), y0 + h * 0.6, -0.04], [0.05, h * 0.7, d - 0.08], 0.03, HAIR, H, false);
+    m.box([sx * 0.15, top - 0.08, d / 2 + 0.015], [0.27, 0.1, 0.05], 0.045, HAIR, H, false);          // swept either side of the part
+    m.box([sx * (w / 2 - 0.03), y0 + h * 0.62, d / 2 + 0.01], [0.06, h * 0.42, 0.04], 0.025, HAIR, H, false); // framing strands
+  }
+  m.box([-0.12, y0 + h * 0.35, -d / 2 - 0.08], [0.1, 0.1, 0.08], 0.04, '#2b2626', H, false);       // hair tie
+  m.box([-0.14, y0 + h * 0.05, -d / 2 - 0.07], [0.12, 0.34, 0.1], 0.05, HAIR, H, false);           // ponytail
+  return m.done({ wing: [0, 0], leg: [HIP, 0, 0], head: [NECK, 0], tail: [0], arm: SHOULDER - 0.02 });
+}
+// Little faces for the character choice buttons.
+const FACE_EYES = '<circle cx="11" cy="19" r="3.4" fill="#2a160e"/><circle cx="21" cy="19" r="3.4" fill="#2a160e"/><circle cx="10" cy="17.8" r="1.1" fill="#fff"/><circle cx="20" cy="17.8" r="1.1" fill="#fff"/><ellipse cx="7.5" cy="23.5" rx="2.2" ry="1.3" fill="#f6a3a0"/><ellipse cx="24.5" cy="23.5" rx="2.2" ry="1.3" fill="#f6a3a0"/><path d="M13 25q3 3.5 6 0z" fill="#a8323a"/>';
+export const KID_FACE_SVG = {
+  lachie: '<rect x="3" y="6" width="26" height="24" rx="9" fill="#f3c9a6"/><path d="M2 15q-1-12 14-12t14 12l-3-2-2 3-3-3-3 3-3-3-3 3-3-3-2 3z" fill="#1b1818"/><path d="M8 4l2-3 2 3M15 3l2-3 2 3M22 4l2-2 1 3" fill="#1b1818"/>' + FACE_EYES,
+  charli: '<rect x="1" y="12" width="5" height="15" rx="2" fill="#1b1818"/><rect x="3" y="6" width="26" height="24" rx="9" fill="#f3c9a6"/><path d="M3 17q-1-14 13-14t13 14q-2-8-13-10-11 2-13 10z" fill="#1b1818"/><circle cx="3.2" cy="24" r="1" fill="#8d8f96"/><circle cx="28.8" cy="24" r="1" fill="#8d8f96"/>' + FACE_EYES,
+};

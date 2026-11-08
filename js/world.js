@@ -150,6 +150,17 @@ export class World {
     return true;
   }
 
+  // An edit from another player: applied now if the chunk is loaded, otherwise kept for when it generates.
+  applyEdit(x, y, z, id) {
+    if (y < 1 || y >= CH) return false;
+    const cx = Math.floor(x / CS), cz = Math.floor(z / CS), key = World.key(cx, cz);
+    if (this.chunks.has(key)) return this.setBlock(x, y, z, id);
+    let e = this.edits.get(key);
+    if (!e) { e = new Map(); this.edits.set(key, e); }
+    e.set(index(x - cx * CS, y, z - cz * CS), id);
+    return false;
+  }
+
   hasNeighbours(cx, cz) {
     for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++)
       if (!this.chunks.has(World.key(cx + dx, cz + dz))) return false;
