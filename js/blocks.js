@@ -107,6 +107,9 @@ ITEM_NAMES[ITEM_EGG] = 'Egg'; ITEM_NAMES[ITEM_MILK] = 'Milk';
 // A house kit: place it and a little cottage builds itself, its door facing you.
 export const ITEM_HOUSE = 209;
 ITEM_NAMES[ITEM_HOUSE] = 'House kit';
+// Fishing: a rod you cast into water, and the fish you catch with it.
+export const ITEM_ROD = 210, ITEM_FISH = 211;
+ITEM_NAMES[ITEM_ROD] = 'Fishing rod'; ITEM_NAMES[ITEM_FISH] = 'Fish';
 // The two halves of a door, open or shut.
 export const IS_DOOR = id => id >= B.DOOR && id <= B.DOOR_OPEN_TOP;
 export const DOOR_TOPS = new Set([B.DOOR_TOP, B.DOOR_OPEN_TOP]);

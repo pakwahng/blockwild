@@ -85,6 +85,7 @@ Tap a grown-up (hen, cow, pig, sheep or wolf) to pet it and open **Teach a job**
 | Crafting table | 4 Wood |
 | Sword * | 2 Wood + 1 Stick |
 | 3 Ladders * | 7 Sticks |
+| Fishing rod * | 3 Sticks, 1 Wool |
 | 4 Fence * | 2 Wood + 2 Sticks |
 | 1 Gate * | 2 Wood + 4 Sticks |
 | Feeder * | 3 Wood |
@@ -112,6 +113,13 @@ Tap a grown-up (hen, cow, pig, sheep or wolf) to pet it and open **Teach a job**
 - The star line under the nursery counters shows your **next goal** (tap it to see them all in the bag's **★ Goals** tab).
 - Goals lead from digging your first blocks to chopping a tree, building a crafting table, penning your babies in with fences and a gate, filling a feeder, climbing a ladder, bonking a raider, keeping the nursery safe for a night, watching a baby grow up, picking up gifts from the grown-ups, teaching a grown-up a job and growing to 37 chickens.
 - Each goal gives a reward (seeds, wheat, apples, bones, wood, a gate, hay or lamps) when you finish it.
+
+## Fishing
+
+- The **fishing rod** is a tool (never used up): 3 sticks and 1 wool at a crafting table, once you've learned it (recipe page, or finishing the sewing goal).
+- Hold it and tap (or click) to cast: the line lands on the first water you're looking at, up to about 17 blocks away. After 4–13 seconds (sooner in rain or at night) the float bobs under with a splash. Tap within about 1.3 seconds to catch something. Tap too soon and the line comes back empty. Switch item or walk more than 22 blocks away and it reels itself in.
+- A catch is a fish (75%, sometimes two), a treat or sticks, or a recipe page (10%, if there's anything left to learn).
+- **Fish** pay for teaching a grown-up a job when you've none of its favourite treat. Code: the fishing section of `js/main.js`, the float is `bobberModel()` in `js/models.js`.
 
 ## Flowers
 

@@ -335,6 +335,14 @@ export function henModel() {
   }
   return m.done({ wing: [0.22, 0.4], leg: [0, 0, 0], head: [0, 0], tail: [-0.28] });
 }
+// The float on a fishing line, bobbing on the water: red on top, white underneath.
+export function bobberModel() {
+  const m = new ModelBuilder();
+  m.box([0, 0.02, 0], [0.16, 0.1, 0.16], 0.07, '#fbfbf7');
+  m.box([0, 0.1, 0], [0.15, 0.08, 0.15], 0.065, '#e8443a');
+  m.box([0, 0.17, 0], [0.025, 0.08, 0.025], 0.01, '#3a3a3c', 0, false);
+  return m.done(NO_RIG);
+}
 export function eggModel() {
   const m = new ModelBuilder();
   m.box([0, 0.075, 0], [0.12, 0.15, 0.12], 0.055, '#f6ead2');
@@ -489,6 +497,22 @@ export function treatIcon(kind, px = 64) {
       rr(g, 16, 36, 8, 8, 1, '#8f5f34'); rr(g, 17, 37, 6, 6, 1, '#cfeefa');            // windows
       rr(g, 41, 36, 8, 8, 1, '#8f5f34'); rr(g, 42, 37, 6, 6, 1, '#cfeefa');
       rr(g, 42, 10, 6, 12, 1, '#a3acb6');                                              // chimney
+    } else if (kind === 'fishing rod') {
+      g.strokeStyle = '#e9eef2'; g.lineWidth = 1.5;                                    // the line and its float
+      g.beginPath(); g.moveTo(52, 8); g.quadraticCurveTo(60, 30, 54, 44); g.stroke();
+      rr(g, 50, 42, 8, 6, 3, '#e8443a'); rr(g, 50, 47, 8, 5, 2.5, '#fbfbf7');
+      g.save(); g.translate(30, 34); g.rotate(-Math.PI / 4.2);
+      rr(g, -3, -30, 6, 60, 3, '#8a5a30'); rr(g, -1.5, -29, 2.5, 58, 1, '#b07a45');
+      rr(g, -4.5, 14, 9, 14, 3, '#3a6fd8');                                            // handle
+      g.restore();
+      g.fillStyle = '#5a5f6a'; g.beginPath(); g.arc(18, 44, 5, 0, Math.PI * 2); g.fill(); // reel
+    } else if (kind === 'fish') {
+      g.fillStyle = '#4aa8ff'; g.beginPath(); g.ellipse(28, 33, 20, 12, 0, 0, Math.PI * 2); g.fill();
+      g.beginPath(); g.moveTo(44, 33); g.lineTo(60, 20); g.lineTo(60, 46); g.closePath(); g.fill(); // tail
+      g.fillStyle = '#9fd4ff'; g.beginPath(); g.ellipse(26, 38, 13, 5, 0, 0, Math.PI * 2); g.fill();  // light belly
+      g.fillStyle = '#2f7fd0'; g.beginPath(); g.moveTo(22, 22); g.lineTo(34, 14); g.lineTo(38, 24); g.closePath(); g.fill(); // fin
+      g.fillStyle = '#fff'; g.beginPath(); g.arc(16, 30, 4, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#1c1a1a'; g.beginPath(); g.arc(15, 30, 2.2, 0, Math.PI * 2); g.fill();
     } else if (kind === 'egg') {
       g.fillStyle = '#f6ead2'; g.beginPath(); g.ellipse(32, 35, 17, 22, 0, 0, Math.PI * 2); g.fill();
       g.fillStyle = '#e3d2b2'; g.beginPath(); g.ellipse(36, 42, 11, 13, 0, 0, Math.PI * 2); g.fill();

@@ -1,5 +1,5 @@
 // Baby Chicken Empire: bootstrap, game loop, streaming, interaction, UI and saving.
-import { B, T, BLOCKS, SOLID, PLACEABLE, TILE_COUNT, ITEM_SEEDS, ITEM_WHEAT, ITEM_SWORD, ITEM_BONE, ITEM_APPLE, ITEM_CLOVER, ITEM_STICK, ITEM_EGG, ITEM_MILK, ITEM_HOUSE, IS_DOOR, DOOR_TOPS, TREATS, ITEM_NAMES, SHAPED, FEEDER_OF, FEEDER_TREAT, IS_FEEDER } from './blocks.js';
+import { B, T, BLOCKS, SOLID, PLACEABLE, TILE_COUNT, ITEM_SEEDS, ITEM_WHEAT, ITEM_SWORD, ITEM_BONE, ITEM_APPLE, ITEM_CLOVER, ITEM_STICK, ITEM_EGG, ITEM_MILK, ITEM_HOUSE, ITEM_ROD, ITEM_FISH, IS_DOOR, DOOR_TOPS, TREATS, ITEM_NAMES, SHAPED, FEEDER_OF, FEEDER_TREAT, IS_FEEDER } from './blocks.js';
 import { Snakes, SNAKE_KINDS, K_POISON, K_FLYING, K_DIGGER, K_BOOM } from './snakes.js';
 import { Raiders } from './raiders.js';
 import { Weather } from './weather.js';
@@ -71,6 +71,7 @@ try {
   renderer.addModel('crow', M.crowModel());
   renderer.addModel('hen', M.henModel());
   renderer.addModel('egg', M.eggModel());
+  renderer.addModel('bobber', M.bobberModel());
   renderer.addModel('milk', M.milkModel());
   renderer.addModel('woolTuft', M.woolTuftModel());
   renderer.addModel('logChunk', M.logChunkModel());
@@ -108,12 +109,12 @@ const SHAPE_ICON = { [B.FENCE]: 'fence', [B.GATE]: 'gate', [B.DOOR]: 'door', [B.
 if (textures) for (const id of [...PLACEABLE, B.THRONE]) {
   icons[id] = SHAPED[id] ? M.treatIcon(SHAPE_ICON[id], 64).toDataURL() : blockIcon(BLOCKS[id], textures.tiles, 64).toDataURL();
 }
-for (const id of [...TREATS, ITEM_SWORD, ITEM_STICK, ITEM_EGG, ITEM_MILK, ITEM_HOUSE]) icons[id] = M.treatIcon(ITEM_NAMES[id].toLowerCase(), 64).toDataURL();
+for (const id of [...TREATS, ITEM_SWORD, ITEM_STICK, ITEM_EGG, ITEM_MILK, ITEM_HOUSE, ITEM_ROD, ITEM_FISH]) icons[id] = M.treatIcon(ITEM_NAMES[id].toLowerCase(), 64).toDataURL();
 $('#held').src = icons[ITEM_SWORD] || '';
 const itemName = id => ITEM_NAMES[id] || BLOCKS[id]?.name || '';
 const isItem = id => !!icons[id];
 // the order things are listed in your bag
-const BAG_ORDER = [...TREATS, ITEM_EGG, ITEM_MILK, ITEM_SWORD, ITEM_STICK, ITEM_HOUSE, B.THRONE, ...PLACEABLE];
+const BAG_ORDER = [...TREATS, ITEM_FISH, ITEM_EGG, ITEM_MILK, ITEM_SWORD, ITEM_ROD, ITEM_STICK, ITEM_HOUSE, B.THRONE, ...PLACEABLE];
 
 // ---------- your bag: collecting and using things up ----------
 const have = id => inv[id] || 0;
@@ -379,6 +380,8 @@ function startWorld(save) {
     stats = Object.assign(newStats(), save?.stats || {}); goalsDone = [...(save?.goals || [])];
     // recipes have to be learned since v26; a world from before keeps what it has already made or found
     if (!Array.isArray(stats.known)) stats.known = old ? oldWorldRecipes(save.stats, save.inv, goalsDone) : [...STARTER_RECIPES];
+    // and anything a finished goal teaches (goals can learn to teach new things in later versions)
+    for (const g of goalsDone) if (typeof GOAL_TEACH[g] === 'number' && !stats.known.includes(GOAL_TEACH[g])) stats.known.push(GOAL_TEACH[g]);
     if (save?.inv) inv = { ...save.inv };
     else if (old) {
       // a world from before you had to collect things: a generous bag, plus a stack of what was on the hotbar
@@ -804,7 +807,81 @@ function swing() {
   if (net.isGuest) { net.toHost({ t: 'swing', eye: player.eye(), fwd: player.forward() }); sfx.whoosh(); return; }
   if (!snakes.swing(player.eye(), player.forward()) && !raiders.swing(player.eye(), player.forward(), myNetId)) sfx.whoosh();
 }
-function updateHeld() { $('#held').hidden = hotbar[selected] !== ITEM_SWORD || !have(ITEM_SWORD); }
+function updateHeld() {
+  const id = hotbar[selected], el = $('#held');
+  el.hidden = !TOOLS.has(id) || !have(id);
+  if (!el.hidden && el.dataset.id !== String(id)) { el.src = icons[id]; el.dataset.id = id; }
+}
+
+// ---------- fishing ----------
+// Hold the rod and tap to cast into water. Wait for the float to bob under, then tap straight away to reel it in.
+let fishing = null; // { p: where the float sits, wait: time until a bite, bite: time left to catch it, t }
+const bobberBuf = new Float32Array(12);
+let fishTapAt = 0;
+function fishTap() {
+  if (performance.now() - fishTapAt < 300) return; // one press can arrive as a dig and a tap
+  fishTapAt = performance.now();
+  if (fishing) {
+    if (fishing.bite > 0) catchFish();
+    else { toast('Too soon! Wait for the float to bob under, then tap.', 1800); sfx.whoosh(); }
+    fishing = null;
+    return;
+  }
+  // cast: find the first water you're looking at, not too far off
+  const e = player.eye(), f = player.forward();
+  for (let t = 1; t < 18; t += 0.2) {
+    const x = Math.floor(e[0] + f[0] * t), y = Math.floor(e[1] + f[1] * t), z = Math.floor(e[2] + f[2] * t), id = world.getBlock(x, y, z);
+    if (id === B.WATER) {
+      let top = y;
+      while (world.getBlock(x, top + 1, z) === B.WATER && top < y + 4) top++;
+      fishing = { p: [e[0] + f[0] * t, top + 0.86, e[2] + f[2] * t], wait: biteWait(), bite: 0, t: 0 };
+      sfx.toss(); setTimeout(() => sfx.splash(), 250);
+      if (!firsts.includes('fish')) { firsts.push('fish'); toast('Now wait… when the float bobs under, tap quickly to reel it in!', 3500); }
+      return;
+    }
+    if (SOLID[id]) break;
+  }
+  toast('Aim at a pond, river or the sea to cast your line.', 2000);
+}
+// Fish bite sooner in the rain and at night.
+const biteWait = () => (4 + Math.random() * 9) * (weather.amount > 0.3 ? 0.6 : 1) * (skyAt(clock).night > 0.6 ? 0.8 : 1);
+// What's on the hook: mostly fish, sometimes a treat, now and then a soggy recipe page.
+function catchFish() {
+  let got;
+  const r = Math.random(), page = r < 0.1 ? pickPage(knownList(), settings.patterns || [], foundEver) : null;
+  if (page) { learn(page, 'page'); got = []; }
+  else if (r < 0.75) got = [[ITEM_FISH, Math.random() < 0.15 ? 2 : 1]];
+  else got = [[[ITEM_CLOVER, 2], [ITEM_APPLE, 1], [ITEM_BONE, 1], [ITEM_STICK, 2], [ITEM_SEEDS, 3]][Math.random() * 5 | 0]];
+  for (const [item, n] of got) { addItem(item, n); bump(stats, 'got', item, n); }
+  bump(stats, 'fished');
+  if (got.length) {
+    const [item, n] = got[0];
+    toast(item === ITEM_FISH ? (n > 1 ? 'Two fish at once!' : 'You caught a fish!') + (firsts.includes('caught') ? '' : ' Any grown-up will take a fish to learn a job.') : `You fished up ${n} ${itemName(item).toLowerCase()}!`, 2600);
+    if (!firsts.includes('caught')) firsts.push('caught');
+    pickupPop({ x: Math.floor(fishing.p[0]), y: Math.floor(fishing.p[1]), z: Math.floor(fishing.p[2]) }, got);
+  }
+  sfx.splash(); sfx.pickup(); buzz(15);
+}
+function fishStep(dt) {
+  if (!fishing) return;
+  const F = fishing;
+  F.t += dt;
+  // put the rod away or walk off and the line comes back in
+  if (hotbar[selected] !== ITEM_ROD || !have(ITEM_ROD) || Math.hypot(F.p[0] - player.pos[0], F.p[2] - player.pos[2]) > 22) { fishing = null; return; }
+  if (F.bite > 0) {
+    F.bite -= dt;
+    if (F.bite <= 0) F.wait = biteWait(); // missed it: wait for another nibble
+  } else if ((F.wait -= dt) <= 0) {
+    F.bite = 1.3;
+    sfx.splash(); buzz([30, 40, 30]);
+  }
+}
+function bobberGroup() {
+  const F = fishing, d = bobberBuf;
+  const dip = F.bite > 0 ? -0.16 - 0.06 * Math.sin(F.t * 30) : 0.025 * Math.sin(F.t * 2.4);
+  d.set([F.p[0], F.p[1] + dip, F.p[2], F.t * 0.3, 1.8, 0, 0, 0, 0, 0, 0, 0]); // big enough to spot from the bank
+  return { model: 'bobber', data: d, count: 1 };
+}
 
 // ---------- chunk streaming ----------
 const OFFSETS = [];
@@ -871,6 +948,7 @@ function placeBlock() {
     remeshAround(target.x, target.z); sfx.place(); buzz(8);
     return;
   }
+  if (id === ITEM_ROD && have(id)) { fishTap(); return; }
   if (!isTreat(id) && id !== ITEM_SWORD && petBaby(!id || id >= 200)) return;
   if (target && target.id === B.PLANTER_RIPE) {
     // pick the golden wheat: some wheat and a few seeds to plant again
@@ -1015,8 +1093,10 @@ function nameAnimal(a, text) {
 }
 $('#job-name').addEventListener('change', () => nameAnimal(jobAnimal, $('#job-name').value));
 $('#job-name').addEventListener('keydown', e => { if (e.key === 'Enter') $('#job-name').blur(); e.stopPropagation(); });
+// A job costs the animal's favourite treat, or a fish if you've none of that (every grown-up likes fish).
+const jobPay = a => have(a.S.treat) || !have(ITEM_FISH) ? a.S.treat : ITEM_FISH;
 function buildJobs() {
-  const a = jobAnimal, nm = petName(a) || `your ${ADULT_NAME[a.sp]}`, treat = a.S.treat, got = have(treat) > 0;
+  const a = jobAnimal, nm = petName(a) || `your ${ADULT_NAME[a.sp]}`, fav = a.S.treat, treat = jobPay(a), got = have(treat) > 0;
   const tname = itemName(treat).toLowerCase(), baby = a.grow < 1;
   const list = $('#job-list');
   list.innerHTML = '';
@@ -1040,12 +1120,12 @@ function buildJobs() {
     list.appendChild(b);
   }
   $('#job-note').textContent = got
-    ? `Teaching a job costs one ${tname}, ${nm}’s favourite treat. Grown-ups work by day, near where they are, and bring what they find straight to you.`
-    : `You need 1 ${tname} (${nm}’s favourite treat) to teach a job. Grown-ups work by day and bring what they find to you.`;
+    ? `Teaching a job costs one ${tname}${treat === fav ? `, ${nm}’s favourite treat` : ''}. Grown-ups work by day, near where they are, and bring what they find straight to you.`
+    : `You need 1 ${tname} (${nm}’s favourite treat) or a fish to teach a job. Grown-ups work by day and bring what they find to you.`;
 }
 function teachJob(job) {
   const a = jobAnimal;
-  if (!a || (job && !useItem(a.S.treat))) return;
+  if (!a || (job && !useItem(jobPay(a)))) return;
   if (net.isGuest) { net.toHost({ t: 'train', id: a.id, job }); a.job = job; } else flock.train(a.id, job, myNetId);
   sfx.happy(); sfx.call(a.sp, 0.55); buzz(15);
   floatFx([a.p[0], a.p[1] + a.S.height * 0.6, a.p[2]], 'heart');
@@ -1070,6 +1150,13 @@ $('#jobcard').addEventListener('click', e => { if (e.target.id === 'jobcard') cl
 
 function updateBreaking(dt) {
   const ring = $('#crosshair');
+  if (hotbar[selected] === ITEM_ROD && have(ITEM_ROD)) {
+    // with the rod, a click or press casts (or reels in) instead of digging
+    if (input.state.breaking && !wasBreaking && !input.usingTouch) fishTap();
+    wasBreaking = input.state.breaking;
+    breakT.p = 0; breakT.key = ''; ring.style.setProperty('--p', 0);
+    return;
+  }
   if (hotbar[selected] === ITEM_SWORD && have(ITEM_SWORD)) {
     // with the sword, a click or press swings instead of digging
     if (input.state.breaking && !wasBreaking) swing();
@@ -2021,6 +2108,8 @@ function frame(now, photo = false) {
   if (weather.amount > 0.01) s.groups.push(weather.instances(eye, dt));
   critters.update(dt, player.pos, skyAt(clock).night, weather.amount);
   s.groups.push(...critters.instances(eye, Math.min(far, 40), now / 1000));
+  fishStep(dt);
+  if (fishing) s.groups.push(bobberGroup());
   sfx.rain(running && !underwater ? weather.amount : 0);
   // birds singing by day, crickets at night (only on the surface, away from heavy rain)
   ambientT -= dt;
@@ -2050,7 +2139,7 @@ function frame(now, photo = false) {
 requestAnimationFrame(loop);
 
 // handy for debugging from the console
-window.blockwild = { get known() { return knownList(); }, learn, unlearned: () => unlearned(knownList(), settings.patterns || []), get settings() { return settings; }, get world() { return world; }, get player() { return player; }, get target() { return target; }, get flock() { return flock; }, get nursery() { return flock; }, get snakes() { return snakes; }, get raiders() { return raiders; }, get weather() { return weather; }, get critters() { return critters; }, wardrobe, selfieCam, petBaby, openJobs, get inv() { return inv; }, addItem, RECIPES, craft, input, raycast,
+window.blockwild = { fishTap, get fishing() { return fishing; }, selectSlot, get hotbar() { return hotbar; }, get known() { return knownList(); }, learn, unlearned: () => unlearned(knownList(), settings.patterns || []), get settings() { return settings; }, get world() { return world; }, get player() { return player; }, get target() { return target; }, get flock() { return flock; }, get nursery() { return flock; }, get snakes() { return snakes; }, get raiders() { return raiders; }, get weather() { return weather; }, get critters() { return critters; }, wardrobe, selfieCam, petBaby, openJobs, get inv() { return inv; }, addItem, RECIPES, craft, input, raycast,
   get clock() { return clock; }, setTime(t) { clock = t; }, swing: () => swing(),
   net, others, get myNetId() { return myNetId; },
   get seat() { return seat; }, awardCrown: () => awardCrown(), sit: (x, y, z) => sit(x, y, z), standUp: () => standUp(),

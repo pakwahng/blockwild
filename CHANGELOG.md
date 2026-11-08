@@ -2,6 +2,13 @@
 
 The same list is in the game: tap the version number on the front screen, or open **What’s new**.
 
+## 27. Gone fishing (8 Nov 2026)
+- New: the fishing rod. Learn it from a recipe page (or the sewing goal), then make it at a crafting table from 3 sticks and 1 wool.
+- Hold the rod and tap to cast into a pond, river or the sea. When the float bobs under, tap quickly to reel it in!
+- You mostly catch fish, sometimes a treat or some sticks, and now and then a soggy recipe page. Fish bite sooner in the rain and at night.
+- Any grown-up will take a fish to learn a job, if you’ve none of its favourite treat.
+- New goal: catch something with a fishing rod.
+
 ## 26. Learn recipes and patterns (8 Nov 2026)
 - You don’t know how to make everything any more. A new world starts with just wood, sticks, the crafting table, fences, seeds and hay.
 - Learn more from recipe pages. They turn up now and then when you dig leaves, grass, stone, sand, clay and snow, and many goals teach you something new when you finish them.

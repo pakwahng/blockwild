@@ -1,5 +1,5 @@
 // Collecting and crafting: what each block gives you when you dig it, and what you can make.
-import { B, ITEM_SEEDS, ITEM_WHEAT, ITEM_APPLE, ITEM_CLOVER, ITEM_BONE, ITEM_SWORD, ITEM_STICK, ITEM_HOUSE } from './blocks.js';
+import { B, ITEM_SEEDS, ITEM_WHEAT, ITEM_APPLE, ITEM_CLOVER, ITEM_BONE, ITEM_SWORD, ITEM_STICK, ITEM_HOUSE, ITEM_ROD } from './blocks.js';
 
 // What you get for digging a block. Extra treats turn up now and then.
 export function drops(id) {
@@ -37,6 +37,7 @@ export const RECIPES = [
   R(B.TABLE, 1, [[B.PLANKS, 4]], 'wood'),
   R(ITEM_SWORD, 1, [[B.PLANKS, 2], [ITEM_STICK, 1]], 'wood', true),
   R(B.LADDER, 3, [[ITEM_STICK, 7]], 'wood', true),
+  R(ITEM_ROD, 1, [[ITEM_STICK, 3], [B.WOOL, 1]], 'wood', true),
   R(B.FENCE, 4, [[B.PLANKS, 2], [ITEM_STICK, 2]], 'farm', true),
   R(B.GATE, 1, [[B.PLANKS, 2], [ITEM_STICK, 4]], 'farm', true),
   R(B.FEEDER, 1, [[B.PLANKS, 3]], 'farm', true),
@@ -59,7 +60,7 @@ export const TABLE_REACH = 4;
 export const FEEDER_FILL = 5;
 
 // Tools are kept, not used up.
-export const TOOLS = new Set([ITEM_SWORD]);
+export const TOOLS = new Set([ITEM_SWORD, ITEM_ROD]);
 
 // A new world starts with a handful of seeds and the toy sword; the rest you find.
 export const STARTER = { [ITEM_SEEDS]: 10, [ITEM_SWORD]: 1 };

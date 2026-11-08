@@ -1,7 +1,7 @@
 // Learning recipes: you start out knowing how to make only a few things. The rest you learn from recipe pages
 // (found now and then when you dig) and from finishing goals. Clothes work the same way: you need the pattern
 // before you can sew them in the Wardrobe, and then the bits to make them.
-import { B, ITEM_SEEDS, ITEM_STICK, ITEM_EGG, ITEM_CLOVER, ITEM_SWORD, ITEM_HOUSE } from './blocks.js';
+import { B, ITEM_SEEDS, ITEM_STICK, ITEM_EGG, ITEM_CLOVER, ITEM_SWORD, ITEM_HOUSE, ITEM_ROD } from './blocks.js';
 import { RECIPES } from './crafting.js';
 
 // What a new world knows how to make straight away.
@@ -35,7 +35,7 @@ export const patternKey = (slot, v) => slot + ':' + v;
 // Each one is what you'll want for the goals that come after it.
 export const GOAL_TEACH = {
   fence: B.GATE, pen: B.FEEDER, flowers: '4:4', hatch: B.PLANTER, feeder: B.LADDER, wheat: B.DOOR,
-  bonk: B.GLASS, ladder: B.LAMP, house: B.BRICK, night: B.ROOF, grow: '4:2', gifts: ITEM_HOUSE, job: '0:4',
+  bonk: B.GLASS, ladder: B.LAMP, house: B.BRICK, night: B.ROOF, grow: '4:2', gifts: ITEM_HOUSE, job: '0:4', sew: ITEM_ROD,
 };
 
 // How often digging a block turns up a recipe page.
