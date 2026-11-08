@@ -1,11 +1,17 @@
 // The game's version and what changed in each one. Shown on the front screen ("What's new")
 // and in CHANGELOG.md. When you release: bump VERSION, add an entry at the top of CHANGES,
 // and set the same number in sw.js (CACHE = 'blockwild-v<VERSION>') so phones pick it up.
-export const VERSION = 32;
-export const RELEASED = '8 Nov 2026';
+export const VERSION = 33;
+export const RELEASED = '9 Nov 2026';
 
 // [version, date, headline, [details]]
 export const CHANGES = [
+  [33, '9 Nov 2026', 'A map, and Pip the travelling goose', [
+    'New map button (top right, or press M): see the land around you from above, with your nursery, signs, beds, campfires, treasure chests and friends marked on it. Zoom out to see further.',
+    'Every other day, Pip the travelling goose pulls her market cart up near your nursery. Follow the 🛒 tag and tap her to swap things.',
+    'Pip has five swaps each visit, always including a recipe page: eggs for a party cake, fish for lamps, logs for a house kit and more. She leaves in the early afternoon.',
+    'A new goal: swap something with Pip.',
+  ]],
   [32, '8 Nov 2026', 'Cooking, the theme song, and keeping your world safe', [
     'Cooking! Make a campfire from 2 logs and 3 cobble, then cook in the bag’s new Cooking tab: bread, grilled fish, apple pie and a party cake.',
     'Eat bread to run faster, grilled fish to jump twice as high, or apple pie for both. A little timer shows how long it lasts.',

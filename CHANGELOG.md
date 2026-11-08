@@ -2,6 +2,12 @@
 
 The same list is in the game: tap the version number on the front screen, or open **What’s new**.
 
+## 33. A map, and Pip the travelling goose (9 Nov 2026)
+- New map button (top right, or press M): see the land around you from above, with your nursery, signs, beds, campfires, treasure chests and friends marked on it. Zoom out to see further.
+- Every other day, Pip the travelling goose pulls her market cart up near your nursery. Follow the 🛒 tag and tap her to swap things.
+- Pip has five swaps each visit, always including a recipe page: eggs for a party cake, fish for lamps, logs for a house kit and more. She leaves in the early afternoon.
+- A new goal: swap something with Pip.
+
 ## 32. Cooking, the theme song, and keeping your world safe (8 Nov 2026)
 - Cooking! Make a campfire from 2 logs and 3 cobble, then cook in the bag’s new Cooking tab: bread, grilled fish, apple pie and a party cake.
 - Eat bread to run faster, grilled fish to jump twice as high, or apple pie for both. A little timer shows how long it lasts.

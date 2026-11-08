@@ -200,6 +200,18 @@ Tap a grown-up (hen, cow, pig, sheep or wolf) to pet it and open **Teach a job**
 
 The front screen shows the version number. Tap it, or open **What’s new**, for the change log. It lives in `js/version.js` (and [CHANGELOG.md](CHANGELOG.md)). To release: bump `VERSION`, add an entry at the top of `CHANGES` and in CHANGELOG.md, and set `CACHE` in `sw.js` to the same number.
 
+## The map
+
+- The **map button** (top right, between the camera and the bag), or **M** on a keyboard, opens a bird's-eye map around you: 128 blocks across, or 256 with **Zoom out**. North is up.
+- Ground you've been near is drawn from the real blocks, with your buildings, paths and wool. Further out it's drawn from the world's own shape (`heightAt`), so you can see hills, beaches and the sea before you get there. Higher ground is lighter, and slopes are shaded from the west.
+- Markers: a white arrow for you (pointing the way you face), 🐣 your nursery, 🪧 signs with their words, 🛏️ beds and 🔥 campfires you've put down, ✨ shut treasure chests in places you've been, 🛒 Pip's cart, and friends playing with you. Code: `drawMap()` in `js/main.js`.
+
+## Pip the travelling goose
+
+- Every other day (day 2, 4, 6 …), from morning till early afternoon, **Pip** pulls her striped market cart up near your nursery (or near you, if there's no dry ground there). A 🛒 tag points the way.
+- Tap Pip or her cart to see five swaps. They change each visit (picked from `TRADES` using the world seed and the day) and are the same for everyone playing together. One is always a **recipe page**. The others swap spare things for handy ones: eggs for a party cake, fish for lamps, wheat for apples, logs and fish for a house kit, and so on. Each swap can be made once or twice per visit.
+- Playing together, the host decides when Pip comes and where she parks (`td` in the state message); everyone swaps from their own bag. New goal: swap something with Pip.
+
 ## Cooking
 
 - The **Cooking** tab in the bag. Make a **campfire** from 2 logs and 3 cobble (learned by finishing the chop-a-tree goal) and put it down: a ring of stones, crossed logs and glowing flames that crackle when you're close by. Food needs a campfire within 4 blocks (`r.table === 'fire'` in `RECIPES`).
@@ -273,6 +285,7 @@ A full day lasts 10 minutes: about 6 minutes of daylight, a pink dusk, roughly 3
 | Tap: place block / open gate · Hold: dig | Right click: place · Left hold: break |
 | ⬆ jump (you can't fly) | Space; Shift climbs down a ladder |
 | Hotbar tap, bag button | 1–9, wheel, E |
+| Map button | M |
 
 ## Code map
 

@@ -37,6 +37,7 @@ export const GOALS = [
   ['sleep', 'Make a bed and sleep in it till morning: tap it when it’s dark', 1, s => s.slept || 0, [[ITEM_MILK, 2], [B.WOOL, 2]]],
   ['cook', 'Make a campfire and cook something on it', 1, s => sum(s.made, FOODS), [[ITEM_WHEAT, 4], [ITEM_EGG, 2]]],
   ['party', 'Throw a party: use a party cake near your babies', 1, s => s.parties || 0, [[ITEM_MILK, 2], [B.FLOWER_RED, 3]]],
+  ['trade', 'Swap something with Pip the travelling goose (she visits every other day)', 1, s => s.traded || 0, [[ITEM_APPLE, 4], [ITEM_FISH, 2]]],
   ['chicks', 'Grow your nursery to 37 chickens', 37, s => s.chicks || 0, [[B.HAY, 4], [ITEM_APPLE, 5]]],
 ];
 export const GOAL_IDS = GOALS.map(g => g[0]);

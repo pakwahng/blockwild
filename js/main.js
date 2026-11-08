@@ -13,7 +13,7 @@ import * as M from './models.js';
 import { Nursery, SPECIES, SPECIES_ORDER, isTreat, GIFTS, BABY_NAMES, cleanAnimalNick, ANIMAL_HATS } from './animals.js';
 import { Sfx } from './audio.js';
 import { Music } from './music.js';
-import { World, CS, CH } from './world.js';
+import { World, CS, CH, SEA } from './world.js';
 import { buildMesh } from './mesher.js';
 import { Renderer } from './renderer.js';
 import { Player, raycast } from './player.js';
@@ -74,6 +74,7 @@ try {
   renderer.addModel('hen', M.henModel());
   renderer.addModel('egg', M.eggModel());
   renderer.addModel('bobber', M.bobberModel());
+  renderer.addModel('trader', M.traderModel());
   renderer.addModel('milk', M.milkModel());
   renderer.addModel('woolTuft', M.woolTuftModel());
   renderer.addModel('logChunk', M.logChunkModel());
@@ -420,6 +421,7 @@ function startWorld(save) {
   crown = !!save?.crown;
   loadSigns(save?.signs);
   snackT = 0; boostEl.hidden = true;
+  trader.here = false; trader.day = -1; trader.look = 0;
   seat = null;
   showCrown();
   // a few wild babies of each kind close by, so there's someone to feed straight away
@@ -975,6 +977,7 @@ function remeshAround(x, z) {
 function placeBlock() {
   if (!running) return;
   const id = hotbar[selected];
+  if (aimingAtTrader()) { openTrade(); return; }
   if (target && target.id === B.THRONE && !seat) { sit(target.x, target.y, target.z); return; }
   if (target && (target.id === B.GATE || target.id === B.GATE_OPEN)) {
     // tap a gate to swing it open or shut
@@ -1476,6 +1479,8 @@ function pause() {
   if (!running && !$('#picker').hidden) $('#picker').hidden = true;
   if (!running && !$('#jobcard').hidden) { $('#jobcard').hidden = true; jobAnimal = null; }
   if (!running && !$('#signcard').hidden) { $('#signcard').hidden = true; signAt = null; }
+  if (!running && !$('#tradecard').hidden) $('#tradecard').hidden = true;
+  if (!running && mapView.open) { mapView.open = false; $('#mapcard').hidden = true; }
   running = false; input.enabled = false;
   input.state.breaking = false;
   saveGame();
@@ -1949,6 +1954,263 @@ function updateSignTags(box, eye) {
   }
 }
 
+// ---------- the map ----------
+// A bird's-eye view around you: the ground you've been to (with your buildings), and the lie of the land beyond
+// from the world's own shape. Markers show you, your nursery, signs, beds, campfires, chests, the trader and friends.
+const MAP_COL = {
+  [B.GRASS]: '#62b04c', [B.DIRT]: '#8a5a35', [B.STONE]: '#8e9196', [B.SAND]: '#e6d49a', [B.LOG]: '#7a5230', [B.LEAVES]: '#3c8a38',
+  [B.PLANKS]: '#c08850', [B.GLASS]: '#cfeefa', [B.WATER]: '#3a7bd5', [B.COBBLE]: '#8a8d92', [B.BRICK]: '#b5523b', [B.SNOW]: '#f4f7fb',
+  [B.LAMP]: '#ffe08a', [B.CLAY]: '#b9a39a', [B.HAY]: '#e3c25a', [B.ROOF]: '#c94a3a', [B.CREAM]: '#f1e3c4', [B.MUD]: '#6b4a2e',
+  [B.THRONE]: '#ffcf3a', [B.WOOL]: '#f4efe3', [B.WOOL_RED]: '#d8443a', [B.WOOL_ORANGE]: '#f08a2a', [B.WOOL_YELLOW]: '#f2cf3a',
+  [B.WOOL_PINK]: '#f29ab8', [B.WOOL_GREEN]: '#5cbf4a', [B.CHEST]: '#ffcf3a', [B.CHEST_OPEN]: '#b58a3a', [B.BED]: '#e2443a',
+  [B.CAMPFIRE]: '#ff8a2a', [B.SIGN]: '#d8924e', [B.PLANTER_RIPE]: '#f2c35a',
+};
+const mapView = { size: 128, open: false };
+const SEE_THROUGH = id => id === B.AIR || (SHAPED[id] && !IS_FEEDER(id) && id !== B.TABLE && id !== B.BED && id !== B.CAMPFIRE && id !== B.SIGN && !(id >= B.PLANTER && id <= B.PLANTER_RIPE));
+// The block you'd see looking straight down on a column, and how high it is.
+function topOf(x, z) {
+  const cx = Math.floor(x / CS), cz = Math.floor(z / CS), c = world.getChunk(cx, cz);
+  if (c) {
+    const lx = x - cx * CS, lz = z - cz * CS;
+    for (let y = CH - 1; y > 0; y--) { const id = c.data[lx + lz * CS + y * CS * CS]; if (!SEE_THROUGH(id)) return [id, y]; }
+    return [B.BEDROCK, 0];
+  }
+  const h = world.heightAt(x, z);
+  return h < SEA ? [B.WATER, SEA] : [world.surfaceBlock(h), h];
+}
+function drawMap() {
+  const cv = $('#map-canvas'), g = cv.getContext('2d'), W = cv.width, N = mapView.size, px = W / N;
+  const ox = Math.floor(player.pos[0]) - N / 2, oz = Math.floor(player.pos[2]) - N / 2;
+  const img = g.createImageData(W, W), d = img.data, hs = new Float32Array(N + 1);
+  const rgb = c => [parseInt(c.slice(1, 3), 16), parseInt(c.slice(3, 5), 16), parseInt(c.slice(5, 7), 16)];
+  const cache = {};
+  for (let j = 0; j < N; j++) {
+    let west = topOf(ox - 1, oz + j)[1];
+    for (let i = 0; i < N; i++) {
+      const [id, h] = topOf(ox + i, oz + j);
+      const col = cache[id] || (cache[id] = rgb(MAP_COL[id] || '#9a8f80'));
+      // light from the west and a little brighter the higher it is, so hills and valleys show
+      const k = (id === B.WATER ? 0.85 : 0.82 + (h - SEA) * 0.006) + Math.max(-0.12, Math.min(0.12, (h - west) * 0.06));
+      west = h;
+      for (let yy = 0; yy < px; yy++) for (let xx = 0; xx < px; xx++) {
+        const o = ((Math.floor(j * px) + yy) * W + Math.floor(i * px) + xx) * 4;
+        d[o] = Math.min(255, col[0] * k); d[o + 1] = Math.min(255, col[1] * k); d[o + 2] = Math.min(255, col[2] * k); d[o + 3] = 255;
+      }
+    }
+  }
+  g.putImageData(img, 0, 0);
+  // markers
+  const at = (x, z) => [(x - ox) * px, (z - oz) * px];
+  const inside = ([sx, sy]) => sx > -10 && sy > -10 && sx < W + 10 && sy < W + 10;
+  const emoji = (e, x, z, s = 22) => { const p = at(x, z); if (!inside(p)) return; g.font = `${s}px system-ui, sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(e, p[0], p[1]); };
+  const label = (text, x, z, dy = -18) => {
+    const p = at(x, z); if (!inside(p)) return;
+    g.font = 'bold 14px system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    const w = g.measureText(text).width + 12;
+    g.fillStyle = 'rgba(243, 220, 182, 0.92)'; g.beginPath(); g.roundRect(p[0] - w / 2, p[1] + dy - 10, w, 20, 6); g.fill();
+    g.fillStyle = '#4a2e18'; g.fillText(text, p[0], p[1] + dy);
+  };
+  // your buildings: beds and campfires from the blocks you've put down
+  const c0x = Math.floor(ox / CS), c1x = Math.floor((ox + N) / CS), c0z = Math.floor(oz / CS), c1z = Math.floor((oz + N) / CS);
+  for (let cz = c0z; cz <= c1z; cz++) for (let cx = c0x; cx <= c1x; cx++) {
+    const m = world.edits.get(World.key(cx, cz));
+    if (m) for (const [i, id] of m) {
+      if (id !== B.BED && id !== B.CAMPFIRE) continue;
+      emoji(id === B.BED ? '🛏️' : '🔥', cx * CS + (i % CS) + 0.5, cz * CS + (Math.floor(i / CS) % CS) + 0.5, 18);
+    }
+    const ch = world.getChunk(cx, cz)?.chest;
+    if (ch && world.getBlock(ch[0], ch[1], ch[2]) === B.CHEST) emoji('✨', ch[0] + 0.5, ch[2] + 0.5, 20);
+  }
+  for (const [k, t] of signs) { const [x, , z] = k.split(',').map(Number); emoji('🪧', x + 0.5, z + 0.5, 16); label(t.length > 18 ? t.slice(0, 17) + '…' : t, x + 0.5, z + 0.5, -16); }
+  let n = 0, hx = 0, hz = 0;
+  for (const a of flock.animals) if (a.tame) { n++; hx += a.p[0]; hz += a.p[2]; }
+  if (n) { emoji('🐣', hx / n, hz / n, 26); label('Nursery', hx / n, hz / n, 20); }
+  if (trader.here) { emoji('🛒', trader.p[0], trader.p[2], 24); label('Pip’s cart', trader.p[0], trader.p[2], 20); }
+  for (const o of others.values()) {
+    if (o.id === myNetId) continue;
+    const p = at(o.p[0], o.p[2]); if (!inside(p)) continue;
+    g.fillStyle = o.char === 'charli' ? '#8fd3c3' : '#d8392b'; g.strokeStyle = '#fff'; g.lineWidth = 3;
+    g.beginPath(); g.arc(p[0], p[1], 8, 0, Math.PI * 2); g.fill(); g.stroke();
+    label(nameOf(o), o.p[0], o.p[2], -18);
+  }
+  // you: an arrow pointing the way you're facing
+  const [mx, my] = at(player.pos[0], player.pos[2]), f = player.forward(), ang = Math.atan2(f[2], f[0]);
+  g.save(); g.translate(mx, my); g.rotate(ang);
+  g.fillStyle = '#ffffff'; g.strokeStyle = '#1c1a1a'; g.lineWidth = 3;
+  g.beginPath(); g.moveTo(14, 0); g.lineTo(-9, -9); g.lineTo(-4, 0); g.lineTo(-9, 9); g.closePath(); g.stroke(); g.fill();
+  g.restore();
+  $('#map-zoom').textContent = N === 128 ? 'Zoom out' : 'Zoom in';
+  $('#map-where').textContent = `You’re at ${Math.floor(player.pos[0])}, ${Math.floor(player.pos[2])}, ${Math.max(0, Math.floor(player.pos[1]) - SEA)} m above the sea. Up is north.`;
+}
+function openMap() {
+  if (!world || mapView.open) return;
+  mapView.open = true;
+  running = false; input.enabled = false; input.state.breaking = false;
+  if (document.pointerLockElement) { pickerOpenFromLock = true; document.exitPointerLock(); }
+  $('#mapcard').hidden = false;
+  drawMap();
+  bump(stats, 'mapped');
+}
+function closeMap() {
+  if (!mapView.open) return;
+  mapView.open = false;
+  $('#mapcard').hidden = true;
+  pickerOpenFromLock = false;
+  resume();
+}
+$('#btn-map').addEventListener('click', openMap);
+$('#map-close').addEventListener('click', closeMap);
+$('#map-zoom').addEventListener('click', () => { mapView.size = mapView.size === 128 ? 256 : 128; drawMap(); });
+$('#mapcard').addEventListener('click', e => { if (e.target.id === 'mapcard') closeMap(); });
+document.addEventListener('keydown', e => {
+  if (e.code !== 'KeyM' || e.repeat || e.target.tagName === 'INPUT') return;
+  if (mapView.open) closeMap(); else if (running) openMap();
+});
+
+// ---------- the travelling trader ----------
+// Pip the goose pulls her market cart up near your nursery every other day, from morning till early afternoon.
+// The host decides when she's here and where; everyone trades from their own bag. The offers change each visit.
+const TRADE_FROM = 0.06, TRADE_TILL = 0.5;
+const visitDay = d => d >= 1 && d % 2 === 1;
+const trader = { here: false, p: [0, 0, 0], yaw: 0, day: -1, used: {}, look: 0 };
+const traderBuf = new Float32Array(12);
+// [what you give, what you get ('page' is a recipe page), how many times per visit]
+const TRADES = [
+  [[[B.WOOL, 4]], 'page', 2],
+  [[[B.FLOWER_RED, 2], [B.FLOWER_YELLOW, 2], [B.FLOWER_WHITE, 2]], 'page', 1],
+  [[[ITEM_FISH, 2], [ITEM_WHEAT, 2]], 'page', 1],
+  [[[ITEM_EGG, 6]], [[ITEM_CAKE, 1]], 1],
+  [[[ITEM_FISH, 3]], [[B.LAMP, 2]], 2],
+  [[[ITEM_WHEAT, 8]], [[ITEM_APPLE, 4]], 2],
+  [[[ITEM_APPLE, 6]], [[ITEM_MILK, 2]], 2],
+  [[[ITEM_MILK, 2]], [[ITEM_EGG, 4]], 2],
+  [[[ITEM_SEEDS, 12]], [[ITEM_CLOVER, 4]], 2],
+  [[[B.COBBLE, 16]], [[B.GLASS, 4]], 2],
+  [[[B.LOG, 12], [ITEM_FISH, 2]], [[ITEM_HOUSE, 1]], 1],
+  [[[ITEM_BONE, 4]], [[ITEM_BREAD, 2]], 2],
+  [[[ITEM_BREAD, 2]], [[B.WOOL, 4]], 2],
+  [[[B.SAND, 10]], [[B.CLAY, 6]], 2],
+  [[[ITEM_PIE, 1]], [[ITEM_BONE, 6], [ITEM_SEEDS, 10]], 1],
+  [[[B.COBBLE, 10]], [[ITEM_GRILLED, 2]], 2],
+];
+// Five offers for this visit (the same for everyone playing together), always with a recipe page among them.
+function todaysTrades() {
+  let s = (world.seed ^ Math.imul(trader.day + 1, 2654435761)) >>> 0;
+  const rnd = () => { s = (Math.imul(s ^ (s >>> 15), 2246822507) + 0x9e3779b9) >>> 0; return s / 4294967296; };
+  const pages = TRADES.map((t, i) => i).filter(i => TRADES[i][1] === 'page'), rest = TRADES.map((t, i) => i).filter(i => TRADES[i][1] !== 'page');
+  const pick = list => list.splice(Math.floor(rnd() * list.length), 1)[0];
+  return [pick(pages), pick(rest), pick(rest), pick(rest), pick(rest)];
+}
+// Host: is it a visiting day? Then find a flat spot near the nursery for the cart.
+function traderStep(dt) {
+  if (net.isGuest || !world) return;
+  const want = visitDay(nights) && clock >= TRADE_FROM && clock < TRADE_TILL;
+  if (!want) { if (trader.here) traderLeaves(); return; }
+  if (trader.here || (trader.look -= dt) > 0) return;
+  trader.look = 2;
+  const spot = traderSpot();
+  if (spot) traderArrives(spot.p, spot.yaw, nights);
+}
+function traderSpot() {
+  // near the nursery if there is one, otherwise (or if it's all water and trees there) near you
+  let n = 0, hx = 0, hz = 0;
+  for (const a of flock.animals) if (a.tame) { n++; hx += a.p[0]; hz += a.p[2]; }
+  const centres = n ? [[hx / n, hz / n], [player.pos[0], player.pos[2]]] : [[player.pos[0], player.pos[2]]];
+  for (const [cx, cz] of centres) for (let tries = 0; tries < 80; tries++) {
+    const ang = tries * 2.4, r = 5 + (tries % 14) * 0.8;
+    const x = Math.floor(cx + Math.cos(ang) * r), z = Math.floor(cz + Math.sin(ang) * r);
+    if (!world.getChunk(Math.floor(x / CS), Math.floor(z / CS))) continue;
+    // start at the land's own height (under any trees), then step up past anything built on it
+    let y = world.heightAt(x, z) + 1;
+    while (y < CH - 3 && SOLID[world.getBlock(x, y, z)]) y++;
+    while (y > 1 && !SOLID[world.getBlock(x, y - 1, z)]) y--;
+    const ground = world.getBlock(x, y - 1, z);
+    if (ground === B.LEAVES) continue; // (water is ruled out below: it isn't solid ground)
+    let clear = true;
+    for (let dx = -1; dx <= 1 && clear; dx++) for (let dz = -1; dz <= 1 && clear; dz++) {
+      if (!SOLID[world.getBlock(x + dx, y - 1, z + dz)]) clear = false;
+      for (let dy = 0; dy < 2 && clear; dy++) if (world.getBlock(x + dx, y + dy, z + dz) !== B.AIR) clear = false;
+    }
+    if (!clear) continue;
+    return { p: [x + 0.5, y, z + 0.5], yaw: Math.atan2(cx - x - 0.5, cz - z - 0.5) };
+  }
+  return null;
+}
+function traderArrives(p, yaw, day) {
+  if (trader.day !== day) trader.used = {};
+  Object.assign(trader, { here: true, p, yaw, day });
+  sfx.happy();
+  const first = !firsts.includes('trader');
+  if (first) firsts.push('trader');
+  toast(first ? 'Honk! Pip the travelling goose has pulled her cart up near your nursery. Follow the 🛒 tag and tap her to swap things. She’s here till early afternoon.'
+    : 'Honk! Pip the travelling goose is back with her cart, and some new things to swap.', first ? 7000 : 4200);
+}
+function traderLeaves() {
+  trader.here = false;
+  if ($('#tradecard').hidden === false) closeTrade();
+  toast('Pip packed up her cart and waddled off. She’ll be back in a couple of days.', 3500);
+}
+function traderGroup(time) {
+  const d = traderBuf;
+  d.set([trader.p[0], trader.p[1], trader.p[2], trader.yaw + 0.05 * Math.sin(time * 1.3), 1, 0, 0, 0, 0, 0, 0, 0]);
+  return { model: 'trader', data: d, count: 1 };
+}
+// Tapping Pip (or her cart)?
+function aimingAtTrader() {
+  if (!trader.here) return false;
+  const eye = player.eye(), fwd = player.forward();
+  const vx = trader.p[0] - eye[0], vy = trader.p[1] + 0.9 - eye[1], vz = trader.p[2] - eye[2], d = Math.hypot(vx, vy, vz);
+  if (d > 4.5) return false;
+  if (target && Math.hypot(target.x + 0.5 - eye[0], target.y + 0.5 - eye[1], target.z + 0.5 - eye[2]) < d - 1.2) return false;
+  return (vx * fwd[0] + vy * fwd[1] + vz * fwd[2]) / (d || 1) > (d < 1.6 ? 0.4 : 0.8);
+}
+function openTrade() {
+  running = false; input.enabled = false; input.state.breaking = false;
+  if (document.pointerLockElement) { pickerOpenFromLock = true; document.exitPointerLock(); }
+  buildTrades();
+  $('#tradecard').hidden = false;
+  sfx.call('chick', 0.3);
+}
+function closeTrade() {
+  $('#tradecard').hidden = true;
+  pickerOpenFromLock = false;
+  resume();
+}
+const giveList = list => list.map(([id, k]) => `<span class="tr-item"><img alt="" src="${icons[id]}"><em>${k}</em></span>`).join('');
+function buildTrades() {
+  const box = $('#trade-list');
+  box.textContent = '';
+  for (const i of todaysTrades()) {
+    const [give, get, times] = TRADES[i], left = times - (trader.used[i] || 0);
+    const can = left > 0 && give.every(([id, k]) => have(id) >= k);
+    const row = document.createElement('div');
+    row.className = 'trade' + (can ? ' ready' : '');
+    const getHtml = get === 'page' ? '<span class="tr-item page">📜<em>Recipe page</em></span>' : giveList(get);
+    row.innerHTML = `<div class="tr-give">${giveList(give)}</div><span class="tr-arrow" aria-hidden="true">→</span><div class="tr-get">${getHtml}</div>` +
+      `<button type="button" class="primary"${can ? '' : ' disabled'}>${left > 0 ? 'Swap' : 'Sold out'}</button>`;
+    const words = l => l.map(([id, k]) => { const n = itemName(id).toLowerCase(); return `${k} ${k > 1 && /(egg|apple|log|bone|lamp|kit|cake|pie|flower)$/.test(n) ? n + 's' : n}`; }).join(', ');
+    row.querySelector('button').setAttribute('aria-label', `Swap ${words(give)} for ${get === 'page' ? 'a recipe page' : words(get)}. ${left} left.`);
+    row.querySelector('button').addEventListener('click', () => doTrade(i));
+    box.appendChild(row);
+  }
+}
+function doTrade(i) {
+  const [give, get, times] = TRADES[i];
+  if ((trader.used[i] || 0) >= times || !give.every(([id, k]) => have(id) >= k)) return;
+  for (const [id, k] of give) useItem(id, k);
+  trader.used[i] = (trader.used[i] || 0) + 1;
+  if (get === 'page') {
+    const u = pickPage(knownList(), settings.patterns || [], foundEver);
+    if (u) learn(u, 'page');
+    else { addItem(ITEM_APPLE, 4); toast('You know every recipe already! Pip gives you 4 apples instead.'); }
+  } else for (const [id, k] of get) { addItem(id, k); bump(stats, 'got', id, k); }
+  bump(stats, 'traded');
+  sfx.pickup(); buzz(10);
+  buildTrades();
+}
+$('#trade-close').addEventListener('click', closeTrade);
+$('#tradecard').addEventListener('click', e => { if (e.target.id === 'tradecard') closeTrade(); });
+
 // ---------- cooking: eat a snack for a boost, or throw a party ----------
 const SNACK = {
   [ITEM_BREAD]: { boost: 1.5, t: 60, say: 'Yum, fresh bread! Zoomies: you run faster for a minute.' },
@@ -2166,6 +2428,19 @@ function updateTags() {
     pinTag(chestEl, 'tag treasure', tc[0] + 0.5, tc[1] + 1.4, tc[2] + 0.5, W, H, eye, f, r, u);
   }
   updateSignTags(box, eye);
+  // The trader: a tag over Pip's cart while she's visiting.
+  if (!traderEl) {
+    traderEl = document.createElement('div');
+    traderEl.innerHTML = '<span class="arrow" aria-hidden="true"></span><span class="name"></span>';
+    box.appendChild(traderEl);
+  }
+  const trd = trader.here && Math.hypot(trader.p[0] - eye[0], trader.p[2] - eye[2]);
+  traderEl.hidden = !(trd > 3);
+  if (!traderEl.hidden) {
+    const label = `🛒 Pip’s cart · ${Math.round(trd)} m`;
+    if (traderEl.lastName !== label) { traderEl.querySelector('.name').textContent = label; traderEl.lastName = label; }
+    pinTag(traderEl, 'tag trader', trader.p[0], trader.p[1] + 2.4, trader.p[2], W, H, eye, f, r, u);
+  }
   // The home arrow: when you wander far from your tame babies, it points the way back to them.
   let n = 0, hx = 0, hy = 0, hz = 0;
   for (const a of flock.animals) if (a.tame) { n++; hx += a.p[0]; hy += a.p[1]; hz += a.p[2]; }
@@ -2181,7 +2456,7 @@ function updateTags() {
   if (homeEl.lastName !== label) { homeEl.querySelector('.name').textContent = label; homeEl.lastName = label; }
   pinTag(homeEl, 'tag home', hx / n, hy / n + 1.2, hz / n, W, H, eye, f, r, u);
 }
-let homeEl = null;
+let homeEl = null, traderEl = null;
 // Puts a tag over a point, or pins it to the screen edge with an arrow when the point is off screen.
 function pinTag(el, cls, tx, ty, tz, W, H, eye, f, r, u) {
     const at = project(tx, ty, tz);
@@ -2240,7 +2515,8 @@ function netStep(dt) {
   const pl = [[0, settings.char, ...myPose(), myName(), myFit()]];
   for (const o of others.values()) pl.push([o.id, o.char, ...o.tp, o.tyaw, o.pitch, o.held, o.sit ? 1 : 0, o.nick, o.fit]);
   const ev = netEvents.splice(0);
-  const common = { t: 's', clock: +clock.toFixed(5), nights, crown, counts: flock.counts(), pl, sn: snakes.snapshot(), rd: raiders.snapshot(), tr: flock.treatSnapshot(), gf: flock.giftSnapshot(), wx: weather.snapshot(), ev };
+  const common = { t: 's', clock: +clock.toFixed(5), nights, crown, counts: flock.counts(), pl, sn: snakes.snapshot(), rd: raiders.snapshot(), tr: flock.treatSnapshot(), gf: flock.giftSnapshot(), wx: weather.snapshot(), ev,
+    td: trader.here ? [...trader.p, +trader.yaw.toFixed(3), trader.day] : 0 };
   for (const [id] of net.conns) {
     const o = others.get(id);
     // animals go every other update (about 4 a second): the copies glide in between
@@ -2335,6 +2611,8 @@ function guestMessage(msg) {
       snakes.applySnapshot(msg.sn || []);
       raiders.applySnapshot(msg.rd || []);
       weather.applySnapshot(msg.wx);
+      if (Array.isArray(msg.td) && msg.td.length === 5 && msg.td.every(Number.isFinite)) { if (!trader.here) traderArrives(msg.td.slice(0, 3), msg.td[3], msg.td[4]); else trader.p = msg.td.slice(0, 3); }
+      else if (!msg.td && trader.here) traderLeaves();
       const seen = new Set();
       for (const [id, char, x, y, z, yaw, pitch, held, sit, nick, fit] of msg.pl || []) {
         if (id === myNetId) continue;
@@ -2531,9 +2809,11 @@ function frame(now, photo = false) {
   s.groups.push(...critters.instances(eye, Math.min(far, 40), now / 1000));
   fishStep(dt);
   if (fishing) s.groups.push(bobberGroup());
+  if (trader.here) s.groups.push(traderGroup(now / 1000));
   sfx.rain(running && !underwater && !weather.snowing ? weather.amount : 0);
   music.day = skyAt(clock).night < 0.3;
   if (running) snackStep(dt);
+  traderStep(dt);
   campfireCrackle(dt);
   if (weather.snowing && weather.amount > 0.3 && running && !firsts.includes('snow')) { firsts.push('snow'); toast('It’s snowing up here on the mountain! Down in the valley it’s only rain.'); }
   // birds singing by day, crickets at night (only on the surface, away from heavy rain)
@@ -2564,7 +2844,7 @@ function frame(now, photo = false) {
 requestAnimationFrame(loop);
 
 // handy for debugging from the console
-window.blockwild = { fishTap, get fishing() { return fishing; }, selectSlot, get hotbar() { return hotbar; }, get known() { return knownList(); }, learn, unlearned: () => unlearned(knownList(), settings.patterns || []), get settings() { return settings; }, get world() { return world; }, get player() { return player; }, get target() { return target; }, get flock() { return flock; }, get nursery() { return flock; }, get snakes() { return snakes; }, get raiders() { return raiders; }, get weather() { return weather; }, get critters() { return critters; }, music, wardrobe, selfieCam, petBaby, openJobs, get inv() { return inv; }, addItem, RECIPES, craft, input, raycast,
+window.blockwild = { fishTap, get fishing() { return fishing; }, selectSlot, get hotbar() { return hotbar; }, get known() { return knownList(); }, learn, unlearned: () => unlearned(knownList(), settings.patterns || []), get settings() { return settings; }, get world() { return world; }, get player() { return player; }, get target() { return target; }, get flock() { return flock; }, get nursery() { return flock; }, get snakes() { return snakes; }, get raiders() { return raiders; }, get weather() { return weather; }, get critters() { return critters; }, music, trader, openMap, get nights() { return nights; }, set nights(n) { nights = n; }, wardrobe, selfieCam, petBaby, openJobs, get inv() { return inv; }, addItem, RECIPES, craft, input, raycast,
   get clock() { return clock; }, setTime(t) { clock = t; }, swing: () => swing(),
   net, others, get myNetId() { return myNetId; },
   get seat() { return seat; }, awardCrown: () => awardCrown(), sit: (x, y, z) => sit(x, y, z), standUp: () => standUp(),

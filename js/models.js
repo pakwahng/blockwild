@@ -335,6 +335,49 @@ export function henModel() {
   }
   return m.done({ wing: [0.22, 0.4], leg: [0, 0, 0], head: [0, 0], tail: [-0.28] });
 }
+// Pip the travelling goose and the little market cart she pulls about (cart behind, goose in front, facing +Z).
+export function traderModel() {
+  const m = new ModelBuilder();
+  const wood = '#b07a45', dark = '#7e5230', red = '#e2443a', cream = '#fbf3e4', white = '#fbfaf6', orange = '#ff8a2a';
+  // the cart
+  m.box([0, 0.62, -0.55], [1.5, 0.5, 0.9], 0.06, wood);                             // box
+  m.box([0, 0.9, -0.55], [1.56, 0.08, 0.96], 0.03, dark, 0, false);                  // rim
+  for (const x of [-0.5, 0, 0.5]) m.box([x, 0.62, -0.09], [0.06, 0.44, 0.02], 0.01, dark, 0, false); // planks
+  for (const sx of [-1, 1]) {
+    m.box([sx * 0.8, 0.32, -0.55], [0.08, 0.6, 0.6], 0.25, '#4a3526');              // wheels
+    m.box([sx * 0.85, 0.32, -0.55], [0.04, 0.18, 0.18], 0.06, '#c9c2b4', 0, false);  // hubs
+    m.box([sx * 0.7, 1.35, -0.18], [0.07, 0.95, 0.07], 0.02, dark, 0, false);        // awning posts
+    m.box([sx * 0.7, 1.35, -0.92], [0.07, 0.95, 0.07], 0.02, dark, 0, false);
+  }
+  for (let k = 0; k < 6; k++) m.box([-0.65 + k * 0.26, 1.86, -0.55], [0.26, 0.08, 1.02], 0.02, k % 2 ? cream : red, 0, false); // striped awning
+  for (let k = 0; k < 6; k++) m.box([-0.65 + k * 0.26, 1.76, -0.03], [0.26, 0.14, 0.04], 0.02, k % 2 ? red : cream, 0, false); // scalloped edge
+  // goods on the cart
+  m.box([-0.42, 1.02, -0.5], [0.3, 0.22, 0.3], 0.08, '#f2c35a');                     // a sack of wheat
+  m.box([0.05, 1.0, -0.55], [0.26, 0.18, 0.26], 0.06, '#f4efe3');                    // wool
+  m.box([0.42, 1.02, -0.45], [0.18, 0.2, 0.18], 0.08, '#e8443a');                    // apples
+  m.box([0.48, 1.06, -0.62], [0.16, 0.18, 0.16], 0.07, '#4cc25a');
+  m.box([0.1, 1.14, -0.7], [0.3, 0.06, 0.2], 0.02, '#ffe08a', 0, false);              // a recipe page
+  // Pip the goose
+  m.box([0, 0.42, 0.55], [0.46, 0.4, 0.62], 0.17, white);                            // body
+  m.box([0, 0.62, 0.36], [0.4, 0.14, 0.3], 0.06, '#e9e4d8');                          // wing shading
+  m.box([0, 0.8, 0.8], [0.16, 0.5, 0.16], 0.07, white, 10);                           // long neck
+  m.box([0, 1.08, 0.84], [0.26, 0.24, 0.28], 0.1, white, 10);                         // head
+  m.box([0, 1.04, 1.02], [0.12, 0.07, 0.14], 0.03, orange, 10, false);                // beak
+  for (const sx of [-1, 1]) {
+    m.box([sx * 0.085, 1.12, 0.97], [0.05, 0.06, 0.02], 0.02, '#1c1a1a', 10, false);
+    m.box([sx * 0.085 - 0.012, 1.13, 0.98], [0.018, 0.018, 0.01], 0.006, '#ffffff', 10, false);
+    m.box([sx * 0.11, 0.08, 0.6], [0.05, 0.16, 0.05], 0.015, orange, 3, false);       // legs and feet
+    m.box([sx * 0.11, 0.015, 0.66], [0.12, 0.03, 0.14], 0.012, orange, 3, false);
+  }
+  m.box([0, 1.23, 0.84], [0.32, 0.03, 0.32], 0.012, '#3a7a46', 10, false);             // a little green traveller's hat
+  m.box([0, 1.3, 0.84], [0.2, 0.12, 0.2], 0.04, '#3a7a46', 10, false);
+  m.box([0, 1.27, 0.84], [0.21, 0.03, 0.21], 0.01, '#ffcf3a', 10, false);
+  m.box([0.25, 0.46, 0.55], [0.06, 0.2, 0.22], 0.04, '#8f5f34', 0, false);             // satchel
+  m.box([0, 0.66, 0.55], [0.5, 0.03, 0.05], 0.01, '#8f5f34', 0, false);               // its strap
+  m.box([0, 0.5, 0.22], [0.08, 0.06, 0.12], 0.02, dark, 0, false);                     // harness to the cart
+  return m.done({ wing: [0.2, 0.5], leg: [0, 0, 0], head: [0.8, 0.8], tail: [0.25] });
+}
+
 // The float on a fishing line, bobbing on the water: red on top, white underneath.
 export function bobberModel() {
   const m = new ModelBuilder();
