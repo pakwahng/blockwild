@@ -355,10 +355,10 @@ export class Nursery {
       f[i++] = a.v[0]; f[i++] = a.v[2]; f[i++] = a.hop; f[i++] = a.squash; f[i++] = a.peck; f[i++] = a.wag;
       f[i++] = Math.min(9999, a.age); f[i++] = a.gy;
     }
-    return f.buffer;
+    return Array.from(f, v => Math.round(v * 1000) / 1000); // plain numbers: JSON travels between any two browsers
   }
   applySnapshot(buf) {
-    const f = new Float32Array(buf), byId = new Map(this.animals.map(a => [a.id, a]));
+    const f = buf, byId = new Map(this.animals.map(a => [a.id, a]));
     const keep = [];
     for (let i = 0; i < f.length; i += 14) {
       const id = f[i], spf = f[i + 1], spi = spf % 8, flags = Math.floor(spf / 8);

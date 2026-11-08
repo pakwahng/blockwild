@@ -72,7 +72,8 @@ export class Net {
     this.peer = peer;
     try {
       await new Promise((resolve, reject) => { peer.on('open', resolve); peer.on('error', reject); });
-      const conn = peer.connect(PREFIX + code, { reliable: true });
+      // JSON rather than PeerJS's binary packing, which doesn't get on between Safari and other browsers
+      const conn = peer.connect(PREFIX + code, { reliable: true, serialization: 'json' });
       await new Promise((resolve, reject) => {
         const timer = setTimeout(() => reject({ type: 'timeout' }), 15000);
         conn.on('open', () => { clearTimeout(timer); resolve(); });

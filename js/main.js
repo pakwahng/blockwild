@@ -67,7 +67,7 @@ const sfx = new Sfx();
 // play together
 const net = new Net();
 const others = new Map();   // id → another player: { id, char, p, tp, yaw, tyaw, pitch, held, sit, phase, speed }
-let myNetId = 0, netTimer = 0, poseTimer = 0, shownOthers = -1;
+let myNetId = 0, netTimer = 0, poseTimer = 0, shownOthers = -1, pendingEdits = {}, joining = false;
 const netEdits = [], netEvents = [];
 
 const icons = {};
@@ -663,13 +663,14 @@ function updateTags() {
 }
 
 function addOther(id, char) {
-  const o = { id, char: charOf(char), p: [...player.pos], tp: [...player.pos], yaw: 0, tyaw: 0, pitch: 0, held: null, sit: false, phase: 0, speed: 0 };
+  const o = { id, joined: performance.now(), char: charOf(char), p: [...player.pos], tp: [...player.pos], yaw: 0, tyaw: 0, pitch: 0, held: null, sit: false, phase: 0, speed: 0 };
   others.set(id, o);
   return o;
 }
 function setPose(o, p, yaw, pitch, held, sit, char) {
   if (!o.seen) { o.p = [...p]; o.yaw = yaw; o.seen = true; }
   o.tp = p; o.tyaw = yaw; o.pitch = pitch; o.held = held; o.sit = !!sit;
+  o.heard = performance.now(); o.warned = false;
   if (char) o.char = charOf(char);
 }
 function myPose() {
@@ -691,6 +692,9 @@ function netStep(dt) {
   netTimer -= dt;
   if (netTimer > 0 || !net.guests) return;
   netTimer = 0.12;
+  for (const o of others.values()) {
+    if (!o.warned && performance.now() - (o.heard || o.joined) > 6000) { o.warned = true; toast(`Can’t hear from ${CHAR_NAMES[o.char]}’s device. They may need to rejoin.`); }
+  }
   const pl = [[0, settings.char, ...myPose()]];
   for (const o of others.values()) pl.push([o.id, o.char, ...o.tp, o.tyaw, o.pitch, o.held, o.sit ? 1 : 0]);
   const ev = netEvents.splice(0);
@@ -724,13 +728,20 @@ function hostMessage(from, msg) {
       const n = addOther(from, msg.char);
       const f = player.forward(), pos = [player.pos[0] + f[0] * 2, player.pos[1] + 0.2, player.pos[2] + f[2] * 2];
       n.p = [...pos]; n.tp = [...pos];
-      net.send(from, { t: 'w', id: from, seed: world.seed, edits: world.serializeEdits(), clock, nights, crown, pos, yaw: player.yaw + Math.PI });
+      // the world's block edits go in pieces first: some browsers only take smallish messages
+      let part = {}, size = 0;
+      for (const [key, arr] of Object.entries(world.serializeEdits())) {
+        part[key] = arr; size += arr.length * 6;
+        if (size > 20000) { net.send(from, { t: 'we', edits: part }); part = {}; size = 0; }
+      }
+      net.send(from, { t: 'w', id: from, seed: world.seed, edits: part, clock, nights, crown, pos, yaw: player.yaw + Math.PI });
       toast(`${CHAR_NAMES[n.char]} joined your world!`);
       sfx.happy();
       updateRoomUi();
       break;
     }
-    case 'p': if (o && Array.isArray(msg.pose)) { const [x, y, z, yaw, pitch, held, sit] = msg.pose; setPose(o, [x, y, z], yaw, pitch, held, sit, msg.char); } break;
+    case 'p': if (Array.isArray(msg.pose)) {
+      const o = others.get(from) || addOther(from, msg.char); const [x, y, z, yaw, pitch, held, sit] = msg.pose; setPose(o, [x, y, z], yaw, pitch, held, sit, msg.char); } break;
     case 'e':
       for (const [x, y, z, id] of msg.b || []) if (BLOCKS[id] || id === B.AIR) { world.applyEdit(x, y, z, id); remeshAround(x, z); }
       net.broadcast(msg, from);
@@ -744,7 +755,12 @@ function hostMessage(from, msg) {
 
 function guestMessage(msg) {
   switch (msg.t) {
-    case 'w': startGuestWorld(msg); break;
+    case 'we': Object.assign(pendingEdits, msg.edits); break;
+    case 'w':
+      if (myNetId) break; // already in
+      msg.edits = Object.assign(pendingEdits, msg.edits); pendingEdits = {};
+      startGuestWorld(msg);
+      break;
     case 'full': setNetStatus('That game already has four players.', true); net.close(); updateRoomUi(); break;
     case 'bye': net.close(); others.clear(); updateTags(); backToOwnWorld(); toast('The host stopped the game. You’re back in your own world.'); break;
     case 'e': for (const [x, y, z, id] of msg.b || []) { world.applyEdit(x, y, z, id); remeshAround(x, z); } break;
@@ -828,17 +844,19 @@ $('#btn-host').addEventListener('click', async () => {
 });
 $('#join-code').addEventListener('input', e => { e.target.value = cleanCode(e.target.value); });
 $('#btn-join').addEventListener('click', async () => {
-  if (!renderer) return;
+  if (!renderer || joining || net.active) return;
   const code = cleanCode($('#join-code').value);
   if (code.length !== 4) { setNetStatus('Type the four letters from your friend’s screen.', true); return; }
   saveGame(); // keep your own world safe while you visit
   sfx.unlock();
   setNetStatus('Joining…');
+  joining = true;
   try {
     await net.join(code);
     net.toHost({ t: 'hello', char: settings.char });
     setNetStatus('Connected! Loading your friend’s world…');
   } catch (err) { setNetStatus(err.message, true); }
+  joining = false;
   updateRoomUi();
 });
 $('#btn-leave').addEventListener('click', () => {
