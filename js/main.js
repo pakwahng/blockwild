@@ -67,7 +67,7 @@ const sfx = new Sfx();
 // play together
 const net = new Net();
 const others = new Map();   // id → another player: { id, char, p, tp, yaw, tyaw, pitch, held, sit, phase, speed }
-let myNetId = 0, netTimer = 0, poseTimer = 0, shownOthers = -1, pendingEdits = {}, joining = false;
+let myNetId = 0, netTimer = 0, poseTimer = 0, shownOthers = -1, pendingEdits = {}, joining = false, sendAnimals = false;
 const netEdits = [], netEvents = [];
 
 const icons = {};
@@ -646,19 +646,42 @@ function kidInstances(dt) {
     shadowGroups: [{ data: new Float32Array(shadows), count: shadows.length / 12 }],
   };
 }
+// Name tags over other players. Someone off screen (or behind you) gets their tag pinned to the
+// screen edge with an arrow pointing their way and how far off they are, so you can always find each other.
 function updateTags() {
   const box = $('#tags');
   for (const [id, el] of tagEls) if (!others.has(id) || id === myNetId) { el.remove(); tagEls.delete(id); }
+  const W = window.innerWidth, H = window.innerHeight;
+  const eye = player.eye(), f = player.forward();
+  const r = [Math.cos(player.yaw), 0, -Math.sin(player.yaw)];
+  const u = [r[1] * f[2] - r[2] * f[1], r[2] * f[0] - r[0] * f[2], r[0] * f[1] - r[1] * f[0]];
   for (const o of others.values()) {
     if (o.id === myNetId) continue;
     let el = tagEls.get(o.id);
-    if (!el) { el = document.createElement('div'); box.appendChild(el); tagEls.set(o.id, el); }
-    el.className = 'tag ' + o.char;
-    el.textContent = CHAR_NAMES[o.char];
-    const d = Math.hypot(o.p[0] - player.pos[0], o.p[2] - player.pos[2]);
-    const at = d < 48 ? project(o.p[0], o.p[1] + 1.65, o.p[2]) : null;
-    el.hidden = !at;
-    if (at) { el.style.left = at[0] + 'px'; el.style.top = at[1] + 'px'; }
+    if (!el) {
+      el = document.createElement('div');
+      el.innerHTML = '<span class="arrow" aria-hidden="true"></span><span class="name"></span>';
+      box.appendChild(el); tagEls.set(o.id, el);
+    }
+    const tx = o.p[0], ty = o.p[1] + 1.65, tz = o.p[2];
+    const d = Math.hypot(tx - eye[0], tz - eye[2]);
+    const name = CHAR_NAMES[o.char] + (d > 12 ? ` · ${Math.round(d)} m` : '');
+    if (el.lastName !== name) { el.querySelector('.name').textContent = name; el.lastName = name; }
+    const at = project(tx, ty, tz);
+    const onScreen = at && at[0] > 30 && at[0] < W - 30 && at[1] > 50 && at[1] < H - 30;
+    el.className = 'tag ' + o.char + (onScreen ? '' : ' edge');
+    if (onScreen) { el.style.left = at[0] + 'px'; el.style.top = at[1] + 'px'; continue; }
+    // direction on screen towards them: right/up in camera space (behind you counts as "turn this way")
+    const rel = [tx - eye[0], ty - eye[1], tz - eye[2]];
+    let dx = rel[0] * r[0] + rel[1] * r[1] + rel[2] * r[2];
+    let dy = -(rel[0] * u[0] + rel[1] * u[1] + rel[2] * u[2]);
+    const dz = rel[0] * f[0] + rel[1] * f[1] + rel[2] * f[2];
+    if (dz < 0) dy = Math.max(dy, 0.25 * Math.abs(dx) + 0.01); // behind: keep the tag low on the screen, to the side to turn
+    const l = Math.hypot(dx, dy) || 1; dx /= l; dy /= l;
+    const hw = W / 2 - 70, hh = H / 2 - 56;
+    const t = Math.min(hw / Math.max(Math.abs(dx), 1e-3), hh / Math.max(Math.abs(dy), 1e-3));
+    el.style.left = (W / 2 + dx * t) + 'px'; el.style.top = (H / 2 + dy * t) + 'px';
+    el.querySelector('.arrow').style.transform = `rotate(${Math.atan2(dy, dx)}rad)`;
   }
 }
 
@@ -692,6 +715,7 @@ function netStep(dt) {
   netTimer -= dt;
   if (netTimer > 0 || !net.guests) return;
   netTimer = 0.12;
+  sendAnimals = !sendAnimals;
   for (const o of others.values()) {
     if (!o.warned && performance.now() - (o.heard || o.joined) > 6000) { o.warned = true; toast(`Can’t hear from ${CHAR_NAMES[o.char]}’s device. They may need to rejoin.`); }
   }
@@ -701,7 +725,8 @@ function netStep(dt) {
   const common = { t: 's', clock: +clock.toFixed(5), nights, crown, counts: flock.counts(), pl, sn: snakes.snapshot(), tr: flock.treatSnapshot(), ev };
   for (const [id] of net.conns) {
     const o = others.get(id);
-    net.send(id, { ...common, a: flock.snapshot(o ? o.tp : player.pos, 72) });
+    // animals go every other update (about 4 a second): the copies glide in between
+    net.send(id, sendAnimals ? { ...common, a: flock.snapshot(o ? o.tp : player.pos, 64) } : common);
   }
 }
 

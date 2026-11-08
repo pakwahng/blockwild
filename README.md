@@ -56,6 +56,7 @@ A full day lasts 10 minutes: about 6 minutes of daylight, a pink dusk, roughly 3
 - Pick **Lachie** or **Charli** in Settings. That's how other players see you.
 - One player opens **Play together** and taps **Host my world** to get a four-letter room code.
 - Friends (up to three) type the code and tap **Join**. They arrive in the host's world, next to the host.
+- When another player is off screen, their name tag sits at the screen edge with an arrow pointing their way and how far off they are.
 - Everyone shares the nursery, treats, blocks, day and night, and the snakes. The host's device runs the animals and snakes, so the host keeps the game open.
 - A visitor's own world isn't touched; **Leave** takes them back to it.
 - Needs the internet: the free PeerJS service introduces the devices, then game data goes directly between them (WebRTC).

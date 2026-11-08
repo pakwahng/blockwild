@@ -5,6 +5,7 @@ const PEER_SRC = 'https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js';
 const PREFIX = 'babychickenempire-';
 const LETTERS = 'BCDFGHJKLMNPQRSTVWXZ';
 export const MAX_GUESTS = 3;
+const PIECE = 5000; // characters per piece: even with every quote escaped it stays well under the limit
 
 let loading = null;
 function loadPeer() {
@@ -59,9 +60,9 @@ export class Net {
     const id = ++this.nextId;
     const gone = () => { if (this.conns.delete(id)) this.emit('leave', id); };
     conn.on('open', () => { this.conns.set(id, conn); });
-    conn.on('data', msg => this.emit('message', id, msg));
+    conn.on('data', msg => this.receive(id, msg));
     conn.on('close', gone);
-    conn.on('error', gone);
+    conn.on('error', err => console.warn('connection', id, err)); // e.g. a dropped message: not a disconnect
   }
 
   async join(rawCode) {
@@ -82,10 +83,10 @@ export class Net {
       });
       this.role = 'guest'; this.code = code;
       this.conns.set(0, conn);
-      conn.on('data', msg => this.emit('message', 0, msg));
+      conn.on('data', msg => this.receive(0, msg));
       const lost = () => { if (this.role === 'guest') { this.close(); this.emit('lost'); } };
       conn.on('close', lost);
-      conn.on('error', lost);
+      conn.on('error', err => console.warn('connection', err));
       peer.on('disconnected', () => { if (!peer.destroyed) peer.reconnect(); });
     } catch (err) {
       peer.destroy(); this.reset();
@@ -93,7 +94,25 @@ export class Net {
     }
   }
 
-  send(id, msg) { const c = this.conns.get(id); if (c?.open) c.send(msg); }
+  // PeerJS's JSON channel refuses messages over ~16 KB, so big ones go in numbered pieces.
+  send(id, msg) {
+    const c = this.conns.get(id);
+    if (!c?.open) return;
+    const s = JSON.stringify(msg);
+    if (s.length < PIECE) { c.send(msg); return; }
+    const q = this.seq = (this.seq || 0) + 1, n = Math.ceil(s.length / PIECE);
+    for (let i = 0; i < n; i++) c.send({ t: '_c', q, i, n, s: s.slice(i * PIECE, (i + 1) * PIECE) });
+  }
+  receive(id, msg) {
+    if (msg?.t !== '_c') { this.emit('message', id, msg); return; }
+    const key = id + ':' + msg.q, parts = this.parts || (this.parts = new Map());
+    let p = parts.get(key);
+    if (!p) { p = []; parts.set(key, p); }
+    p[msg.i] = msg.s;
+    if (p.filter(x => x !== undefined).length < msg.n) return;
+    parts.delete(key);
+    try { this.emit('message', id, JSON.parse(p.join(''))); } catch { /* a garbled message is dropped */ }
+  }
   toHost(msg) { this.send(0, msg); }
   broadcast(msg, except) { for (const [id, c] of this.conns) if (id !== except && c.open) c.send(msg); }
 

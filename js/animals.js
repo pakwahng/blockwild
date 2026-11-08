@@ -355,7 +355,7 @@ export class Nursery {
       f[i++] = a.v[0]; f[i++] = a.v[2]; f[i++] = a.hop; f[i++] = a.squash; f[i++] = a.peck; f[i++] = a.wag;
       f[i++] = Math.min(9999, a.age); f[i++] = a.gy;
     }
-    return Array.from(f, v => Math.round(v * 1000) / 1000); // plain numbers: JSON travels between any two browsers
+    return Array.from(f, v => Math.round(v * 100) / 100); // plain numbers: JSON travels between any two browsers
   }
   applySnapshot(buf) {
     const f = buf, byId = new Map(this.animals.map(a => [a.id, a]));
@@ -383,6 +383,7 @@ export class Nursery {
     const k = Math.min(1, dt * 12);
     for (const a of this.animals) {
       if (!a.tp) continue;
+      a.tp[0] += a.v[0] * dt; a.tp[2] += a.v[2] * dt; // keep walking the way they were going until the next update
       const dx = a.tp[0] - a.p[0], dy = a.tp[1] - a.p[1], dz = a.tp[2] - a.p[2];
       if (dx * dx + dy * dy + dz * dz > 16) a.p = [...a.tp];
       else { a.p[0] += dx * k; a.p[1] += dy * k; a.p[2] += dz * k; }
