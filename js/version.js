@@ -1,11 +1,16 @@
 // The game's version and what changed in each one. Shown on the front screen ("What's new")
 // and in CHANGELOG.md. When you release: bump VERSION, add an entry at the top of CHANGES,
 // and set the same number in sw.js (CACHE = 'blockwild-v<VERSION>') so phones pick it up.
-export const VERSION = 24;
+export const VERSION = 25;
 export const RELEASED = '8 Nov 2026';
 
 // [version, date, headline, [details]]
 export const CHANGES = [
+  [25, '8 Nov 2026', 'Name your animals', [
+    'Give any baby or grown-up your own name for it. Pat a baby twice to open its card, or tap a grown-up, then type in the Name box.',
+    'Its new name shows in all the messages, is kept in your save, and everyone playing together sees it.',
+    'Birds sing by day and crickets chirp at night when you’re outside.',
+  ]],
   [24, '8 Nov 2026', 'Pets, butterflies and fireflies', [
     'New job: Follow me. A grown-up you teach it to trots after you everywhere, day and night, and sits by you when you stop. If you run far ahead it catches up.',
     'Butterflies flutter round the wild flowers by day, and sometimes land on one.',

@@ -30,7 +30,9 @@ export const BABY_NAMES = ['Nugget', 'Peep', 'Biscuit', 'Pudding', 'Pip', 'Waffl
   'Button', 'Pebble', 'Muffin', 'Noodle', 'Tofu', 'Bean', 'Sunny', 'Daisy', 'Honey', 'Maple', 'Poppy', 'Toffee', 'Bubbles',
   'Cupcake', 'Jellybean', 'Popcorn', 'Snowy', 'Fluffy', 'Ziggy', 'Coco', 'Peanut', 'Marshmallow', 'Pancake', 'Teacup',
   'Nibbles', 'Squeak', 'Wiggles', 'Dot', 'Cookie', 'Sesame', 'Custard', 'Jelly', 'Bramble', 'Clementine', 'Pom-pom'];
-export const babyName = a => BABY_NAMES[a.name | 0] || 'Baby';
+export const babyName = a => a.nick || BABY_NAMES[a.name | 0] || 'Baby';
+// A name typed by a player: no control characters, at most 14 letters.
+export const cleanAnimalNick = s => typeof s === 'string' ? s.replace(/[\u0000-\u001f]/g, '').trim().slice(0, 14) : '';
 
 export const SPECIES_ORDER = ['chick', 'calf', 'piglet', 'lamb', 'pup'];
 export const SPECIES = {
@@ -78,7 +80,7 @@ export class Nursery {
       spot: null, enjoy: 0, look: Math.random() * 3,
       tame, age, call: 2 + Math.random() * 10, born: 0,
       grow: 0, name: Math.random() * BABY_NAMES.length | 0, gift: GIFT_TIME[0] * Math.random(), bite: 0,
-      job: null, trainer: 0, task: null, carry: 0, fails: 0, lost: 0,
+      job: null, trainer: 0, task: null, carry: 0, fails: 0, lost: 0, nick: '',
     };
     this.animals.push(a);
     return a;
@@ -149,7 +151,7 @@ export class Nursery {
   growBy(a, f) {
     if (a.grow >= 1) return;
     a.grow = Math.min(1, a.grow + f);
-    if (a.grow === 1) { a.gift = GIFT_TIME[0] * (0.3 + Math.random() * 0.4); this.events.push({ type: 'grown', sp: a.sp, name: a.name, p: [...a.p] }); }
+    if (a.grow === 1) { a.gift = GIFT_TIME[0] * (0.3 + Math.random() * 0.4); this.events.push({ type: 'grown', sp: a.sp, name: a.name, nick: a.nick, p: [...a.p] }); }
   }
 
   // A pat from a player: a happy hop and a wag, and now and then a little push towards growing up.
@@ -162,6 +164,19 @@ export class Nursery {
     return true;
   }
 
+  // A name a player typed for one of their animals ('' goes back to its own name from the list).
+  setNick(id, nick) {
+    const a = this.animals.find(q => q.id === id);
+    if (!a || !a.tame) return false;
+    a.nick = cleanAnimalNick(nick);
+    return true;
+  }
+  nickSnapshot() { return this.animals.filter(a => a.nick).map(a => [a.id, a.nick]); }
+  applyNicks(list) {
+    const m = new Map(Array.isArray(list) ? list : []);
+    for (const a of this.animals) a.nick = cleanAnimalNick(m.get(a.id));
+  }
+
   // A player teaches a tame grown-up a job (or null to let it stop and play). by: who taught it, who it brings things to.
   train(id, job, by = 0) {
     const a = this.animals.find(q => q.id === id);
@@ -169,7 +184,7 @@ export class Nursery {
     a.job = JOB_INFO[job] ? job : null; a.trainer = by; a.task = null; a.carry = 0; a.fails = a.lost = 0; a.avoid = null;
     a.wag = 1; a.peck = 0.6; a.sleep = false; a.spot = null; a.enjoy = 0;
     if (a.onGround) a.v[1] = 3.6;
-    this.events.push({ type: 'trained', sp: a.sp, name: a.name, job: a.job, by, p: [...a.p] });
+    this.events.push({ type: 'trained', sp: a.sp, name: a.name, nick: a.nick, job: a.job, by, p: [...a.p] });
     return true;
   }
 
@@ -314,8 +329,8 @@ export class Nursery {
       const way = spots.length ? this.findPath(a, spots.map(s => s.at)) : null;
       if (!way) {
         T.t = 10;
-        if (spots.length) { if (++a.fails === 2) this.events.push({ type: 'stuck', sp: a.sp, name: a.name, job: a.job, by: a.trainer, p: [...a.p] }); }
-        else if (++a.lost === 2) this.events.push({ type: 'nowork', sp: a.sp, name: a.name, job: a.job, by: a.trainer, p: [...a.p] });
+        if (spots.length) { if (++a.fails === 2) this.events.push({ type: 'stuck', sp: a.sp, name: a.name, nick: a.nick, job: a.job, by: a.trainer, p: [...a.p] }); }
+        else if (++a.lost === 2) this.events.push({ type: 'nowork', sp: a.sp, name: a.name, nick: a.nick, job: a.job, by: a.trainer, p: [...a.p] });
         return null;
       }
       const spot = spots[way.i];
@@ -355,8 +370,8 @@ export class Nursery {
     if ((d < 1.7 * 1.7 && Math.abs(a.p[1] - pl.pos[1]) < 2) || T.t <= 0 || (T.prog -= dt) <= 0) {
       const near = d < 3 * 3, f = near ? 0.35 : 1;
       const p = near ? [pl.pos[0] + (a.p[0] - pl.pos[0]) * f, a.gy + 0.01, pl.pos[2] + (a.p[2] - pl.pos[2]) * f] : [a.p[0], a.gy + 0.01, a.p[2]];
-      if (this.gifts.length < MAX_GIFTS + 20) this.gifts.push({ item: J.item, n: J.n, p, yaw: Math.random() * 6.28, life: 600, t: 0, from: { sp: a.sp, name: a.name } });
-      this.events.push({ type: 'fetched', sp: a.sp, name: a.name, item: J.item, n: J.n, by: a.trainer, near, p: [...a.p] });
+      if (this.gifts.length < MAX_GIFTS + 20) this.gifts.push({ item: J.item, n: J.n, p, yaw: Math.random() * 6.28, life: 600, t: 0, from: { sp: a.sp, name: a.name, nick: a.nick } });
+      this.events.push({ type: 'fetched', sp: a.sp, name: a.name, nick: a.nick, item: J.item, n: J.n, by: a.trainer, near, p: [...a.p] });
       a.carry = 0; a.wag = 1; T.ph = 'rest'; T.t = 8 + Math.random() * 6;
       return null;
     }
@@ -960,12 +975,12 @@ export class Nursery {
   }
 
   serialize() {
-    return this.animals.filter(a => a.tame).map(a => [SPECIES_ORDER.indexOf(a.sp), +a.p[0].toFixed(2), +a.p[1].toFixed(2), +a.p[2].toFixed(2), Math.min(999, Math.round(a.age)), +a.grow.toFixed(4), a.name, a.job ? JOBS.indexOf(a.job) : 0]);
+    return this.animals.filter(a => a.tame).map(a => [SPECIES_ORDER.indexOf(a.sp), +a.p[0].toFixed(2), +a.p[1].toFixed(2), +a.p[2].toFixed(2), Math.min(999, Math.round(a.age)), +a.grow.toFixed(4), a.name, a.job ? JOBS.indexOf(a.job) : 0, a.nick || 0]);
   }
   load(list) {
-    for (const [s, x, y, z, age, grow, name, job] of list || []) {
+    for (const [s, x, y, z, age, grow, name, job, nick] of list || []) {
       const a = SPECIES_ORDER[s] && this.add(SPECIES_ORDER[s], x, y, z, true, age);
-      if (a) { a.grow = Math.max(0, Math.min(1, grow || 0)); if (BABY_NAMES[name]) a.name = name; if (a.grow >= 1) a.job = JOBS[job] || null; }
+      if (a) { a.grow = Math.max(0, Math.min(1, grow || 0)); if (BABY_NAMES[name]) a.name = name; if (a.grow >= 1) a.job = JOBS[job] || null; a.nick = cleanAnimalNick(nick); }
     }
   }
   serializeGifts() { return this.gifts.map(g => [g.item, g.n, +g.p[0].toFixed(2), +g.p[1].toFixed(2), +g.p[2].toFixed(2)]); }

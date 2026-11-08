@@ -81,7 +81,7 @@ export class Snakes {
   spook(t, from, why) {
     t.tame = false; t.love = 0; t.flee = 6; t.fleeFrom = [...from];
     this.spooked++;
-    this.events.push({ type: 'spook', sp: t.sp, name: t.name, p: [...t.p], why });
+    this.events.push({ type: 'spook', sp: t.sp, name: t.name, nick: t.nick, p: [...t.p], why });
   }
 
   heads() { return this.list.map(s => s.p); }

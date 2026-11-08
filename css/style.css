@@ -437,3 +437,8 @@ body.in-wardrobe #tags, body.in-wardrobe #loading { display: none; }
 .sew-needs .short em { color: #ff9a8a; }
 .sew-go { padding: 8px 22px; }
 .sew-box .note { margin: 0; }
+.job-name { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; font-weight: 700; font-size: 14px; }
+.job-name input {
+  flex: 1; min-width: 0; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--panel-edge);
+  background: rgba(0, 0, 0, 0.25); color: var(--ink); font: inherit; -webkit-user-select: text; user-select: text;
+}

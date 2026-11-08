@@ -9,7 +9,7 @@ import { drops, RECIPES, TABS, TOOLS, STARTER, OLD_SAVE_BAG, TABLE_REACH, FEEDER
 import { skyAt, CYCLE } from './sky.js';
 import { buildTextures, blockIcon } from './textures.js';
 import * as M from './models.js';
-import { Nursery, SPECIES, SPECIES_ORDER, isTreat, GIFTS, BABY_NAMES } from './animals.js';
+import { Nursery, SPECIES, SPECIES_ORDER, isTreat, GIFTS, BABY_NAMES, cleanAnimalNick } from './animals.js';
 import { Sfx } from './audio.js';
 import { World, CS, CH } from './world.js';
 import { buildMesh } from './mesher.js';
@@ -553,8 +553,8 @@ function toast(text, ms = 4200) {
   toastTimer = setTimeout(() => t.classList.remove('show'), ms);
 }
 // "Nugget the lamb", or "Your lamb" / "a lamb" for a baby with no name.
-function callName(n, sp, fallback) {
-  const nm = BABY_NAMES[n], s = SPECIES[sp] ? SPECIES[sp].name : 'baby';
+function callName(n, sp, fallback, nick) {
+  const nm = nick || BABY_NAMES[n], s = SPECIES[sp] ? SPECIES[sp].name : 'baby';
   return nm ? `${nm} the ${s}` : `${fallback} ${s}`;
 }
 
@@ -630,7 +630,7 @@ function handleChickEvents() {
       snakes.burst([ev.p[0], ev.p[1] + 0.4, ev.p[2]], 26, [1, 1, 2, 3], false);
       const first = !firsts.includes('grown' + ev.sp);
       if (first) firsts.push('grown' + ev.sp);
-      const who = callName(ev.name, ev.sp, 'Your');
+      const who = callName(ev.name, ev.sp, 'Your', ev.nick);
       const jobTip = firsts.includes('jobtip') ? '' : ' Tap it to teach it a job, like fetching wood!';
       if (jobTip) firsts.push('jobtip');
       toast((first ? GROWN_TIP[ev.sp].replace(/^Your [a-z ]+ grew up/, `${who} grew up`) : `${who} grew up into a ${ADULT_NAME[ev.sp]}!`) + jobTip, jobTip ? 7000 : 4200);
@@ -677,7 +677,7 @@ function handleChickEvents() {
       if (k && !firsts.includes('snake' + k)) { firsts.push('snake' + k); setTimeout(() => toast(SNAKE_TIPS[k]), 1500); }
     } else if (ev.type === 'spook') {
       sfx.hiss(0.4); sfx.call(ev.sp, 0.5);
-      const who = callName(ev.name, ev.sp, 'a');
+      const who = callName(ev.name, ev.sp, 'a', ev.nick);
       toast(ev.why === 'goo' ? `Yuck! ${who[0].toUpperCase() + who.slice(1)} stepped in poison goo and ran out of your nursery! Feed it again to bring it back.`
         : ev.why === 'boom' ? `BOOM! ${who[0].toUpperCase() + who.slice(1)} got a fright and ran out of your nursery! Feed it again to bring it back.`
         : `The snake spooked ${who} out of your nursery! Feed it again to bring it back.`);
@@ -722,7 +722,7 @@ function handleChickEvents() {
     else if (ev.type === 'steal') { if (d < 40) { sfx.caw(0.3); toast('A crow pinched a treat and flew off!'); } }
     else if (ev.type === 'foxSpook') {
       sfx.yelp(0.4); sfx.call(ev.sp, 0.5);
-      toast(`The fox spooked ${callName(ev.name, ev.sp, 'a')} out of your nursery! Feed it again to bring it back.`);
+      toast(`The fox spooked ${callName(ev.name, ev.sp, 'a', ev.nick)} out of your nursery! Feed it again to bring it back.`);
     } else if (ev.type === 'foxChased') { sfx.yelp(0.45); if (d < 60) toast('Your grown-up wolf chased the fox away!'); }
     else if (ev.type === 'foxGiveUp') { if (d < 60) toast('The fox couldn’t get past your fence and slunk off home.'); }
     else if (ev.type === 'bonk') { sfx.bonk(); floatFx(ev.p, 'bonk'); buzz(30); }
@@ -899,6 +899,8 @@ function placeBlock() {
 }
 
 // Tap a tame baby right in front of you (closer than the block you're pointing at) to pet it.
+let lastPat = { id: 0, t: 0 };
+let ambientT = 4;
 function petBaby(wildHint) { // wildHint: say so when it's a wild baby (not when you're holding a block to build with)
   const eye = player.eye(), fwd = player.forward();
   let best = null, bd = 3.2;
@@ -921,9 +923,13 @@ function petBaby(wildHint) { // wildHint: say so when it's a wild baby (not when
   sfx.call(best.sp, 0.5); sfx.happy(); buzz(12);
   bump(stats, 'petted');
   if (best.grow >= 1) { openJobs(best); return true; } // grown-ups can be taught a job
-  const who = callName(best.name, best.sp, 'Your');
-  if (!firsts.includes('pet')) { firsts.push('pet'); toast(`Aww! ${who} loves a pat. Pets help babies grow up a little too.`); }
-  else toast(`${who} loves that!`, 1600);
+  const who = callName(best.name, best.sp, 'Your', best.nick);
+  // pat the same baby again straight away to give it a name
+  const again = lastPat.id === best.id && performance.now() - lastPat.t < 4000;
+  lastPat = { id: best.id, t: performance.now() };
+  if (again) { openJobs(best); return true; }
+  if (!firsts.includes('pet')) { firsts.push('pet'); toast(`Aww! ${who} loves a pat. Pets help babies grow up a little too. Pat it again to give it a name.`); }
+  else toast(`${who} loves that!${stats.named ? '' : ' Pat again to give it a name.'}`, stats.named ? 1600 : 2600);
   return true;
 }
 
@@ -936,23 +942,45 @@ const JOB_TEXT = {
 };
 const BALL_SVG = '<svg class="job-play" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="17" r="11" fill="#e8473a"/><path d="M5 17h22M16 6c-5 4-5 18 0 22" stroke="#fff6e8" stroke-width="2.4" fill="none"/></svg>';
 const PAW_SVG = '<svg class="job-play" viewBox="0 0 32 32" aria-hidden="true"><g fill="#f3c9a0"><ellipse cx="16" cy="20" rx="7" ry="6"/><circle cx="8" cy="12" r="3.2"/><circle cx="13.5" cy="7.5" r="3.2"/><circle cx="18.5" cy="7.5" r="3.2"/><circle cx="24" cy="12" r="3.2"/></g></svg>';
-const grownName = a => BABY_NAMES[a.name] ? `${BABY_NAMES[a.name]} the ${ADULT_NAME[a.sp]}` : `Your ${ADULT_NAME[a.sp]}`;
+const petName = a => a.nick || BABY_NAMES[a.name] || '';
+const grownName = a => petName(a) ? `${petName(a)} the ${ADULT_NAME[a.sp]}` : `Your ${ADULT_NAME[a.sp]}`;
 const fetchedWhat = id => id === B.LOG ? 'a log' : id === B.COBBLE ? 'some cobble' : 'some seeds';
 let jobAnimal = null;
 function openJobs(a) {
   jobAnimal = a;
   running = false; input.enabled = false; input.state.breaking = false;
   if (document.pointerLockElement) { pickerOpenFromLock = true; document.exitPointerLock(); }
+  $('#job-name').value = a.nick || '';
+  $('#job-name').placeholder = BABY_NAMES[a.name] || 'Name';
   buildJobs();
   $('#jobcard').hidden = false;
 }
+// Give one of your animals a name of your own (blank goes back to its own name).
+function nameAnimal(a, text) {
+  const nick = cleanAnimalNick(text);
+  if (!a || nick === (a.nick || '')) return;
+  if (net.isGuest) net.toHost({ t: 'nick', id: a.id, nick }); else flock.setNick(a.id, nick);
+  a.nick = nick;
+  bump(stats, 'named');
+  sfx.happy();
+  if (jobAnimal === a) buildJobs();
+}
+$('#job-name').addEventListener('change', () => nameAnimal(jobAnimal, $('#job-name').value));
+$('#job-name').addEventListener('keydown', e => { if (e.key === 'Enter') $('#job-name').blur(); e.stopPropagation(); });
 function buildJobs() {
-  const a = jobAnimal, nm = BABY_NAMES[a.name] || `your ${ADULT_NAME[a.sp]}`, treat = a.S.treat, got = have(treat) > 0;
-  const tname = itemName(treat).toLowerCase();
-  $('#job-title').textContent = `Teach ${nm} a job`;
-  $('#job-now').textContent = a.job ? `${grownName(a)} is ${JOB_TEXT[a.job].doing}.` : `${grownName(a)} doesn’t have a job yet.`;
+  const a = jobAnimal, nm = petName(a) || `your ${ADULT_NAME[a.sp]}`, treat = a.S.treat, got = have(treat) > 0;
+  const tname = itemName(treat).toLowerCase(), baby = a.grow < 1;
   const list = $('#job-list');
   list.innerHTML = '';
+  list.hidden = baby; $('#job-note').hidden = baby;
+  if (baby) {
+    // babies can have a name, but they're too little to work
+    $('#job-title').textContent = callName(a.name, a.sp, 'Your', a.nick);
+    $('#job-now').textContent = `Too little for a job. When ${nm} grows up, tap it to teach it one.`;
+    return;
+  }
+  $('#job-title').textContent = `Teach ${nm} a job`;
+  $('#job-now').textContent = a.job ? `${grownName(a)} is ${JOB_TEXT[a.job].doing}.` : `${grownName(a)} doesn’t have a job yet.`;
   for (const job of ['wood', 'stone', 'seeds', 'follow', null]) {
     const J = job && JOB_TEXT[job], on = (a.job || null) === job, b = document.createElement('button');
     b.type = 'button'; b.className = 'job' + (on ? ' on' : '');
@@ -983,6 +1011,7 @@ function teachJob(job) {
   closeJobs();
 }
 function closeJobs() {
+  nameAnimal(jobAnimal, $('#job-name').value);
   $('#jobcard').hidden = true;
   jobAnimal = null;
   pickerOpenFromLock = false;
@@ -1645,7 +1674,7 @@ function netStep(dt) {
   for (const [id] of net.conns) {
     const o = others.get(id);
     // animals go every other update (about 4 a second): the copies glide in between
-    net.send(id, sendAnimals ? { ...common, a: flock.snapshot(o ? o.tp : player.pos, 64) } : common);
+    net.send(id, sendAnimals ? { ...common, a: flock.snapshot(o ? o.tp : player.pos, 64), nk: flock.nickSnapshot() } : common);
   }
 }
 
@@ -1695,6 +1724,7 @@ function hostMessage(from, msg) {
     case 'swing': if (!snakes.swing(msg.eye, msg.fwd)) raiders.swing(msg.eye, msg.fwd, from); break;
     case 'pet': if (typeof msg.id === 'number') flock.pet(msg.id); break;
     case 'train': if (typeof msg.id === 'number' && (msg.job === null || JOB_TEXT[msg.job])) flock.train(msg.id, msg.job, from); break;
+    case 'nick': if (typeof msg.id === 'number') flock.setNick(msg.id, msg.nick); break;
     case 'sit': flock.gatherAt(msg.seat, msg.front); break;
     case 'stand': flock.endGather(); break;
   }
@@ -1715,7 +1745,7 @@ function guestMessage(msg) {
       if (Math.abs(msg.clock - clock) > 0.002 && Math.abs(msg.clock - clock) < 0.998) clock = msg.clock;
       nights = msg.nights;
       flock.remoteCounts = msg.counts;
-      if (msg.a) flock.applySnapshot(msg.a);
+      if (msg.a) { flock.applySnapshot(msg.a); flock.applyNicks(msg.nk); }
       flock.applyTreats(msg.tr || []);
       flock.applyGifts(msg.gf || []);
       // events first, so a snake that just poofed is still here to burst into confetti
@@ -1924,6 +1954,14 @@ function frame(now, photo = false) {
   critters.update(dt, player.pos, skyAt(clock).night, weather.amount);
   s.groups.push(...critters.instances(eye, Math.min(far, 40), now / 1000));
   sfx.rain(running && !underwater ? weather.amount : 0);
+  // birds singing by day, crickets at night (only on the surface, away from heavy rain)
+  ambientT -= dt;
+  if (ambientT <= 0) {
+    const nt = skyAt(clock).night, outside = running && !underwater && player.pos[1] > 24;
+    if (outside && nt < 0.3 && weather.amount < 0.4) { sfx.bird(0.03 + Math.random() * 0.03); ambientT = 3 + Math.random() * 7; }
+    else if (outside && nt > 0.65 && weather.amount < 0.6) { sfx.cricket(0.012 + Math.random() * 0.01); ambientT = 0.6 + Math.random() * 1.6; }
+    else ambientT = 2;
+  }
   renderer.render({
     eye, forward: fwd, fov: 70 * Math.PI / 180,
     fogColor: underwater ? waterFog : sky.horizon, zenith: underwater ? waterFog : sky.zenith,

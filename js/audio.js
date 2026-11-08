@@ -223,6 +223,21 @@ export class Sfx {
   toss() { if (this.ready) this.noise(this.ctx.currentTime + 0.01, 0.12, 0.25, 3000); }
   place() { if (this.ready) { const t = this.ctx.currentTime + 0.01; this.tone('sine', 220, 120, t, 0.09, 0.35); this.noise(t, 0.05, 0.12, 900); } }
   dig() { if (this.ready) this.noise(this.ctx.currentTime + 0.01, 0.16, 0.35, 600); }
+  // a little bird song: a few quick high chirps
+  bird(vol = 0.05) {
+    if (!this.ready) return;
+    const t = this.ctx.currentTime + 0.02, n = 2 + (Math.random() * 4 | 0), f = 2300 + Math.random() * 1400, up = Math.random() < 0.5;
+    for (let i = 0; i < n; i++) {
+      const g = f * (1 + (Math.random() - 0.5) * 0.15);
+      this.tone('sine', up ? g : g * 1.35, up ? g * 1.35 : g, t + i * (0.09 + Math.random() * 0.05), 0.06, vol);
+    }
+  }
+  // crickets at night: a soft trill
+  cricket(vol = 0.02) {
+    if (!this.ready) return;
+    const t = this.ctx.currentTime + 0.02, f = 4000 + Math.random() * 600;
+    for (let i = 0; i < 4; i++) this.tone('triangle', f, f * 1.02, t + i * 0.045, 0.028, vol);
+  }
   // a working grown-up: tok-tok on a tree, a clack on rock, a scratchy rustle in the grass
   knock(job, vol = 0.3) {
     if (!this.ready) return;

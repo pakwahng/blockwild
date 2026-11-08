@@ -2,6 +2,11 @@
 
 The same list is in the game: tap the version number on the front screen, or open **What’s new**.
 
+## 25. Name your animals (8 Nov 2026)
+- Give any baby or grown-up your own name for it. Pat a baby twice to open its card, or tap a grown-up, then type in the Name box.
+- Its new name shows in all the messages, is kept in your save, and everyone playing together sees it.
+- Birds sing by day and crickets chirp at night when you’re outside.
+
 ## 24. Pets, butterflies and fireflies (8 Nov 2026)
 - New job: Follow me. A grown-up you teach it to trots after you everywhere, day and night, and sits by you when you stop. If you run far ahead it catches up.
 - Butterflies flutter round the wild flowers by day, and sometimes land on one.
