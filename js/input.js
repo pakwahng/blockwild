@@ -96,7 +96,7 @@ export class Input {
 
     // stop iOS pinch-zoom / double-tap zoom gestures
     for (const ev of ['gesturestart', 'gesturechange', 'dblclick']) document.addEventListener(ev, e => e.preventDefault(), { passive: false });
-    document.addEventListener('touchmove', e => { if (e.target.closest('#bag-body, .menu-scroll, .ward-body')) return; e.preventDefault(); }, { passive: false });
+    document.addEventListener('touchmove', e => { if (e.target.closest('#bag-body, .menu-scroll, .ward-body, .job-panel')) return; e.preventDefault(); }, { passive: false });
   }
 
   bindDesktop() {

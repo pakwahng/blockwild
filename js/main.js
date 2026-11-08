@@ -64,6 +64,8 @@ try {
   renderer.addModel('egg', M.eggModel());
   renderer.addModel('milk', M.milkModel());
   renderer.addModel('woolTuft', M.woolTuftModel());
+  renderer.addModel('logChunk', M.logChunkModel());
+  renderer.addModel('stoneChunk', M.stoneChunkModel());
   renderer.addModel('rain', M.rainModel());
 } catch (err) {
   console.error(err);
@@ -596,9 +598,27 @@ function handleChickEvents() {
       bump(stats, 'gifts', ev.item, ev.n);
       pickupPop({ x: ev.p[0] - 0.5, y: ev.p[1] - 0.6, z: ev.p[2] - 0.5 }, [[ev.item, ev.n]]);
       sfx.pickup(); buzz(10);
-      if (!firsts.includes('gift' + ev.item)) { firsts.push('gift' + ev.item); toast(GIFT_TIP[ev.item] || `You picked up ${itemName(ev.item).toLowerCase()}.`); }
+      if (ev.from) {
+        // something a working grown-up fetched for you
+        bump(stats, 'fetched', ev.item, ev.n);
+        const first = !firsts.includes('fetched');
+        if (first) firsts.push('fetched');
+        toast(`${grownName(ev.from)} brought you ${fetchedWhat(ev.item)}!${first ? ' It’ll keep bringing more while it’s light.' : ''}`, first ? 4500 : 2200);
+      } else if (!firsts.includes('gift' + ev.item)) { firsts.push('gift' + ev.item); toast(GIFT_TIP[ev.item] || `You picked up ${itemName(ev.item).toLowerCase()}.`); }
       continue;
     }
+    if (ev.type === 'fetched' || ev.type === 'nowork' || ev.type === 'stuck') {
+      // news from a working grown-up, for whoever taught it
+      if (ev.type === 'fetched' && d < 14) sfx.call(ev.sp, 0.45 * (1 - d / 14));
+      if (ev.by !== myNetId) continue;
+      const who = grownName(ev), J = JOB_TEXT[ev.job] || JOB_TEXT.wood;
+      if (ev.type === 'fetched') { if (!ev.near) toast(`${who} left ${fetchedWhat(ev.item)} for you on the ground. Go and pick it up!`, 4000); }
+      else if (ev.type === 'nowork') toast(`${who} can’t find any ${J.place} near by. Take it somewhere with ${J.place}, or teach it a different job.`, 6000);
+      else toast(`${who} can’t find a way to any ${J.place} near by. Try somewhere else, or look for a fence in the way.`, 6000);
+      continue;
+    }
+    if (ev.type === 'work') { if (d < 14) sfx.knock(ev.job, 0.3 * (1 - d / 14)); continue; }
+    if (ev.type === 'trained') { if (d < 20) floatFx(ev.p, 'heart'); continue; }
     if (d > 40) continue;
     if (ev.type === 'grown') {
       bump(stats, 'grown');
@@ -894,11 +914,73 @@ function petBaby(wildHint) { // wildHint: say so when it's a wild baby (not when
   floatFx([best.p[0], best.p[1] + best.S.height * 0.4, best.p[2]], 'heart');
   sfx.call(best.sp, 0.5); sfx.happy(); buzz(12);
   bump(stats, 'petted');
+  if (best.grow >= 1) { openJobs(best); return true; } // grown-ups can be taught a job
   const who = callName(best.name, best.sp, 'Your');
   if (!firsts.includes('pet')) { firsts.push('pet'); toast(`Aww! ${who} loves a pat. Pets help babies grow up a little too.`); }
   else toast(`${who} loves that!`, 1600);
   return true;
 }
+
+// ---------- teaching a grown-up a job ----------
+const JOB_TEXT = {
+  wood:  { name: 'Fetch wood',  icon: B.LOG,      learn: 'fetch wood',  doing: 'fetching wood for you',  what: 'Finds a tree and brings you logs.', place: 'trees', spot: 'tree' },
+  stone: { name: 'Fetch stone', icon: B.COBBLE,   learn: 'fetch stone', doing: 'fetching stone for you', what: 'Finds bare rock and brings you cobble.', place: 'bare rock', spot: 'rock' },
+  seeds: { name: 'Find seeds',  icon: ITEM_SEEDS, learn: 'find seeds',  doing: 'finding seeds for you',  what: 'Scratches about in the grass for seeds.', place: 'grass', spot: 'grass' },
+};
+const PAW_SVG = '<svg class="job-play" viewBox="0 0 32 32" aria-hidden="true"><g fill="#f3c9a0"><ellipse cx="16" cy="20" rx="7" ry="6"/><circle cx="8" cy="12" r="3.2"/><circle cx="13.5" cy="7.5" r="3.2"/><circle cx="18.5" cy="7.5" r="3.2"/><circle cx="24" cy="12" r="3.2"/></g></svg>';
+const grownName = a => BABY_NAMES[a.name] ? `${BABY_NAMES[a.name]} the ${ADULT_NAME[a.sp]}` : `Your ${ADULT_NAME[a.sp]}`;
+const fetchedWhat = id => id === B.LOG ? 'a log' : id === B.COBBLE ? 'some cobble' : 'some seeds';
+let jobAnimal = null;
+function openJobs(a) {
+  jobAnimal = a;
+  running = false; input.enabled = false; input.state.breaking = false;
+  if (document.pointerLockElement) { pickerOpenFromLock = true; document.exitPointerLock(); }
+  buildJobs();
+  $('#jobcard').hidden = false;
+}
+function buildJobs() {
+  const a = jobAnimal, nm = BABY_NAMES[a.name] || `your ${ADULT_NAME[a.sp]}`, treat = a.S.treat, got = have(treat) > 0;
+  const tname = itemName(treat).toLowerCase();
+  $('#job-title').textContent = `Teach ${nm} a job`;
+  $('#job-now').textContent = a.job ? `${grownName(a)} is ${JOB_TEXT[a.job].doing}.` : `${grownName(a)} doesn’t have a job yet.`;
+  const list = $('#job-list');
+  list.innerHTML = '';
+  for (const job of ['wood', 'stone', 'seeds', null]) {
+    const J = job && JOB_TEXT[job], on = (a.job || null) === job, b = document.createElement('button');
+    b.type = 'button'; b.className = 'job' + (on ? ' on' : '');
+    b.disabled = on || (!!job && !got);
+    const tag = on ? '<em>Doing this now</em>' : job ? `<em><img alt="" src="${icons[treat]}">1 ${tname}</em>` : '<em>Free</em>';
+    b.innerHTML = job ? `<img alt="" src="${icons[J.icon]}"><b>${J.name}</b><span>${J.what}</span>${tag}`
+      : `${PAW_SVG}<b>Just play</b><span>No job: wanders about and plays.</span>${tag}`;
+    b.addEventListener('click', () => teachJob(job));
+    list.appendChild(b);
+  }
+  $('#job-note').textContent = got
+    ? `Teaching a job costs one ${tname}, ${nm}’s favourite treat. Grown-ups work by day, near where they are, and bring what they find straight to you.`
+    : `You need 1 ${tname} (${nm}’s favourite treat) to teach a job. Grown-ups work by day and bring what they find to you.`;
+}
+function teachJob(job) {
+  const a = jobAnimal;
+  if (!a || (job && !useItem(a.S.treat))) return;
+  if (net.isGuest) { net.toHost({ t: 'train', id: a.id, job }); a.job = job; } else flock.train(a.id, job, myNetId);
+  sfx.happy(); sfx.call(a.sp, 0.55); buzz(15);
+  floatFx([a.p[0], a.p[1] + a.S.height * 0.6, a.p[2]], 'heart');
+  if (job) bump(stats, 'trained');
+  const first = job && !firsts.includes('trained');
+  if (first) firsts.push('trained');
+  toast(!job ? `${grownName(a)} is off to play. No more jobs for now.`
+    : first ? `${grownName(a)} learned to ${JOB_TEXT[job].learn}! Each day it finds ${JOB_TEXT[job].place} near by and carries what it gets back to you. Animals don’t work at night.`
+      : `${grownName(a)} learned to ${JOB_TEXT[job].learn}!`, first ? 7000 : 3000);
+  closeJobs();
+}
+function closeJobs() {
+  $('#jobcard').hidden = true;
+  jobAnimal = null;
+  pickerOpenFromLock = false;
+  resume();
+}
+$('#job-close').addEventListener('click', closeJobs);
+$('#jobcard').addEventListener('click', e => { if (e.target.id === 'jobcard') closeJobs(); });
 
 function updateBreaking(dt) {
   const ring = $('#crosshair');
@@ -1115,6 +1197,7 @@ $('#picker').addEventListener('click', e => { if (e.target.id === 'picker') clos
 function pause() {
   if (pickerOpenFromLock) return; // pointer lock was released for the picker, not a pause
   if (!running && !$('#picker').hidden) $('#picker').hidden = true;
+  if (!running && !$('#jobcard').hidden) { $('#jobcard').hidden = true; jobAnimal = null; }
   running = false; input.enabled = false;
   input.state.breaking = false;
   saveGame();
@@ -1562,6 +1645,7 @@ function hostMessage(from, msg) {
     case 'throw': if (isTreat(msg.item)) flock.throwTreat(msg.item, msg.eye, msg.fwd); break;
     case 'swing': if (!snakes.swing(msg.eye, msg.fwd)) raiders.swing(msg.eye, msg.fwd, from); break;
     case 'pet': if (typeof msg.id === 'number') flock.pet(msg.id); break;
+    case 'train': if (typeof msg.id === 'number' && (msg.job === null || JOB_TEXT[msg.job])) flock.train(msg.id, msg.job, from); break;
     case 'sit': flock.gatherAt(msg.seat, msg.front); break;
     case 'stand': flock.endGather(); break;
   }
@@ -1809,7 +1893,7 @@ function frame(now, photo = false) {
 requestAnimationFrame(loop);
 
 // handy for debugging from the console
-window.blockwild = { get world() { return world; }, get player() { return player; }, get target() { return target; }, get flock() { return flock; }, get nursery() { return flock; }, get snakes() { return snakes; }, get raiders() { return raiders; }, get weather() { return weather; }, wardrobe, selfieCam, get inv() { return inv; }, addItem, RECIPES, craft, input, raycast,
+window.blockwild = { get world() { return world; }, get player() { return player; }, get target() { return target; }, get flock() { return flock; }, get nursery() { return flock; }, get snakes() { return snakes; }, get raiders() { return raiders; }, get weather() { return weather; }, wardrobe, selfieCam, petBaby, openJobs, get inv() { return inv; }, addItem, RECIPES, craft, input, raycast,
   get clock() { return clock; }, setTime(t) { clock = t; }, swing: () => swing(),
   net, others, get myNetId() { return myNetId; },
   get seat() { return seat; }, awardCrown: () => awardCrown(), sit: (x, y, z) => sit(x, y, z), standUp: () => standUp(),

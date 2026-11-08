@@ -355,6 +355,24 @@ export function woolTuftModel() {
   return m.done(NO_RIG);
 }
 
+// A short log a working grown-up brings you: bark round the outside, pale cut ends.
+export function logChunkModel() {
+  const m = new ModelBuilder();
+  m.box([0, 0.09, 0], [0.32, 0.18, 0.18], 0.06, '#8a5a32');
+  for (const s of [-1, 1]) m.box([s * 0.158, 0.09, 0], [0.012, 0.145, 0.145], 0.005, '#e6c890');
+  m.box([0.04, 0.18, 0.03], [0.1, 0.012, 0.05], 0.005, '#6e4526');
+  return m.done(NO_RIG);
+}
+
+// A knobbly lump of cobble.
+export function stoneChunkModel() {
+  const m = new ModelBuilder();
+  m.box([0, 0.08, 0], [0.26, 0.16, 0.22], 0.06, '#8f9096');
+  m.box([0.05, 0.16, -0.03], [0.14, 0.08, 0.12], 0.035, '#aeafb5');
+  m.box([-0.07, 0.12, 0.06], [0.09, 0.07, 0.08], 0.03, '#77787e');
+  return m.done(NO_RIG);
+}
+
 // A falling rain streak.
 export function rainModel() {
   return new ModelBuilder().box([0, 0, 0], [0.035, 0.42, 0.035], 0.012, '#bfe0ff', 0, false).done(NO_RIG);

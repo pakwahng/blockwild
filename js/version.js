@@ -1,11 +1,17 @@
 // The game's version and what changed in each one. Shown on the front screen ("What's new")
 // and in CHANGELOG.md. When you release: bump VERSION, add an entry at the top of CHANGES,
 // and set the same number in sw.js (CACHE = 'blockwild-v<VERSION>') so phones pick it up.
-export const VERSION = 21.1;
+export const VERSION = 22;
 export const RELEASED = '8 Nov 2026';
 
 // [version, date, headline, [details]]
 export const CHANGES = [
+  [22, '8 Nov 2026', 'Working animals', [
+    'Teach your grown-ups a job! Tap a hen, cow, pig, sheep or wolf and pick Fetch wood, Fetch stone or Find seeds. It costs one of its favourite treats.',
+    'By day a worker finds a tree, bare rock or grass near you, works at it, then carries a log, some cobble or seeds back on its back and drops it at your feet.',
+    'Workers find their way round hills, fences and water. If one can’t find anything to do, it tells you.',
+    'Pick Just play to give it a day off. Jobs save, and friends you play with can teach jobs too.',
+  ]],
   [21.1, '8 Nov 2026', 'No more flying', [
     'You can’t fly any more: the Fly button and the F key are gone. Walk, jump, swim and climb ladders instead.',
     'If you were up in the air, you drop back down to the ground.',

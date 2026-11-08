@@ -223,6 +223,15 @@ export class Sfx {
   toss() { if (this.ready) this.noise(this.ctx.currentTime + 0.01, 0.12, 0.25, 3000); }
   place() { if (this.ready) { const t = this.ctx.currentTime + 0.01; this.tone('sine', 220, 120, t, 0.09, 0.35); this.noise(t, 0.05, 0.12, 900); } }
   dig() { if (this.ready) this.noise(this.ctx.currentTime + 0.01, 0.16, 0.35, 600); }
+  // a working grown-up: tok-tok on a tree, a clack on rock, a scratchy rustle in the grass
+  knock(job, vol = 0.3) {
+    if (!this.ready) return;
+    const t = this.ctx.currentTime + 0.01;
+    if (job === 'seeds') { this.noise(t, 0.09, vol * 0.6, 2400); return; }
+    const f = job === 'stone' ? 520 : 240;
+    this.tone('triangle', f, f * 0.6, t, 0.07, vol);
+    this.noise(t, 0.05, vol * 0.5, job === 'stone' ? 1800 : 700);
+  }
 
   fanfare() {
     if (!this.ready) return;

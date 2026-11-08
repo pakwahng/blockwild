@@ -145,7 +145,7 @@ body.flying #btn-down { display: grid; }
 #touch-hint.gone { opacity: 0; }
 
 /* ---------- block picker ---------- */
-#picker {
+#picker, #jobcard {
   position: fixed; inset: 0; z-index: 3; background: rgba(0, 0, 0, 0.45);
   display: flex; align-items: center; justify-content: center; /* flex (not grid) so the panel can't grow past the screen */
   padding: calc(8px + var(--safe-t)) calc(8px + var(--safe-r)) calc(8px + var(--safe-b)) calc(8px + var(--safe-l));
@@ -402,3 +402,22 @@ body.in-wardrobe #tags, body.in-wardrobe #loading { display: none; }
   .ward-panel { flex: 0 1 55%; max-height: none; max-width: 520px; border-radius: 18px 0 0 18px; border-top: 0; border-left: 1px solid var(--panel-edge);
     padding: calc(10px + var(--safe-t)) calc(14px + var(--safe-r)) calc(10px + var(--safe-b)) 14px; }
 }
+
+/* ---------- teaching a grown-up a job ---------- */
+.job-panel { width: min(460px, 100%); overflow-y: auto; touch-action: pan-y; }
+.job-now { margin: 0 0 10px; color: var(--ink-dim); font-size: 14px; }
+#job-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.job {
+  display: flex; flex-direction: column; align-items: center; gap: 3px; text-align: center;
+  padding: 10px 6px 8px; border-radius: 12px; border: 2px solid transparent;
+  background: rgba(255, 255, 255, 0.07); color: var(--ink); font: inherit; font-size: 12px;
+}
+.job > img, .job-play { width: 44px; height: 44px; image-rendering: pixelated; }
+.job b { font-size: 15px; }
+.job > span { color: var(--ink-dim); line-height: 1.3; }
+.job em { font-style: normal; font-weight: 700; display: flex; align-items: center; gap: 4px; margin-top: 2px; color: #ffcf7a; }
+.job em img { width: 20px; height: 20px; image-rendering: pixelated; }
+.job.on { border-color: var(--accent); background: rgba(124, 195, 90, 0.14); }
+.job.on em { color: var(--accent); }
+.job:disabled:not(.on) { opacity: 0.45; }
+#job-note { margin: 10px 0 0; }

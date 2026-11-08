@@ -49,6 +49,21 @@ Babies in your nursery slowly grow up (about seven minutes of being tame), getti
 
 Foxes and snakes don't go after grown wolves. Growth, gifts lying on the ground and grown-ups all save, and guests see them too.
 
+### Jobs: training grown-ups to help
+
+Tap a grown-up (hen, cow, pig, sheep or wolf) to pet it and open **Teach a job**. Teaching costs one of its favourite treats from your bag; stopping (**Just play**) is free.
+
+| Job | What it does | Brings you |
+|---|---|---|
+| Fetch wood | Walks to a tree trunk near you and pecks or butts at it | 1 **log** |
+| Fetch stone | Finds bare rock out in the open (not down caves) and chips at it | 1 **cobble** |
+| Find seeds | Scratches about on a grassy patch | 2 **seeds** |
+
+- Workers only work by day. They look for work within about 18 blocks of whoever taught them, find a way there round hills, fences and water, work for a few seconds, then carry the log, cobble or seeds home on their back and drop it at your feet. Then they have a short break and go again.
+- The block stays put: they gather from the tree or rock, they don't knock it down.
+- If one can't find anything, or can't find a way to it, it tells you. If it can't get any closer to you while carrying something, it leaves it on the ground for you.
+- Jobs save. In play together a guest can teach a job too, and that animal brings things to the guest.
+
 ## Collecting and crafting
 
 - A new world starts with 10 seeds and the toy sword. Everything else you collect.
@@ -181,7 +196,7 @@ A full day lasts 10 minutes: about 6 minutes of daylight, a pink dusk, roughly 3
 | `js/main.js` | Boot, game loop, chunk streaming, break/place, menus, saving |
 | `js/world.js` | Chunk storage, terrain/caves/trees generation, player edits |
 | `js/mesher.js` | Turns chunks into triangles, with rounded block edges and ambient occlusion |
-| `js/animals.js` | Baby animal behaviour: species table, wandering, treats, taming, breeding, hay and mud habits, pens, growing up, gifts, wolf guards |
+| `js/animals.js` | Baby animal behaviour: species table, wandering, treats, taming, breeding, hay and mud habits, pens, growing up, gifts, wolf guards, jobs (finding work, path-finding round hills and fences, carrying things home) |
 | `js/raiders.js` | Daytime foxes and crows: sneaking, stealing treats, fences, sword hits |
 | `js/goals.js` | The goals list, progress and rewards |
 | `js/version.js` | Version number and the change log shown in What’s new |

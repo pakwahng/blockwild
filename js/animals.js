@@ -13,8 +13,17 @@ export const ADULT_TIME = 420, ADULT_SCALE = 1.45, MILK_GROW = 0.25;
 // What each grown-up leaves on the ground for you now and then: [item, how many]. Grown wolves guard instead.
 export const GIFTS = { chick: [ITEM_EGG, 1], calf: [ITEM_MILK, 1], lamb: [B.WOOL, 2], piglet: [ITEM_APPLE, 2] };
 const GIFT_TIME = [60, 120], MAX_GIFTS = 60, GUARD_RANGE = 14;
-const GIFT_MODEL = { [ITEM_EGG]: 'egg', [ITEM_MILK]: 'milk', [B.WOOL]: 'woolTuft', [ITEM_APPLE]: 'apple' };
+const GIFT_MODEL = { [ITEM_EGG]: 'egg', [ITEM_MILK]: 'milk', [B.WOOL]: 'woolTuft', [ITEM_APPLE]: 'apple', [B.LOG]: 'logChunk', [B.COBBLE]: 'stoneChunk', [ITEM_SEEDS]: 'seed' };
 const ease = t => t * t * (3 - 2 * t);
+// Jobs a tame grown-up can learn. It finds a tree, a rock or a grassy patch near by, works at it for a bit
+// (the block stays put: it gathers from it), then carries what it got back to whoever taught it.
+export const JOBS = [null, 'wood', 'stone', 'seeds'];
+export const JOB_INFO = {
+  wood:  { blocks: [B.LOG], item: B.LOG, n: 1, work: 4 },
+  stone: { blocks: [B.STONE, B.COBBLE], item: B.COBBLE, n: 1, work: 4.5 },
+  seeds: { blocks: [B.GRASS], item: ITEM_SEEDS, n: 2, work: 3 },
+};
+const JOB_RANGE = 18, SIDES = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 // Every baby gets a name (an index into this list, so it travels and saves as a number).
 export const BABY_NAMES = ['Nugget', 'Peep', 'Biscuit', 'Pudding', 'Pip', 'Waffles', 'Mochi', 'Pickle', 'Dumpling', 'Sprout',
   'Button', 'Pebble', 'Muffin', 'Noodle', 'Tofu', 'Bean', 'Sunny', 'Daisy', 'Honey', 'Maple', 'Poppy', 'Toffee', 'Bubbles',
@@ -68,6 +77,7 @@ export class Nursery {
       spot: null, enjoy: 0, look: Math.random() * 3,
       tame, age, call: 2 + Math.random() * 10, born: 0,
       grow: 0, name: Math.random() * BABY_NAMES.length | 0, gift: GIFT_TIME[0] * Math.random(), bite: 0,
+      job: null, trainer: 0, task: null, carry: 0, fails: 0, lost: 0,
     };
     this.animals.push(a);
     return a;
@@ -151,6 +161,180 @@ export class Nursery {
     return true;
   }
 
+  // A player teaches a tame grown-up a job (or null to let it stop and play). by: who taught it, who it brings things to.
+  train(id, job, by = 0) {
+    const a = this.animals.find(q => q.id === id);
+    if (!a || !a.tame || a.grow < 1) return false;
+    a.job = JOB_INFO[job] ? job : null; a.trainer = by; a.task = null; a.carry = 0; a.fails = a.lost = 0; a.avoid = null;
+    a.wag = 1; a.peck = 0.6; a.sleep = false; a.spot = null; a.enjoy = 0;
+    if (a.onGround) a.v[1] = 3.6;
+    this.events.push({ type: 'trained', sp: a.sp, name: a.name, job: a.job, by, p: [...a.p] });
+    return true;
+  }
+
+  // Places to work, nearest first: tree trunks or bits of bare rock with somewhere to stand beside them,
+  // or grassy spots to scratch about on. [{ b: block, at: where to stand }], up to 8 of them.
+  findWork(a, job, centre = a.p) {
+    const world = this.world, J = JOB_INFO[job];
+    const bx = Math.floor(centre[0]), by = Math.floor(centre[1] + 0.2), bz = Math.floor(centre[2]);
+    const out = [];
+    if (job === 'seeds') {
+      for (let k = 0; k < 60 && out.length < 8; k++) {
+        const ang = Math.random() * 6.28, r = 3 + Math.random() * 11;
+        const x = Math.floor(centre[0] + Math.cos(ang) * r), z = Math.floor(centre[2] + Math.sin(ang) * r), y = this.surface(x, z);
+        if (y > 0 && Math.abs(y - by) <= 4 && world.getBlock(x, y - 1, z) === B.GRASS && this.standable(x, y, z) && !a.avoid?.includes(x + ',' + z))
+          out.push({ b: [x, y - 1, z], at: [x + 0.5, y, z + 0.5], d: r });
+      }
+    } else {
+      const seen = new Set();
+      for (let dy = -5; dy <= 5; dy++) for (let dz = -JOB_RANGE; dz <= JOB_RANGE; dz++) for (let dx = -JOB_RANGE; dx <= JOB_RANGE; dx++) {
+        const x = bx + dx, y = by + dy, z = bz + dz, key = x + ',' + z;
+        if (seen.has(key) || !J.blocks.includes(world.getBlock(x, y, z)) || a.avoid?.includes(key)) continue;
+        const d = dx * dx + dz * dz + dy * dy * 3;
+        if (job === 'stone' && world.getBlock(x, y, z) === B.STONE && this.standable(x, y + 1, z) && this.surface(x, z) === y + 1) { seen.add(key); out.push({ b: [x, y, z], at: [x + 0.5, y + 1, z + 0.5], d, top: true }); continue; } // chip at the rock it stands on
+        for (const [sx, sz] of SIDES) {
+          if (!this.standable(x + sx, y, z + sz) || (job === 'stone' && this.surface(x + sx, z + sz) !== y)) continue; // rock out in the open, not down a cave
+          seen.add(key);
+          out.push({ b: [x, y, z], at: [x + sx + 0.5, y, z + sz + 0.5], d });
+          break;
+        }
+      }
+    }
+    return out.sort((p, q) => p.d - q.d).slice(0, 8);
+  }
+
+  // Somewhere an animal can stand: solid ground under it, no water, and room for its head.
+  standable(x, y, z) {
+    const w = this.world, id = w.getBlock(x, y, z);
+    return !SOLID[id] && id !== B.WATER && !SOLID[w.getBlock(x, y + 1, z)] && SOLID[w.getBlock(x, y - 1, z)];
+  }
+
+  // A walk from where the animal is to the nearest of some spots, round hills, fences and water: { path: cell centres
+  // to head for, i: which spot } or null if it can't get to any. near: how close counts as there (in blocks).
+  // It can hop up one block (not onto fences and walls) and drop down three.
+  findPath(a, spots, near = 0, maxNodes = 2500) {
+    const w = this.world;
+    const sx = Math.floor(a.p[0]), sz = Math.floor(a.p[2]);
+    let sy = Math.floor(a.p[1] + 0.2);
+    if (!this.standable(sx, sy, sz) && this.standable(sx, sy + 1, sz)) sy++;
+    const goals = spots.map(p => [Math.floor(p[0]), Math.floor(p[1] + 0.2), Math.floor(p[2])]);
+    const key = (x, y, z) => x + ',' + y + ',' + z;
+    const from = new Map([[key(sx, sy, sz), null]]);
+    let q = [[sx, sy, sz]], found = null, hit = -1, n = 0;
+    while (q.length && !found && n < maxNodes) {
+      const next = [];
+      for (const c of q) {
+        n++;
+        hit = goals.findIndex(g => Math.abs(c[0] - g[0]) + Math.abs(c[2] - g[2]) <= near && Math.abs(c[1] - g[1]) <= 1);
+        if (hit >= 0) { found = c; break; }
+        for (const [dx, dz] of SIDES) {
+          const nx = c[0] + dx, nz = c[2] + dz;
+          if (Math.abs(nx - sx) > 40 || Math.abs(nz - sz) > 40) continue;
+          let ny = null;
+          const wall = w.getBlock(nx, c[1], nz);
+          if (SOLID[wall]) {
+            // a step up: only natural ground, and room to hop
+            if (!NO_CLIMB[wall] && !SOLID[w.getBlock(c[0], c[1] + 2, c[2])] && this.standable(nx, c[1] + 1, nz)) ny = c[1] + 1;
+          } else if (!SOLID[w.getBlock(nx, c[1] + 1, nz)] && wall !== B.WATER) {
+            for (let y = c[1]; y >= c[1] - 3; y--) {
+              if (this.standable(nx, y, nz)) { ny = y; break; }
+              const id = w.getBlock(nx, y - 1, nz);
+              if (SOLID[id] || id === B.WATER) break;
+            }
+          }
+          if (ny === null) continue;
+          const k = key(nx, ny, nz);
+          if (from.has(k)) continue;
+          from.set(k, c);
+          next.push([nx, ny, nz]);
+        }
+      }
+      q = next;
+    }
+    if (!found) return null;
+    const path = [];
+    for (let c = found; c; c = from.get(key(c[0], c[1], c[2]))) path.push([c[0] + 0.5, c[1], c[2] + 0.5]);
+    path.reverse();
+    path.shift(); // the cell it's standing in
+    return { path, i: hit };
+  }
+
+  // Head along a path; returns the next spot to aim for, or null when it's got to the end.
+  followPath(a, T) {
+    while (T.i < T.path.length) {
+      const c = T.path[T.i];
+      if (dist2(a.p, c) < 0.4 * 0.4 && Math.abs(a.p[1] - c[1]) < 1.3) { T.i++; T.prog = 4; continue; }
+      return c;
+    }
+    return null;
+  }
+
+  // One step of a working grown-up's day. Returns { goal, speed }, { work: true } while it's busy at a tree or rock,
+  // or null when it's having a break between trips (and does the usual wandering about).
+  jobStep(a, dt, players) {
+    const J = JOB_INFO[a.job], world = this.world, S = a.S;
+    const T = a.task || (a.task = { ph: a.carry ? 'carry' : 'rest', t: 1 + Math.random() * 2 });
+    T.t -= dt;
+    // whoever taught it (or the host, if they've gone): it works near them and brings things to them
+    const pl = players.find(q => (q.id || 0) === a.trainer) || players[0];
+    if (T.ph === 'rest') {
+      const far = pl ? dist2(a.p, pl.pos) : 0;
+      if (far > 16 * 16 && far < 64 * 64 && T.t > -15) return { goal: pl.pos, speed: S.run * 0.7 }; // wandered off: head back towards you
+      if (T.t > 0 || this._looked) return null;
+      this._looked = true; // one look round per update keeps things smooth
+      const spots = this.findWork(a, a.job, pl && far < 48 * 48 ? pl.pos : a.p);
+      const way = spots.length ? this.findPath(a, spots.map(s => s.at)) : null;
+      if (!way) {
+        T.t = 10;
+        if (spots.length) { if (++a.fails === 2) this.events.push({ type: 'stuck', sp: a.sp, name: a.name, job: a.job, by: a.trainer, p: [...a.p] }); }
+        else if (++a.lost === 2) this.events.push({ type: 'nowork', sp: a.sp, name: a.name, job: a.job, by: a.trainer, p: [...a.p] });
+        return null;
+      }
+      const spot = spots[way.i];
+      Object.assign(T, { ph: 'go', t: 40, b: spot.b, at: spot.at, top: !!spot.top, path: way.path, i: 0, prog: 4 });
+    }
+    if (T.ph === 'go') {
+      if (!J.blocks.includes(world.getBlock(T.b[0], T.b[1], T.b[2]))) { T.ph = 'rest'; T.t = 0.5; return null; }
+      const next = this.followPath(a, T);
+      if (!next) { T.ph = 'work'; T.t = J.work; T.knock = 0; }
+      else if (T.t <= 0 || (T.prog -= dt) <= 0) {
+        // got stuck on the way: try somewhere else in a bit
+        (a.avoid || (a.avoid = [])).push(T.b[0] + ',' + T.b[2]);
+        if (a.avoid.length > 8) a.avoid.shift();
+        T.ph = 'rest'; T.t = 2;
+        return null;
+      } else return { goal: next, speed: S.run * 0.75 };
+    }
+    if (T.ph === 'work') {
+      T.knock -= dt;
+      if (T.knock <= 0) { T.knock = 0.75; a.peck = 0.6; this.events.push({ type: 'work', sp: a.sp, job: a.job, p: [...a.p] }); }
+      if (T.t <= 0) { Object.assign(T, { ph: 'carry', t: 60, path: null, i: 0, prog: 6, re: 0 }); a.carry = J.item; a.fails = a.lost = 0; a.avoid = null; a.v[1] = 3; }
+      return { work: true };
+    }
+    // carrying it home: find a way to you (again if you've moved on), then follow it
+    if (!pl) return null;
+    const d = dist2(a.p, pl.pos);
+    if (d > 64 * 64) return null; // you've gone far away: it waits with it
+    T.re -= dt;
+    const end = T.path && T.path[T.path.length - 1];
+    if (!this._looked && T.re <= 0 && (!T.path || dist2(end, pl.pos) > 2.5 * 2.5)) {
+      this._looked = true;
+      T.path = this.findPath(a, [pl.pos], 1)?.path || null; T.i = 0; T.re = 2; T.prog = 6;
+    }
+    const next = T.path ? this.followPath(a, T) : null;
+    if (!T.path && d < T.best - 0.25) { T.best = d; T.prog = 6; }
+    // hand it over, or leave it on the ground if it can't get any closer to you
+    if ((d < 1.7 * 1.7 && Math.abs(a.p[1] - pl.pos[1]) < 2) || T.t <= 0 || (T.prog -= dt) <= 0) {
+      const near = d < 3 * 3, f = near ? 0.35 : 1;
+      const p = near ? [pl.pos[0] + (a.p[0] - pl.pos[0]) * f, a.gy + 0.01, pl.pos[2] + (a.p[2] - pl.pos[2]) * f] : [a.p[0], a.gy + 0.01, a.p[2]];
+      if (this.gifts.length < MAX_GIFTS + 20) this.gifts.push({ item: J.item, n: J.n, p, yaw: Math.random() * 6.28, life: 600, t: 0, from: { sp: a.sp, name: a.name } });
+      this.events.push({ type: 'fetched', sp: a.sp, name: a.name, item: J.item, n: J.n, by: a.trainer, near, p: [...a.p] });
+      a.carry = 0; a.wag = 1; T.ph = 'rest'; T.t = 8 + Math.random() * 6;
+      return null;
+    }
+    return { goal: next || pl.pos, speed: S.run * 0.85 };
+  }
+
   // Grown-ups' gifts: anyone who walks over one picks it up.
   updateGifts(dt, players) {
     for (const g of this.gifts) {
@@ -159,7 +343,7 @@ export class Nursery {
         const dx = pl.pos[0] - g.p[0], dz = pl.pos[2] - g.p[2], dy = g.p[1] - pl.pos[1];
         if (dx * dx + dz * dz < 1.1 * 1.1 && dy > -0.6 && dy < 1.8 && g.t > 0.6) {
           g.life = 0;
-          this.events.push({ type: 'gift', item: g.item, n: g.n, by: pl.id || 0, p: [...g.p] });
+          this.events.push({ type: 'gift', item: g.item, n: g.n, by: pl.id || 0, from: g.from, p: [...g.p] });
           break;
         }
       }
@@ -173,6 +357,7 @@ export class Nursery {
   update(dt, players, threats = [], night = false, foes = []) {
     const world = this.world;
     this.clock = (this.clock || 0) + dt;
+    this._looked = false;
     this.updateTreats(dt, true);
     this.updateGifts(dt, players);
     this.spawnWild(dt, players);
@@ -275,6 +460,13 @@ export class Nursery {
           }
         }
       }
+      // a grown-up with a job goes off to fetch wood, stone or seeds by day
+      let working = false;
+      if (!goal && !cheering && a.job && a.tame && adult && !night) {
+        const r = this.jobStep(a, dt, players);
+        if (r && r.goal) { goal = r.goal; speed = r.speed; a.spot = null; a.enjoy = 0; }
+        else if (r && r.work) { working = true; a.spot = null; a.enjoy = 0; }
+      }
       // the nearest player holding this baby's favourite treat
       let lure = null, ld = 14 * 14;
       for (const pl of players) {
@@ -282,12 +474,12 @@ export class Nursery {
         const d = dist2(a.p, pl.pos);
         if (d < ld) { ld = d; lure = pl; }
       }
-      if (!goal && !cheering && lure && !foe) {
+      if (!goal && !cheering && !working && lure && !foe) {
         const near = 1.4 + S.half * 2;
         if (ld > near * near) { goal = lure.pos; speed = S.run * 0.9; a.spot = null; a.enjoy = 0; }
       }
       // favourite spot: calves munch next to hay, piglets roll in mud
-      if (!goal && !cheering && a.spot) {
+      if (!goal && !cheering && !working && a.spot) {
         const sx = a.spot[0] + 0.5, sz = a.spot[2] + 0.5;
         const reach = S.likes === B.HAY ? 1.05 + S.half : 0.35;
         if (dist2(a.p, [sx, 0, sz]) > reach * reach && a.enjoy === 0) { goal = [sx, a.spot[1], sz]; speed = S.walk * 1.2; }
@@ -311,6 +503,8 @@ export class Nursery {
       } else if (cheering) {
         a.speed = 0; a.mode = 'cheer';
         if (a.onGround && Math.random() < dt * 0.9) a.v[1] = 3 + Math.random() * 1.5;   // little hops of joy
+      } else if (working) {
+        a.speed = 0; a.mode = 'work';
       } else if (night && a.enjoy === 0) {
         // night time: curl up and doze
         a.speed = 0; a.mode = 'sleep'; a.sleep = true; a.spot = null;
@@ -386,7 +580,8 @@ export class Nursery {
       const hs = Math.hypot(v[0], v[2]);
       let ty = hs > 0.15 ? Math.atan2(v[0], v[2]) : a.yaw;
       if (a.mode === 'goal' && lure && hs <= 0.15) ty = Math.atan2(lure.pos[0] - a.p[0], lure.pos[2] - a.p[2]);
-      if (a.mode === 'cheer') ty = Math.atan2(this.gather.seat[0] - a.p[0], this.gather.seat[2] - a.p[2]);
+      if (a.mode === 'work' && a.job !== 'seeds' && !a.task.top) ty = Math.atan2(a.task.b[0] + 0.5 - a.p[0], a.task.b[2] + 0.5 - a.p[2]);
+      if (a.mode === 'cheer') ty =Math.atan2(this.gather.seat[0] - a.p[0], this.gather.seat[2] - a.p[2]);
       let dy = ty - a.yaw;
       dy = Math.atan2(Math.sin(dy), Math.cos(dy));
       a.yaw += dy * Math.min(1, dt * 10);
@@ -454,24 +649,24 @@ export class Nursery {
   }
 
   // ---- play together: the host sends its animals, a guest shows copies of them ----
-  // 15 numbers each: id, species + flags, x, y, z, yaw, vx, vz, hop, squash, peck, wag, age, ground y, grown-up, name.
+  // 18 numbers each: id, species + flags, x, y, z, yaw, vx, vz, hop, squash, peck, wag, age, ground y, grown-up, name, job, what it carries.
   snapshot(centre, r) {
     const list = this.animals.filter(a => dist2(a.p, centre) < r * r);
-    const f = new Float32Array(list.length * 16);
+    const f = new Float32Array(list.length * 18);
     let i = 0;
     for (const a of list) {
       const flags = (a.onGround ? 1 : 0) | (a.tame ? 2 : 0) | (a.sleep ? 4 : 0) | (a.enjoy > 0 ? 8 : 0) | (a.love > 0 ? 16 : 0) | (a.mode === 'cheer' ? 32 : 0);
       f[i++] = a.id; f[i++] = SPECIES_ORDER.indexOf(a.sp) + flags * 8;
       f[i++] = a.p[0]; f[i++] = a.p[1]; f[i++] = a.p[2]; f[i++] = a.yaw;
       f[i++] = a.v[0]; f[i++] = a.v[2]; f[i++] = a.hop; f[i++] = a.squash; f[i++] = a.peck; f[i++] = a.wag;
-      f[i++] = Math.min(9999, a.age); f[i++] = a.gy; f[i++] = a.grow; f[i++] = a.name;
+      f[i++] = Math.min(9999, a.age); f[i++] = a.gy; f[i++] = a.grow; f[i++] = a.name; f[i++] = a.job ? JOBS.indexOf(a.job) : 0; f[i++] = a.carry || 0;
     }
     return Array.from(f, v => Math.round(v * 100) / 100); // plain numbers: JSON travels between any two browsers
   }
   applySnapshot(buf) {
     const f = buf, byId = new Map(this.animals.map(a => [a.id, a]));
     const keep = [];
-    for (let i = 0; i < f.length; i += 16) {
+    for (let i = 0; i < f.length; i += 18) {
       const id = f[i], spf = f[i + 1], spi = spf % 8, flags = Math.floor(spf / 8);
       let a = byId.get(id);
       if (!a) {
@@ -481,7 +676,7 @@ export class Nursery {
       }
       a.tp = [f[i + 2], f[i + 3], f[i + 4]]; a.tyaw = f[i + 5];
       a.v[0] = f[i + 6]; a.v[2] = f[i + 7]; a.hop = f[i + 8]; a.squash = f[i + 9]; a.peck = f[i + 10]; a.wag = f[i + 11];
-      a.age = f[i + 12]; a.gy = f[i + 13]; a.grow = f[i + 14]; a.name = f[i + 15];
+      a.age = f[i + 12]; a.gy = f[i + 13]; a.grow = f[i + 14]; a.name = f[i + 15]; a.job = JOBS[f[i + 16]] || null; a.carry = f[i + 17];
       a.onGround = !!(flags & 1); a.tame = !!(flags & 2); a.sleep = !!(flags & 4); a.enjoy = flags & 8 ? 1 : 0;
       a.love = flags & 16 ? 1 : 0; a.mode = flags & 32 ? 'cheer' : 'wander';
       a.born = Math.max(0, 0.6 - a.age);
@@ -637,6 +832,7 @@ export class Nursery {
       const grow = (0.55 + 0.45 * Math.min(1, a.age / GROW_TIME)) * (1 + (ADULT_SCALE - 1) * ease(a.grow || 0));
       const pop = a.born > 0 ? 1 - a.born / 0.6 : 1;
       const scale = grow * (pop < 1 ? 0.3 + 0.7 * pop : 1);
+      a._sc = scale;
       const model = a.sp === 'chick' && a.grow >= 1 ? 'hen' : a.sp;
       const hs = Math.hypot(a.v[0], a.v[2]);
       const moving = hs > 0.2 && a.onGround;
@@ -684,7 +880,7 @@ export class Nursery {
 
     // the grown-ups' gifts: bob gently and turn so they catch your eye
     const gcnt = {};
-    for (const m of Object.values(GIFT_MODEL)) { need('g_' + m, this.gifts.length); gcnt[m] = 0; }
+    for (const m of Object.values(GIFT_MODEL)) { need('g_' + m, this.gifts.length + this.animals.length); gcnt[m] = 0; }
     for (const g of this.gifts) {
       if (dist2(g.p, eye) > md2) continue;
       const m = GIFT_MODEL[g.item];
@@ -696,6 +892,15 @@ export class Nursery {
       sh[si++] = g.p[0]; sh[si++] = g.p[1] + 0.005; sh[si++] = g.p[2]; sh[si++] = 0;
       sh[si++] = 0.3 * s; sh[si++] = 0; sh[si++] = 0; sh[si++] = 0;
       si += 4;
+    }
+    // a working grown-up carries what it found home on its back
+    for (const a of this.animals) {
+      const m = a.carry && GIFT_MODEL[a.carry];
+      if (!m || dist2(a.p, eye) > md2) continue;
+      const d = buf['g_' + m], sc = a._sc || 1, back = -0.06 * sc, bob = Math.abs(Math.sin(a.hop)) * 0.03;
+      let i = gcnt[m]++ * 12;
+      d[i++] = a.p[0] + Math.sin(a.yaw) * back; d[i++] = a.p[1] + a.S.height * sc * (a.sp === 'chick' ? 0.85 : 0.78) + bob; d[i++] = a.p[2] + Math.cos(a.yaw) * back; d[i++] = a.yaw + Math.PI / 2;
+      d[i++] = a.carry === ITEM_SEEDS ? 2 : 0.95; d[i++] = 0; d[i++] = 0; d[i++] = 0; d[i++] = 0; d[i++] = 0; d[i++] = 0; d[i++] = 0;
     }
     for (const m of Object.values(GIFT_MODEL)) groups.push({ model: m, data: buf['g_' + m], count: gcnt[m] });
 
@@ -713,12 +918,12 @@ export class Nursery {
   }
 
   serialize() {
-    return this.animals.filter(a => a.tame).map(a => [SPECIES_ORDER.indexOf(a.sp), +a.p[0].toFixed(2), +a.p[1].toFixed(2), +a.p[2].toFixed(2), Math.min(999, Math.round(a.age)), +a.grow.toFixed(4), a.name]);
+    return this.animals.filter(a => a.tame).map(a => [SPECIES_ORDER.indexOf(a.sp), +a.p[0].toFixed(2), +a.p[1].toFixed(2), +a.p[2].toFixed(2), Math.min(999, Math.round(a.age)), +a.grow.toFixed(4), a.name, a.job ? JOBS.indexOf(a.job) : 0]);
   }
   load(list) {
-    for (const [s, x, y, z, age, grow, name] of list || []) {
+    for (const [s, x, y, z, age, grow, name, job] of list || []) {
       const a = SPECIES_ORDER[s] && this.add(SPECIES_ORDER[s], x, y, z, true, age);
-      if (a) { a.grow = Math.max(0, Math.min(1, grow || 0)); if (BABY_NAMES[name]) a.name = name; }
+      if (a) { a.grow = Math.max(0, Math.min(1, grow || 0)); if (BABY_NAMES[name]) a.name = name; if (a.grow >= 1) a.job = JOBS[job] || null; }
     }
   }
   serializeGifts() { return this.gifts.map(g => [g.item, g.n, +g.p[0].toFixed(2), +g.p[1].toFixed(2), +g.p[2].toFixed(2)]); }
