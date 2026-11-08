@@ -1,11 +1,18 @@
 // The game's version and what changed in each one. Shown on the front screen ("What's new")
 // and in CHANGELOG.md. When you release: bump VERSION, add an entry at the top of CHANGES,
 // and set the same number in sw.js (CACHE = 'blockwild-v<VERSION>') so phones pick it up.
-export const VERSION = 20;
+export const VERSION = 21;
 export const RELEASED = '8 Nov 2026';
 
 // [version, date, headline, [details]]
 export const CHANGES = [
+  [21, '8 Nov 2026', 'New kinds of snake', [
+    'A new kind of snake joins each night.',
+    'Poison snake: leaves a trail of green poison goo that lasts 5 seconds. Babies run from it, and it makes you slow.',
+    'Flying snake: flaps over fences and walls, then swoops down on a baby.',
+    'Digger snake: wears a hard hat and chews straight through walls. It takes three bonks.',
+    'Boom snake: fizzes next to a baby, then goes BOOM and blasts the blocks around it. Bonk it while it fizzes to put the fuse out!',
+  ]],
   [20, '8 Nov 2026', 'Wardrobe: your name and clothes', [
     'Open the Wardrobe from the front screen or the pause menu to give yourself a name and change your clothes.',
     'T-shirts, stripes, hoodies and dresses; shorts, trousers and skirts; caps, beanies, bows and flowers, in 12 colours. Pick your shoe colour and whether you carry your bag.',

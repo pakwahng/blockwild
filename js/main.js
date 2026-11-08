@@ -1,6 +1,6 @@
 // Baby Chicken Empire: bootstrap, game loop, streaming, interaction, UI and saving.
 import { B, T, BLOCKS, SOLID, PLACEABLE, TILE_COUNT, ITEM_SEEDS, ITEM_WHEAT, ITEM_SWORD, ITEM_BONE, ITEM_APPLE, ITEM_STICK, ITEM_EGG, ITEM_MILK, ITEM_HOUSE, IS_DOOR, DOOR_TOPS, TREATS, ITEM_NAMES, SHAPED, FEEDER_OF, FEEDER_TREAT, IS_FEEDER } from './blocks.js';
-import { Snakes } from './snakes.js';
+import { Snakes, SNAKE_KINDS, K_POISON, K_FLYING, K_DIGGER, K_BOOM } from './snakes.js';
 import { Raiders } from './raiders.js';
 import { Weather } from './weather.js';
 import { GOALS, newStats, bump } from './goals.js';
@@ -55,8 +55,8 @@ try {
   renderer.addModel('clover', M.cloverModel());
   renderer.addModel('bone', M.boneModel());
   renderer.addModel('shadow', M.shadowModel());
-  renderer.addModel('snakeHead', M.snakeHeadModel());
-  renderer.addModel('snakeSeg', M.snakeSegModel());
+  SNAKE_KINDS.forEach((_, k) => { renderer.addModel('snakeHead' + k, M.snakeHeadModel(k)); renderer.addModel('snakeSeg' + k, M.snakeSegModel(k)); });
+  renderer.addModel('goo', M.gooModel());
   M.CONFETTI_COLORS.forEach((c, k) => renderer.addModel('confetti' + k, M.confettiModel(c)));
   renderer.addModel('fox', M.foxModel());
   renderer.addModel('crow', M.crowModel());
@@ -517,6 +517,23 @@ function sit(x, y, z) {
 }
 function standUp() { seat = null; flock.endGather(); if (net.isGuest) net.toHost({ t: 'stand' }); }
 
+// The first time each new kind of snake turns up.
+const SNAKE_TIPS = [
+  '',
+  'A poison snake! It leaves a trail of green goo. Babies run from it and it slows you down, but it dries up after 5 seconds.',
+  'A flying snake! It flaps right over fences and walls, then swoops down on a baby. Bonk it when it comes low.',
+  'A digger snake in a hard hat! Walls won’t stop it: it chews straight through blocks. It takes three bonks.',
+  'A boom snake! When it gets near a baby it fizzes, then goes BOOM and blasts the blocks around it. Bonk it while it fizzes to put the fuse out!',
+];
+// Knocks a block out (a snake chewing or a blast). A door goes with its other half.
+function smashBlock(x, y, z) {
+  const id = world.getBlock(x, y, z);
+  if (id === B.AIR || id === B.WATER || id === B.BEDROCK) return;
+  editBlock(x, y, z, B.AIR);
+  if (IS_DOOR[id]) for (const dy of [-1, 1]) if (IS_DOOR[world.getBlock(x, y + dy, z)]) editBlock(x, y + dy, z, B.AIR);
+  remeshAround(x, z);
+}
+
 // Every block change goes through here so other players get it too.
 function editBlock(x, y, z, id) {
   if (!world.setBlock(x, y, z, id)) return false;
@@ -632,9 +649,31 @@ function handleChickEvents() {
       toast(ev.spooked ? `Day ${nights + 1}. Sunrise! The snake spooked ${ev.spooked} ${ev.spooked === 1 ? 'baby' : 'babies'}, but the nursery made it.`
         : `Day ${nights + 1}. Sunrise! Every baby made it safely through the night.`);
     } else if (ev.type === 'hiss') { if (d < 24) sfx.hiss(0.25 * (1 - d / 24)); }
-    else if (ev.type === 'spook') {
+    else if (ev.type === 'spawn') {
+      const k = ev.kind | 0;
+      if (k && !firsts.includes('snake' + k)) { firsts.push('snake' + k); setTimeout(() => toast(SNAKE_TIPS[k]), 1500); }
+    } else if (ev.type === 'spook') {
       sfx.hiss(0.4); sfx.call(ev.sp, 0.5);
-      toast(`The snake spooked ${callName(ev.name, ev.sp, 'a')} out of your nursery! Feed it again to bring it back.`);
+      const who = callName(ev.name, ev.sp, 'a');
+      toast(ev.why === 'goo' ? `Yuck! ${who[0].toUpperCase() + who.slice(1)} stepped in poison goo and ran out of your nursery! Feed it again to bring it back.`
+        : ev.why === 'boom' ? `BOOM! ${who[0].toUpperCase() + who.slice(1)} got a fright and ran out of your nursery! Feed it again to bring it back.`
+        : `The snake spooked ${who} out of your nursery! Feed it again to bring it back.`);
+    } else if (ev.type === 'fuse') {
+      if (d < 40) sfx.fuse();
+      if (d < 30 && !firsts.includes('fuse')) { firsts.push('fuse'); toast('The boom snake is fizzing! Bonk it quick to put the fuse out!'); }
+    } else if (ev.type === 'chew') {
+      if (!net.isGuest && world.getBlock(ev.x, ev.y, ev.z) !== B.AIR) smashBlock(ev.x, ev.y, ev.z);
+      if (d < 24) sfx.dig();
+    } else if (ev.type === 'boom') {
+      if (!net.isGuest) for (const [x, y, z] of ev.blocks || []) smashBlock(x, y, z);
+      sfx.boom(d < 50 ? 1 - d / 60 : 0.15);
+      if (d < 9 && player && !seat) {
+        // blown back a little: away from the blast and up
+        const dx = player.pos[0] - ev.p[0], dz = player.pos[2] - ev.p[2], l = Math.hypot(dx, dz) || 1, f = (9 - d) * 1.4;
+        player.vel[0] += dx / l * f; player.vel[2] += dz / l * f; player.vel[1] = Math.max(player.vel[1], 4 + f * 0.4);
+        buzz(120);
+      }
+      if (!firsts.includes('boom') && d < 60) { firsts.push('boom'); setTimeout(() => toast('BOOM! The boom snake blew a hole in the ground. Bonk them before they fizz out!'), 800); }
     } else if (ev.type === 'bonk') { sfx.bonk(); floatFx(ev.p, 'bonk'); buzz(30); }
     else if (ev.type === 'poof' && ev.wolf) {
       sfx.poof(); buzz(40);
@@ -1690,6 +1729,10 @@ function frame(now, photo = false) {
       if (Math.abs(st.moveX) > 0.2 || Math.abs(st.moveZ) > 0.2 || st.jump || world.getBlock(seat.x, seat.y, seat.z) !== B.THRONE) standUp();
       else { player.pos = [seat.x + 0.5, seat.y + 1, seat.z + 0.5]; player.vel = [0, 0, 0]; }
     }
+    // poison goo makes your feet sticky and slow
+    const gooey = !player.flying && snakes.inGoo(player.pos);
+    player.slow = gooey ? 0.4 : 1;
+    if (gooey && !firsts.includes('goo')) { firsts.push('goo'); toast('Yuck, poison goo! It makes you slow. Step out of it, it dries up soon.'); }
     if (!seat && world.getChunk(Math.floor(player.pos[0] / CS), Math.floor(player.pos[2] / CS))) player.update(dt, input.state, world);
     if (player.pos[1] < -20) { player.pos[1] = CH; player.vel[1] = 0; }
     if (player.onLadder && player.vel[1] > 1) { climbT += dt; if (climbT > 0.8 && !stats.climbed) stats.climbed = 1; }

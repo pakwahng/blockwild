@@ -203,6 +203,23 @@ export class Sfx {
     [523, 659, 784, 1046].forEach((f, k) => this.tone('sine', f, f, t + k * 0.1, 0.16, 0.22));
   }
 
+  // a boom snake's fuse: crackly fizzing that speeds up
+  fuse() {
+    if (!this.ready) return;
+    const t = this.ctx.currentTime + 0.01;
+    for (let k = 0; k < 14; k++) this.noise(t + k * 0.13 * (1 - k / 22), 0.05, 0.16, 4200 + Math.random() * 1500);
+    this.tone('square', 900, 1800, t + 1.4, 0.3, 0.06);
+  }
+  // the big BOOM: a deep thump, a rumble and a scatter of pops (vol 0…1 for how far away)
+  boom(vol = 1) {
+    if (!this.ready || vol < 0.03) return;
+    const t = this.ctx.currentTime + 0.01;
+    this.tone('sine', 140, 38, t, 0.7, 0.7 * vol);
+    this.noise(t, 0.9, 0.7 * vol, 220);
+    this.noise(t + 0.05, 0.5, 0.4 * vol, 900);
+    for (let k = 0; k < 6; k++) this.tone('triangle', 600 + k * 180, 900 + k * 200, t + 0.25 + k * 0.07, 0.08, 0.1 * vol);
+  }
+
   toss() { if (this.ready) this.noise(this.ctx.currentTime + 0.01, 0.12, 0.25, 3000); }
   place() { if (this.ready) { const t = this.ctx.currentTime + 0.01; this.tone('sine', 220, 120, t, 0.09, 0.35); this.noise(t, 0.05, 0.12, 900); } }
   dig() { if (this.ready) this.noise(this.ctx.currentTime + 0.01, 0.16, 0.35, 600); }

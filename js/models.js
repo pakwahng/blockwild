@@ -212,13 +212,37 @@ export function pupModel() {
 }
 
 // ---- the night snake: a goofy head and chunky striped body blocks ----
-const SNAKE_GREEN = '#5cb84a', SNAKE_LIGHT = '#74cc5e', SNAKE_PURPLE = '#6a2a6e';
-export function snakeHeadModel() {
+// Each kind of snake (see SNAKE_KINDS in snakes.js) has its own colours: [body, snout and speckles, stripe, nostrils].
+const SNAKE_COLORS = [
+  ['#5cb84a', '#74cc5e', '#6a2a6e', '#2a5a22'],   // plain: green with purple stripes
+  ['#8a4ad0', '#a86ae6', '#9be04a', '#4a2270'],   // poison: purple with lime stripes
+  ['#5ab0f0', '#8fd0ff', '#f6f6f2', '#2a6a9a'],   // flying: sky blue with white stripes
+  ['#c8823c', '#e0a060', '#4a3a30', '#6a3a14'],   // digger: clay orange with dark stripes
+  ['#d8402c', '#f06a4a', '#2a2a2e', '#7a1a10'],   // boom: red with black stripes
+];
+export function snakeHeadModel(kind = 0) {
   const m = new ModelBuilder();
+  const [SNAKE_GREEN, SNAKE_LIGHT, , NOSE] = SNAKE_COLORS[kind] || SNAKE_COLORS[0];
   m.box([0, 0.24, -0.02], [0.5, 0.4, 0.46], 0.14, SNAKE_GREEN);
   m.box([0, 0.17, 0.25], [0.42, 0.22, 0.2], 0.09, SNAKE_LIGHT);                  // snout
+  if (kind === 2) for (const sx of [-1, 1]) {                                      // flapping feathery wings
+    const part = sx > 0 ? 1 : 2;
+    m.box([sx * 0.45, 0.38, -0.08], [0.42, 0.05, 0.34], 0.024, '#ffffff', part);
+    for (let f = 0; f < 3; f++) m.box([sx * (0.36 + f * 0.12), 0.375, -0.27], [0.1, 0.04, 0.12], 0.02, '#e6f2ff', part, false);
+  }
+  if (kind === 3) {                                                                // yellow hard hat and two big digging teeth
+    m.box([0, 0.5, -0.04], [0.48, 0.16, 0.44], 0.08, '#ffd23c');
+    m.box([0, 0.43, 0.02], [0.58, 0.035, 0.56], 0.015, '#f2b81c', 0, false);
+    m.box([0, 0.6, -0.04], [0.08, 0.04, 0.36], 0.02, '#f2b81c', 0, false);
+    for (const sx of [-1, 1]) m.box([sx * 0.05, 0.04, 0.33], [0.07, 0.08, 0.04], 0.015, '#ffffff', 0, false);
+  }
+  if (kind === 4) {                                                                // a fuse on top with a spark
+    m.box([0, 0.5, -0.06], [0.05, 0.16, 0.05], 0.02, '#3a2a20', 0, false);
+    m.box([0, 0.6, -0.06], [0.09, 0.09, 0.09], 0.04, '#ffd23c', 0, false);
+    m.box([0, 0.62, -0.06], [0.05, 0.05, 0.05], 0.02, '#fff6c0', 0, false);
+  }
   for (const sx of [-1, 1]) {
-    m.box([sx * 0.07, 0.23, 0.351], [0.04, 0.03, 0.02], 0.012, '#2a5a22', 0, false); // nostrils
+    m.box([sx * 0.07, 0.23, 0.351], [0.04, 0.03, 0.02], 0.012, NOSE, 0, false); // nostrils
     m.box([sx * 0.12, 0.47, 0.1], [0.17, 0.19, 0.1], 0.07, '#ffe23a');              // big yellow eyes
     m.box([sx * 0.11, 0.46, 0.152], [0.08, 0.1, 0.02], 0.03, '#7a2e14', 0, false);
     m.box([sx * 0.11 - 0.02, 0.49, 0.164], [0.03, 0.03, 0.01], 0.01, '#ffffff', 0, false);
@@ -226,14 +250,25 @@ export function snakeHeadModel() {
   }
   m.box([0, 0.09, 0.352], [0.26, 0.035, 0.02], 0.012, '#3a1a2a', 0, false);       // grin
   m.box([0.03, 0.06, 0.4], [0.06, 0.02, 0.14], 0.01, '#f2637a', 8, false);        // flicking tongue
-  return m.done({ wing: [0, 0], leg: [0, 0, 0], head: [0, 0], tail: [0.33] });
+  return m.done({ wing: [0.24, 0.38], leg: [0, 0, 0], head: [0, 0], tail: [0.33] });
 }
-export function snakeSegModel() {
+export function snakeSegModel(kind = 0) {
   const m = new ModelBuilder();
+  const [SNAKE_GREEN, SNAKE_LIGHT, SNAKE_PURPLE] = SNAKE_COLORS[kind] || SNAKE_COLORS[0];
   m.box([0, 0.2, 0], [0.42, 0.38, 0.42], 0.1, SNAKE_GREEN);
   m.box([0, 0.2, 0], [0.43, 0.13, 0.43], 0.06, SNAKE_PURPLE, 0, false);
   m.box([0.1, 0.391, 0.08], [0.08, 0.01, 0.06], 0.004, SNAKE_LIGHT, 0, false);   // clay speckles
   m.box([-0.09, 0.391, -0.1], [0.06, 0.01, 0.05], 0.004, SNAKE_LIGHT, 0, false);
+  if (kind === 1) m.box([0, 0.02, 0], [0.36, 0.03, 0.36], 0.012, '#9be04a', 0, false); // drippy goo underneath
+  return m.done(NO_RIG_SNAKE);
+}
+// A puddle of poison goo the poison snake leaves behind.
+export function gooModel() {
+  const m = new ModelBuilder();
+  m.box([0, 0.02, 0], [0.9, 0.04, 0.75], 0.02, '#8fdc3a', 0, false);
+  m.box([0.18, 0.035, 0.12], [0.36, 0.04, 0.3], 0.02, '#b6f25a', 0, false);
+  m.box([-0.22, 0.04, -0.14], [0.14, 0.05, 0.14], 0.03, '#d4ff8a', 0, false);       // little bubbles
+  m.box([0.05, 0.04, -0.22], [0.1, 0.045, 0.1], 0.025, '#d4ff8a', 0, false);
   return m.done(NO_RIG_SNAKE);
 }
 const NO_RIG_SNAKE = { wing: [0, 0], leg: [0, 0, 0], head: [0, 0], tail: [0] };

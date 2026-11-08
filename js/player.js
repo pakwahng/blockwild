@@ -39,6 +39,7 @@ export class Player {
     if (len > 1) { mx /= len; mz /= len; }
     let speed = this.flying ? (input.sprint ? 16 : 9) : input.sprint ? 5.8 : 4.4;
     if (this.inWater && !this.flying) speed *= 0.55;
+    speed *= this.slow ?? 1;   // e.g. stuck in poison goo
     const wx = (-sy * mz + cy * mx) * speed, wz = (-cy * mz - sy * mx) * speed;
     const accel = this.onGround || this.flying ? 14 : this.inWater ? 6 : 3.5;
     const k = 1 - Math.exp(-accel * dt);

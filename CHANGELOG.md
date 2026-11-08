@@ -2,6 +2,13 @@
 
 The same list is in the game: tap the version number on the front screen, or open **What’s new**.
 
+## 21. New kinds of snake (8 Nov 2026)
+- A new kind of snake joins each night.
+- Poison snake: leaves a trail of green poison goo that lasts 5 seconds. Babies run from it, and it makes you slow.
+- Flying snake: flaps over fences and walls, then swoops down on a baby.
+- Digger snake: wears a hard hat and chews straight through walls. It takes three bonks.
+- Boom snake: fizzes next to a baby, then goes BOOM and blasts the blocks around it. Bonk it while it fizzes to put the fuse out!
+
 ## 20. Wardrobe: your name and clothes (8 Nov 2026)
 - Open the Wardrobe from the front screen or the pause menu to give yourself a name and change your clothes.
 - T-shirts, stripes, hoodies and dresses; shorts, trousers and skirts; caps, beanies, bows and flowers, in 12 colours. Pick your shoe colour and whether you carry your bag.

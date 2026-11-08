@@ -141,6 +141,12 @@ A full day lasts 10 minutes: about 6 minutes of daylight, a pink dusk, roughly 3
 - Snakes slither over a **one-block fence** but not a **two-block wall**.
 - Pick the **toy sword** and tap (or click) to swing. Two bonks and the snake poofs into confetti cubes.
 - At sunrise any remaining snakes leave. Lamps stay bright at night.
+- **Kinds of snake** (`SNAKE_KINDS` in `js/snakes.js`). A new kind joins each night, and a newly unlocked kind comes first that night:
+  - Night 1: **block snake** (green and purple) and **poison snake** (purple and lime). The poison snake leaves a trail of green goo from its tail that lasts 5 seconds. Babies that step in it run off; it slows you to 40% speed.
+  - Night 2: **flying snake** (sky blue, white wings). Flies about 4.5 blocks up over fences and walls, then swoops down when it's close to a baby. Bonk it when it comes low.
+  - Night 3: **digger snake** (clay orange, yellow hard hat). Chews a two-high tunnel through any wall in its way instead of going round. Three bonks.
+  - Night 4: **boom snake** (red and black, with a fuse). Stops next to a baby (or you) and fizzes for 1.8 seconds, then goes BOOM: blocks within about 2.5 blocks are blasted away, babies within 6 run off, and you're blown back. A bonk while it fizzes puts the fuse out.
+- Blocks chewed or blasted go through `smashBlock` in `main.js`, so they save and reach other players. Bedrock and water can't be broken.
 
 ## Chicken king
 
@@ -181,7 +187,7 @@ A full day lasts 10 minutes: about 6 minutes of daylight, a pink dusk, roughly 3
 | `js/version.js` | Version number and the change log shown in What’s new |
 | `js/weather.js` | Rain showers, rain drops and the rainbow |
 | `js/crafting.js` | What digging gives you, crafting recipes, starter bag |
-| `js/snakes.js` | The night snake: spawning, slithering body, spooking babies, sword hits, confetti |
+| `js/snakes.js` | The night snakes and their kinds (poison goo, flying, digging, boom): spawning, slithering body, spooking babies, sword hits, confetti |
 | `js/sky.js` | Day/night clock: sky colours, light tint, sun and moon |
 | `js/net.js` | Play together: room codes, hosting and joining (PeerJS / WebRTC) |
 | `js/models.js` | Rounded-box 3D models for the babies, Lachie and Charli in their outfits (clothes list and `kidModel`), and treats (with leg, head and tail rigs), treat icons, counter faces |
