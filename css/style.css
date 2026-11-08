@@ -294,6 +294,10 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
 .card-table { display: none; align-items: center; gap: 4px; font-size: 12px; color: #ffcf7a; }
 .card-table img { width: 20px; height: 20px; }
 .card.locked .card-table { display: flex; }
+.card.unknown { opacity: 0.6; border-style: dashed; }
+.card.unknown .card-out img { filter: grayscale(1) brightness(0.7); }
+.card-learn { font-size: 12px; color: #ffcf7a; text-align: center; }
+.learn-note { grid-column: 1 / -1; margin: 0 0 4px; font-size: 13px; color: var(--ink-dim); }
 .card-go { display: flex; gap: 6px; width: 100%; }
 .card-go button {
   flex: 1; padding: 9px 4px; border-radius: 10px; border: 0; font-weight: 800; font-size: 14px;
@@ -425,6 +429,7 @@ body.in-wardrobe #tags, body.in-wardrobe #loading { display: none; }
 /* ---------- sewing clothes in the wardrobe ---------- */
 .chip.locked { border-style: dashed; color: var(--ink-dim); }
 .chip.locked.picking { border-color: #ffcf7a; color: var(--ink); }
+.chip.nopattern { opacity: 0.6; }
 .chip .lock { width: 11px; height: 11px; margin-right: 4px; vertical-align: -1px; opacity: 0.8; }
 .sew-box {
   display: flex; flex-direction: column; align-items: center; gap: 6px; margin-top: 8px; padding: 10px;

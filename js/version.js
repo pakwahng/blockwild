@@ -1,11 +1,18 @@
 // The game's version and what changed in each one. Shown on the front screen ("What's new")
 // and in CHANGELOG.md. When you release: bump VERSION, add an entry at the top of CHANGES,
 // and set the same number in sw.js (CACHE = 'blockwild-v<VERSION>') so phones pick it up.
-export const VERSION = 25;
+export const VERSION = 26;
 export const RELEASED = '8 Nov 2026';
 
 // [version, date, headline, [details]]
 export const CHANGES = [
+  [26, '8 Nov 2026', 'Learn recipes and patterns', [
+    'You don’t know how to make everything any more. A new world starts with just wood, sticks, the crafting table, fences, seeds and hay.',
+    'Learn more from recipe pages. They turn up now and then when you dig leaves, grass, stone, sand, clay and snow, and many goals teach you something new when you finish them.',
+    'Recipes you haven’t learned show in your bag as grey cards marked “Not learned yet”.',
+    'Clothes need a pattern too. Only the T-shirt, shorts, no hat and no bag are free; for the rest, find the pattern on a recipe page, then sew it in the Wardrobe from wool and flowers.',
+    'Your saved world keeps every recipe you’ve already used, and you keep any clothes you’ve sewn or are wearing.',
+  ]],
   [25, '8 Nov 2026', 'Name your animals', [
     'Give any baby or grown-up your own name for it. Pat a baby twice to open its card, or tap a grown-up, then type in the Name box.',
     'Its new name shows in all the messages, is kept in your save, and everyone playing together sees it.',

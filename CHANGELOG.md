@@ -2,6 +2,13 @@
 
 The same list is in the game: tap the version number on the front screen, or open **What’s new**.
 
+## 26. Learn recipes and patterns (8 Nov 2026)
+- You don’t know how to make everything any more. A new world starts with just wood, sticks, the crafting table, fences, seeds and hay.
+- Learn more from recipe pages. They turn up now and then when you dig leaves, grass, stone, sand, clay and snow, and many goals teach you something new when you finish them.
+- Recipes you haven’t learned show in your bag as grey cards marked “Not learned yet”.
+- Clothes need a pattern too. Only the T-shirt, shorts, no hat and no bag are free; for the rest, find the pattern on a recipe page, then sew it in the Wardrobe from wool and flowers.
+- Your saved world keeps every recipe you’ve already used, and you keep any clothes you’ve sewn or are wearing.
+
 ## 25. Name your animals (8 Nov 2026)
 - Give any baby or grown-up your own name for it. Pat a baby twice to open its card, or tap a grown-up, then type in the Name box.
 - Its new name shows in all the messages, is kept in your save, and everyone playing together sees it.

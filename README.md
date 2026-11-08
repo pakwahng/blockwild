@@ -73,6 +73,10 @@ Tap a grown-up (hen, cow, pig, sheep or wolf) to pet it and open **Teach a job**
 - Open the **bag** (top right, or E). **Your things** shows what you carry: tap one to put it in the selected hotbar slot. The other tabs (**Wood & tools**, **Farm**, **Building**) show picture cards of what you can make; a yellow dot means a tab has something ready. Each card shows what it needs (have / need).
 - Tap **Make** for one batch, **hold** it to keep making, or tap **All** to use up everything you have.
 - Things marked * need a **crafting table** within 4 blocks. Make the table from 4 wood and place it.
+- **Learning recipes:** a new world knows only how to make wood, sticks, the crafting table, fences, seeds and hay. Everything else you learn first:
+  - **Recipe pages** turn up now and then when you dig (leaves 3%, clay 3%, stone 2.5%, sand and snow 2%, grass 1.5%, dirt 0.8%). A page teaches something you don't know yet, usually something you've already found all the bits for. It could be a crafting recipe or a sewing pattern.
+  - **Goals** teach you what the next goals need: the fence goal teaches the gate, the pen the feeder, hatching the planter box, the feeder the ladder, wheat the door, and so on.
+  - Recipes you haven't learned show in the bag as grey **Not learned yet** cards. Known recipes are kept with your bag (`stats.known`), so they come along when you visit a friend. Worlds from before v26 keep every recipe they've made, picked up or placed. Code: `js/recipes.js`.
 
 | Make | From |
 |---|---|
@@ -137,6 +141,7 @@ Tap a grown-up (hen, cow, pig, sheep or wolf) to pet it and open **Teach a job**
 
 - **Wardrobe** (front screen or pause menu) sets your name (up to 14 letters; blank uses Lachie or Charli), who you are, and your outfit. The camera swings round so you see yourself; drag to turn, **Photo** takes a portrait, **Surprise me!** picks a random outfit.
 - Outfits: top (T-shirt, stripes, hoodie, dress, chick jumper, hero cape), bottoms (shorts, trousers, skirt, dungarees, tutu; hidden with a dress), hat (none, cap, beanie, bow, flower, chick hat, party hat, bunny ears, flower crown), shoe colour and bag on or off, from 12 colours. Each character keeps its own outfit.
+- **Patterns and sewing:** only the T-shirt, shorts, no hat and no bag are free. Every other piece needs its **pattern** (from a recipe page, or a goal: picking flowers teaches the flower hat) and then sewing from wool and flowers (`SEW` in `js/recipes.js`). Pieces with a padlock are locked; faded ones still need their pattern. Patterns and sewn clothes are kept on the device (`settings.patterns`, `settings.sewn`). Devices from before v26 keep everything they'd sewn or anyone was wearing.
 - An outfit is 8 small numbers (`[top, colour, bottoms, colour, hat, colour, shoes, bag]`, see `DEFAULT_FIT` in `js/models.js`). Each character-and-outfit is built as its own model the first time it's seen. Names and outfits travel with player poses in play together.
 - **Sewing:** some pieces have a little padlock. Tap one to see what it needs, then **Sew it!** to unlock it for good on this device. Wool comes from grown-up sheep; flowers grow wild.
 
@@ -225,6 +230,7 @@ A full day lasts 10 minutes: about 6 minutes of daylight, a pink dusk, roughly 3
 | `js/version.js` | Version number and the change log shown in What’s new |
 | `js/weather.js` | Rain showers, rain drops and the rainbow |
 | `js/crafting.js` | What digging gives you, crafting recipes, starter bag |
+| `js/recipes.js` | Learning recipes: starter recipes, sewing patterns (SEW), recipe page chances, what goals teach |
 | `js/snakes.js` | The night snakes and their kinds (poison goo, flying, digging, boom): spawning, slithering body, spooking babies, sword hits, confetti |
 | `js/sky.js` | Day/night clock: sky colours, light tint, sun and moon |
 | `js/net.js` | Play together: room codes, hosting and joining (PeerJS / WebRTC) |

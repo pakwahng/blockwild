@@ -6,6 +6,7 @@ import { Weather } from './weather.js';
 import { Critters, BUTTERFLY_KINDS } from './critters.js';
 import { GOALS, newStats, bump } from './goals.js';
 import { drops, RECIPES, TABS, TOOLS, STARTER, OLD_SAVE_BAG, TABLE_REACH, FEEDER_FILL } from './crafting.js';
+import { STARTER_RECIPES, SEW, patternKey, GOAL_TEACH, PAGE_CHANCE, unlearned, pickPage, oldWorldRecipes } from './recipes.js';
 import { skyAt, CYCLE } from './sky.js';
 import { buildTextures, blockIcon } from './textures.js';
 import * as M from './models.js';
@@ -30,6 +31,13 @@ const coarse = matchMedia('(pointer: coarse)').matches;
 // iPads report themselves as Macs, so also check for a touch screen
 const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 const settings = Object.assign({ view: coarse ? 5 : 7, sens: 1, autoJump: true, showFps: false, sound: true, char: 'lachie', nick: '', fits: {} }, store.get(SET_KEY) || {});
+// Clothes patterns arrived in v26: a device from before then keeps what it has sewn and what anyone is wearing.
+if (!Array.isArray(settings.patterns)) {
+  const keep = new Set(settings.sewn || []);
+  for (const f of Object.values(settings.fits || {})) if (Array.isArray(f)) for (const s of [0, 2, 4, 7]) if (f[s]) keep.add(s + ':' + f[s]);
+  settings.patterns = [...keep];
+  settings.sewn = [...keep];
+}
 const CHARS = ['lachie', 'charli'], CHAR_NAMES = { lachie: 'Lachie', charli: 'Charli' };
 const charOf = c => CHARS.includes(c) ? c : 'lachie';
 // Your own name (blank means the character's name) and outfit; other players' names come over the network.
@@ -130,6 +138,43 @@ function useItem(id, n = 1) {
   updateCounts();
   return true;
 }
+// ---------- learning recipes ----------
+// Recipes you know are kept with your bag (stats.known), so they come along when you visit a friend.
+const knownList = () => Array.isArray(stats.known) ? stats.known : (stats.known = [...STARTER_RECIPES]);
+const knows = r => knownList().includes(r.out);
+const knowsPattern = (slot, v) => !sewOf(slot, v) || (settings.patterns || []).includes(patternKey(slot, v));
+const foundEver = id => have(id) > 0 || !!(stats.got?.[id] || stats.made?.[id] || stats.gifts?.[id]);
+const learnName = u => u.kind === 'r' ? itemName(u.out) : (M[{ 0: 'TOPS', 2: 'BOTTOMS', 4: 'HATS' }[u.slot]] || ['', 'Bag'])[u.v];
+// Learn a recipe or pattern. how: 'page' (found one) or 'goal'. Returns its name, or '' if you knew it already.
+function learn(u, how) {
+  if (!u) return '';
+  if (u.kind === 'r') { if (knownList().includes(u.out)) return ''; knownList().push(u.out); }
+  else {
+    if ((settings.patterns || []).includes(u.key)) return '';
+    settings.patterns = [...(settings.patterns || []), u.key];
+    store.set(SET_KEY, settings);
+  }
+  bump(stats, 'learned');
+  const name = learnName(u);
+  if (how === 'page') {
+    const where = u.kind === 'r' ? 'Look in your bag to make it.' : 'Sew it in the Wardrobe (pause menu).';
+    toast(`📜 You found a recipe page: ${u.kind === 'r' ? name : name + ' (sewing pattern)'}! ${where}`, 4200);
+    sfx.grown(); buzz(20);
+  }
+  return name;
+}
+function teachFromGoal(goal) {
+  const t = GOAL_TEACH[goal];
+  if (t === undefined) return '';
+  if (typeof t === 'number') return learn({ kind: 'r', out: t }, 'goal');
+  const [slot, v] = t.split(':').map(Number);
+  return learn({ kind: 's', key: t, slot, v }, 'goal');
+}
+// Digging now and then turns up a recipe page for something you don't know yet.
+function maybePage(id) {
+  if (Math.random() > (PAGE_CHANCE[id] || 0)) return;
+  learn(pickPage(knownList(), settings.patterns || [], foundEver), 'page');
+}
 // ---------- goals ----------
 const goalProgress = g => Math.min(g[2], g[3](stats));
 const nextGoal = () => GOALS.find(g => !goalsDone.includes(g[0]));
@@ -137,17 +182,18 @@ const rewardText = rw => rw.map(([id, k]) => `${k} ${itemName(id).toLowerCase()}
 let shownGoal = '';
 function checkGoals() {
   if (!world) return;
-  let finished = null;
+  let finished = null, taught = '';
   for (const g of GOALS) {
     if (goalsDone.includes(g[0]) || goalProgress(g) < g[2]) continue;
     goalsDone.push(g[0]);
     for (const [id, k] of g[4]) addItem(id, k, true);
+    taught = teachFromGoal(g[0]) || taught;
     finished = g;
   }
   if (finished) {
     sfx.fanfare();
     const next = nextGoal();
-    toast(`★ Goal done: ${finished[1]}! You got ${rewardText(finished[4])}.` + (next ? '' : ' That’s every goal. Chicken king!'));
+    toast(`★ Goal done: ${finished[1]}! You got ${rewardText(finished[4])}.` + (taught ? ` 📜 You learned how to make: ${taught}!` : '') + (next ? '' : ' That’s every goal. Chicken king!'), taught ? 4500 : undefined);
     const el = $('#goal'); el.classList.remove('done'); void el.offsetWidth; el.classList.add('done');
     saveGame();
   }
@@ -211,10 +257,10 @@ function atTable() {
   const [x, y, z] = player.pos;
   return world.placedNear(x, z, TABLE_REACH, id => id === B.TABLE).some(t => Math.abs(t[1] - y) <= 3);
 }
-function canMake(r) { return timesYouCan(r) > 0 && (!r.table || atTable()); }
+function canMake(r) { return knows(r) && timesYouCan(r) > 0 && (!r.table || atTable()); }
 function craft(r, times = 1) {
   times = Math.min(times, timesYouCan(r));
-  if (times <= 0 || (r.table && !atTable())) return 0;
+  if (times <= 0 || !knows(r) || (r.table && !atTable())) return 0;
   for (const [id, k] of r.needs) useItem(id, k * times);
   addItem(r.out, r.n * times, true);
   bump(stats, 'made', r.out, times);
@@ -331,6 +377,8 @@ function startWorld(save) {
     if (old && !(save.v >= 2)) hotbar = [...TREATS, ...hotbar.filter(id => !isTreat(id))].slice(0, 9);
     if (old && !(save.v >= 3) && !hotbar.includes(ITEM_SWORD)) hotbar[5] = ITEM_SWORD; // the toy sword arrives
     stats = Object.assign(newStats(), save?.stats || {}); goalsDone = [...(save?.goals || [])];
+    // recipes have to be learned since v26; a world from before keeps what it has already made or found
+    if (!Array.isArray(stats.known)) stats.known = old ? oldWorldRecipes(save.stats, save.inv, goalsDone) : [...STARTER_RECIPES];
     if (save?.inv) inv = { ...save.inv };
     else if (old) {
       // a world from before you had to collect things: a generous bag, plus a stack of what was on the hotbar
@@ -1038,6 +1086,7 @@ function updateBreaking(dt) {
   if (breakT.p >= 1) {
     bump(stats, 'dug', target.id);
     const got = drops(target.id);
+    maybePage(target.id);
     for (const [item, n] of got) { addItem(item, n); bump(stats, 'got', item, n); }
     pickupPop(target, got);
     // let water flow back into a hole next to water
@@ -1089,7 +1138,7 @@ let hintCool = 0;
 function emptyHint(id) {
   if (performance.now() < hintCool) return;
   hintCool = performance.now() + 4000;
-  const made = RECIPES.find(r => r.out === id);
+  const made = RECIPES.find(r => r.out === id && knows(r));
   toast(made ? `You’re out of ${itemName(id).toLowerCase()}. Open your bag to make more.` : `You’re out of ${itemName(id).toLowerCase()}. Dig or find some more.`);
 }
 function selectSlot(i) {
@@ -1153,7 +1202,27 @@ function buildMake() {
   list.innerHTML = '';
   cards = [];
   $('#bag-body').scrollTop = 0;
-  for (const r of RECIPES.filter(q => q.tab === bagTab)) {
+  const here = RECIPES.filter(q => q.tab === bagTab);
+  if (here.length) {
+    const k = here.filter(knows).length, all = RECIPES.filter(knows).length;
+    const note = document.createElement('p');
+    note.className = 'learn-note';
+    note.textContent = k < here.length
+      ? `You know ${all} of ${RECIPES.length} recipes. Learn more from recipe pages: they turn up when you dig leaves, grass, stone and sand, and when you finish goals.`
+      : `You know every recipe here!`;
+    list.appendChild(note);
+  }
+  // the ones you know first, then the ones still to learn
+  for (const r of [...here.filter(knows), ...here.filter(q => !knows(q))]) {
+    if (!knows(r)) {
+      const c = document.createElement('div');
+      c.className = 'card unknown';
+      c.innerHTML = `<div class="card-out"><img alt="" src="${icons[r.out]}"></div><div class="card-name">${itemName(r.out)}</div>` +
+        `<div class="card-learn">📜 Not learned yet</div>`;
+      c.setAttribute('aria-label', `${itemName(r.out)}: not learned yet. Find a recipe page to learn it.`);
+      list.appendChild(c);
+      continue;
+    }
     const c = document.createElement('div');
     c.className = 'card';
     c.innerHTML = `<div class="card-out"><img alt="" src="${icons[r.out]}">${r.n > 1 ? `<b class="times">×${r.n}</b>` : ''}</div>` +
@@ -1257,24 +1326,21 @@ function resume() {
 // ---------- wardrobe: your name, your character and what you wear ----------
 // While it's open the camera swings round to look at you, so you can see your outfit change.
 const wardrobe = { open: false, spin: 0, drag: null, idle: 0 };
-// Clothes you sew yourself in the Wardrobe, from wool (grown-up sheep leave it) and flowers.
-// The basics are free; these unlock on this device once you've sewn them.
-const SEW = [
-  { slot: 0, v: 4, needs: [[B.WOOL, 3], [B.FLOWER_YELLOW, 1]] },                          // chick jumper
-  { slot: 0, v: 5, needs: [[B.WOOL, 4], [B.FLOWER_RED, 1]] },                             // hero cape
-  { slot: 2, v: 3, needs: [[B.WOOL, 4], [ITEM_STICK, 1]] },                               // dungarees
-  { slot: 2, v: 4, needs: [[B.WOOL, 2], [B.FLOWER_WHITE, 2]] },                           // tutu
-  { slot: 4, v: 5, needs: [[B.WOOL, 2], [ITEM_EGG, 1]] },                                 // chick hat
-  { slot: 4, v: 6, needs: [[B.WOOL, 2], [B.FLOWER_RED, 1], [B.FLOWER_YELLOW, 1]] },       // party hat
-  { slot: 4, v: 7, needs: [[B.WOOL, 2], [ITEM_CLOVER, 1]] },                              // bunny ears
-  { slot: 4, v: 8, needs: [[B.FLOWER_RED, 2], [B.FLOWER_YELLOW, 2], [B.FLOWER_WHITE, 2]] }, // flower crown
-];
+// Clothes you sew yourself in the Wardrobe (the list is SEW in recipes.js). You need the pattern first, then the bits.
+// Patterns you know and clothes you've sewn are kept on this device (settings.patterns, settings.sewn).
 const sewOf = (slot, v) => SEW.find(s => s.slot === slot && s.v === v);
 const isSewn = (slot, v) => !sewOf(slot, v) || (settings.sewn || []).includes(slot + ':' + v);
 const LOCK_SVG = '<svg class="lock" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 7V5a4 4 0 0 1 8 0v2" fill="none" stroke="currentColor" stroke-width="2"/><rect x="2.5" y="7" width="11" height="8" rx="2" fill="currentColor"/></svg>';
 function sewBox(slot, v, name) {
   const s = sewOf(slot, v), box = document.createElement('div'), can = s.needs.every(([id, k]) => have(id) >= k);
   box.className = 'sew-box';
+  if (!knowsPattern(slot, v)) {
+    // no pattern yet: you can see what it'll need, but not sew it
+    box.innerHTML = `<b>📜 You need the pattern for ${/^[aeiou]/i.test(name) ? 'an' : 'a'} ${name.toLowerCase()}</b>` +
+      `<span class="sew-needs">${s.needs.map(([id, k]) => `<span><img alt="" src="${icons[id]}"><em>${k}</em>${itemName(id)}</span>`).join('')}</span>` +
+      `<p class="note">Patterns are on recipe pages. You find them when you dig leaves, grass, stone and sand, and when you finish goals.</p>`;
+    return box;
+  }
   box.innerHTML = `<b>Sew ${/^[aeiou]/i.test(name) ? 'an' : 'a'} ${name.toLowerCase()}</b><span class="sew-needs">${s.needs.map(([id, k]) =>
     `<span class="${have(id) >= k ? '' : 'short'}"><img alt="" src="${icons[id]}"><em>${Math.min(have(id), k)}/${k}</em>${itemName(id)}</span>`).join('')}</span>` +
     `<button type="button" class="primary sew-go"${can ? '' : ' disabled'}>Sew it!</button>` +
@@ -1321,8 +1387,10 @@ function buildWardrobe() {
         const b = document.createElement('button');
         const open = isSewn(r.style, v), picking = wardrobe.sewing && wardrobe.sewing[0] === r.style && wardrobe.sewing[1] === v;
         b.type = 'button'; b.className = 'chip' + (f[r.style] === v ? ' on' : '') + (open ? '' : ' locked') + (picking ? ' picking' : '');
+        const pattern = knowsPattern(r.style, v);
+        if (!pattern) b.classList.add('nopattern');
         b.innerHTML = open ? name : LOCK_SVG + name;
-        if (!open) b.setAttribute('aria-label', name + ' (sew it to unlock)');
+        if (!open) b.setAttribute('aria-label', name + (pattern ? ' (sew it to unlock)' : ' (find its pattern first)'));
         b.addEventListener('click', () => { if (open) { wardrobe.sewing = null; setFit(r.style, v); } else { wardrobe.sewing = picking ? null : [r.style, v]; buildWardrobe(); } });
         chips.appendChild(b);
       });
@@ -1409,7 +1477,7 @@ for (const b of document.querySelectorAll('#ward-char .chip')) {
 $('#ward-random').addEventListener('click', () => {
   const r = n => Math.random() * n | 0, c = M.CLOTH_COLORS.length;
   const pick = (slot, n) => { const ok = [...Array(n).keys()].filter(v => isSewn(slot, v)); return ok[r(ok.length)]; };
-  const f = [pick(0, M.TOPS.length), r(c), pick(2, M.BOTTOMS.length), r(c), pick(4, M.HATS.length), r(c), r(c), r(2)];
+  const f = [pick(0, M.TOPS.length), r(c), pick(2, M.BOTTOMS.length), r(c), pick(4, M.HATS.length), r(c), r(c), pick(7, 2)];
   wardrobe.sewing = null;
   settings.fits = { ...(settings.fits || {}), [settings.char]: f };
   store.set(SET_KEY, settings);
@@ -1982,7 +2050,7 @@ function frame(now, photo = false) {
 requestAnimationFrame(loop);
 
 // handy for debugging from the console
-window.blockwild = { get world() { return world; }, get player() { return player; }, get target() { return target; }, get flock() { return flock; }, get nursery() { return flock; }, get snakes() { return snakes; }, get raiders() { return raiders; }, get weather() { return weather; }, get critters() { return critters; }, wardrobe, selfieCam, petBaby, openJobs, get inv() { return inv; }, addItem, RECIPES, craft, input, raycast,
+window.blockwild = { get known() { return knownList(); }, learn, unlearned: () => unlearned(knownList(), settings.patterns || []), get settings() { return settings; }, get world() { return world; }, get player() { return player; }, get target() { return target; }, get flock() { return flock; }, get nursery() { return flock; }, get snakes() { return snakes; }, get raiders() { return raiders; }, get weather() { return weather; }, get critters() { return critters; }, wardrobe, selfieCam, petBaby, openJobs, get inv() { return inv; }, addItem, RECIPES, craft, input, raycast,
   get clock() { return clock; }, setTime(t) { clock = t; }, swing: () => swing(),
   net, others, get myNetId() { return myNetId; },
   get seat() { return seat; }, awardCrown: () => awardCrown(), sit: (x, y, z) => sit(x, y, z), standUp: () => standUp(),
