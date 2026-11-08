@@ -10,7 +10,7 @@ import { STARTER_RECIPES, SEW, patternKey, GOAL_TEACH, PAGE_CHANCE, unlearned, p
 import { skyAt, CYCLE } from './sky.js';
 import { buildTextures, blockIcon } from './textures.js';
 import * as M from './models.js';
-import { Nursery, SPECIES, SPECIES_ORDER, isTreat, GIFTS, BABY_NAMES, cleanAnimalNick } from './animals.js';
+import { Nursery, SPECIES, SPECIES_ORDER, isTreat, GIFTS, BABY_NAMES, cleanAnimalNick, ANIMAL_HATS } from './animals.js';
 import { Sfx } from './audio.js';
 import { World, CS, CH } from './world.js';
 import { buildMesh } from './mesher.js';
@@ -58,6 +58,7 @@ try {
   renderer.addModel('piglet', M.pigletModel());
   renderer.addModel('lamb', M.lambModel());
   renderer.addModel('pup', M.pupModel());
+  for (const k of M.HATTED) for (let h = 1; h <= ANIMAL_HATS; h++) renderer.addModel(k + '~' + h, M.animalHatModel(k, h));
   renderer.addModel('seed', M.seedModel());
   renderer.addModel('wheat', M.wheatModel());
   renderer.addModel('apple', M.appleModel());
@@ -1127,6 +1128,32 @@ function nameAnimal(a, text) {
 }
 $('#job-name').addEventListener('change', () => nameAnimal(jobAnimal, $('#job-name').value));
 $('#job-name').addEventListener('keydown', e => { if (e.key === 'Enter') $('#job-name').blur(); e.stopPropagation(); });
+// Hats for your animals: any hat you've sewn (or got free) in the Wardrobe.
+function buildHatChips(a) {
+  const box = $('#job-hats');
+  box.textContent = '';
+  for (let h = 0; h <= ANIMAL_HATS; h++) {
+    if (h && !isSewn(4, h)) continue;
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'chip' + ((a.hat || 0) === h ? ' on' : '');
+    b.textContent = M.HATS[h];
+    b.addEventListener('click', () => setAnimalHat(a, h));
+    box.appendChild(b);
+  }
+  if (box.children.length === 1) {
+    const p = document.createElement('span');
+    p.className = 'note'; p.textContent = 'Sew a hat in the Wardrobe and your animals can wear one too.';
+    box.appendChild(p);
+  }
+}
+function setAnimalHat(a, h) {
+  if (!a || (a.hat || 0) === h) return;
+  if (net.isGuest) { net.toHost({ t: 'hat', id: a.id, hat: h }); a.hat = h; } else flock.setHat(a.id, h);
+  if (h) { bump(stats, 'hatted'); sfx.happy(); sfx.call(a.sp, 0.45); floatFx([a.p[0], a.p[1] + a.S.height * 0.8, a.p[2]], 'heart'); buzz(12); }
+  else sfx.place();
+  buildHatChips(a);
+  saveGame();
+}
 // A job costs the animal's favourite treat, or a fish if you've none of that (every grown-up likes fish).
 const jobPay = a => have(a.S.treat) || !have(ITEM_FISH) ? a.S.treat : ITEM_FISH;
 function buildJobs() {
@@ -1135,6 +1162,7 @@ function buildJobs() {
   const list = $('#job-list');
   list.innerHTML = '';
   list.hidden = baby; $('#job-note').hidden = baby;
+  buildHatChips(a);
   if (baby) {
     // babies can have a name, but they're too little to work
     $('#job-title').textContent = callName(a.name, a.sp, 'Your', a.nick);
@@ -1877,7 +1905,7 @@ function netStep(dt) {
   for (const [id] of net.conns) {
     const o = others.get(id);
     // animals go every other update (about 4 a second): the copies glide in between
-    net.send(id, sendAnimals ? { ...common, a: flock.snapshot(o ? o.tp : player.pos, 64), nk: flock.nickSnapshot() } : common);
+    net.send(id, sendAnimals ? { ...common, a: flock.snapshot(o ? o.tp : player.pos, 64), nk: flock.nickSnapshot(), ht: flock.hatSnapshot() } : common);
   }
 }
 
@@ -1928,6 +1956,7 @@ function hostMessage(from, msg) {
     case 'pet': if (typeof msg.id === 'number') flock.pet(msg.id); break;
     case 'train': if (typeof msg.id === 'number' && (msg.job === null || JOB_TEXT[msg.job])) flock.train(msg.id, msg.job, from); break;
     case 'nick': if (typeof msg.id === 'number') flock.setNick(msg.id, msg.nick); break;
+    case 'hat': if (typeof msg.id === 'number') flock.setHat(msg.id, msg.hat); break;
     case 'sit': flock.gatherAt(msg.seat, msg.front); break;
     case 'stand': flock.endGather(); break;
   }
@@ -1948,7 +1977,7 @@ function guestMessage(msg) {
       if (Math.abs(msg.clock - clock) > 0.002 && Math.abs(msg.clock - clock) < 0.998) clock = msg.clock;
       nights = msg.nights;
       flock.remoteCounts = msg.counts;
-      if (msg.a) { flock.applySnapshot(msg.a); flock.applyNicks(msg.nk); }
+      if (msg.a) { flock.applySnapshot(msg.a); flock.applyNicks(msg.nk); flock.applyHats(msg.ht); }
       flock.applyTreats(msg.tr || []);
       flock.applyGifts(msg.gf || []);
       // events first, so a snake that just poofed is still here to burst into confetti

@@ -2,6 +2,12 @@
 
 The same list is in the game: tap the version number on the front screen, or open **What’s new**.
 
+## 29. Hats for your animals (8 Nov 2026)
+- Your animals can wear hats now! Tap one of your babies twice, or a grown-up once, and pick a hat on its card.
+- Any hat you’ve sewn in the Wardrobe can go on any animal: a party hat on a hen, a flower crown on a cow, bunny ears on a wolf…
+- Everyone playing together sees the hats, and they’re kept in your save.
+- New goal: put a hat on one of your animals.
+
 ## 28. Treasure chests (8 Nov 2026)
 - Treasure chests are hidden about the world, out on the grass, sand and snow. When one is close by, a gold Treasure tag shows you the way.
 - Tap a chest to open it: inside are two goodies (apples, wool, eggs, fish, a lamp…) and, most of the time, a recipe page.

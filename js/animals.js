@@ -33,6 +33,8 @@ export const BABY_NAMES = ['Nugget', 'Peep', 'Biscuit', 'Pudding', 'Pip', 'Waffl
 export const babyName = a => a.nick || BABY_NAMES[a.name | 0] || 'Baby';
 // A name typed by a player: no control characters, at most 14 letters.
 export const cleanAnimalNick = s => typeof s === 'string' ? s.replace(/[\u0000-\u001f]/g, '').trim().slice(0, 14) : '';
+export const ANIMAL_HATS = 8; // hats 1..8 from the Wardrobe can go on animals too
+const cleanHat = h => Number.isInteger(h) && h > 0 && h <= ANIMAL_HATS ? h : 0;
 
 export const SPECIES_ORDER = ['chick', 'calf', 'piglet', 'lamb', 'pup'];
 export const SPECIES = {
@@ -80,7 +82,7 @@ export class Nursery {
       spot: null, enjoy: 0, look: Math.random() * 3,
       tame, age, call: 2 + Math.random() * 10, born: 0,
       grow: 0, name: Math.random() * BABY_NAMES.length | 0, gift: GIFT_TIME[0] * Math.random(), bite: 0,
-      job: null, trainer: 0, task: null, carry: 0, fails: 0, lost: 0, nick: '',
+      job: null, trainer: 0, task: null, carry: 0, fails: 0, lost: 0, nick: '', hat: 0,
     };
     this.animals.push(a);
     return a;
@@ -175,6 +177,18 @@ export class Nursery {
   applyNicks(list) {
     const m = new Map(Array.isArray(list) ? list : []);
     for (const a of this.animals) a.nick = cleanAnimalNick(m.get(a.id));
+  }
+  // Hats: 0 none, or a hat from the Wardrobe list (models.js HATS). Shared like names.
+  setHat(id, hat) {
+    const a = this.animals.find(q => q.id === id);
+    if (!a || !a.tame) return false;
+    a.hat = cleanHat(hat);
+    return true;
+  }
+  hatSnapshot() { return this.animals.filter(a => a.hat).map(a => [a.id, a.hat]); }
+  applyHats(list) {
+    const m = new Map(Array.isArray(list) ? list : []);
+    for (const a of this.animals) a.hat = cleanHat(m.get(a.id));
   }
 
   // A player teaches a tame grown-up a job (or null to let it stop and play). by: who taught it, who it brings things to.
@@ -890,7 +904,9 @@ export class Nursery {
       const pop = a.born > 0 ? 1 - a.born / 0.6 : 1;
       const scale = grow * (pop < 1 ? 0.3 + 0.7 * pop : 1);
       a._sc = scale;
-      const model = a.sp === 'chick' && a.grow >= 1 ? 'hen' : a.sp;
+      const model = (a.sp === 'chick' && a.grow >= 1 ? 'hen' : a.sp) + (a.hat ? '~' + a.hat : '');
+      if (!buf[model] || buf[model].length < this.animals.length * 12) need(model, this.animals.length);
+      if (cnt[model] === undefined) cnt[model] = 0;
       const hs = Math.hypot(a.v[0], a.v[2]);
       const moving = hs > 0.2 && a.onGround;
       let hop, flap, squash, nod = 0;
@@ -933,7 +949,7 @@ export class Nursery {
       sh[si++] = scale * S.shadow * Math.max(0.4, 1 - lift * 0.3); sh[si++] = 0; sh[si++] = 0; sh[si++] = 0;
       si += 4;
     }
-    const groups = [...SPECIES_ORDER, 'hen'].map(sp => ({ model: sp, data: buf[sp], count: cnt[sp] }));
+    const groups = Object.keys(cnt).map(m => ({ model: m, data: buf[m], count: cnt[m] }));
 
     // the grown-ups' gifts: bob gently and turn so they catch your eye
     const gcnt = {};
@@ -975,12 +991,12 @@ export class Nursery {
   }
 
   serialize() {
-    return this.animals.filter(a => a.tame).map(a => [SPECIES_ORDER.indexOf(a.sp), +a.p[0].toFixed(2), +a.p[1].toFixed(2), +a.p[2].toFixed(2), Math.min(999, Math.round(a.age)), +a.grow.toFixed(4), a.name, a.job ? JOBS.indexOf(a.job) : 0, a.nick || 0]);
+    return this.animals.filter(a => a.tame).map(a => [SPECIES_ORDER.indexOf(a.sp), +a.p[0].toFixed(2), +a.p[1].toFixed(2), +a.p[2].toFixed(2), Math.min(999, Math.round(a.age)), +a.grow.toFixed(4), a.name, a.job ? JOBS.indexOf(a.job) : 0, a.nick || 0, a.hat || 0]);
   }
   load(list) {
-    for (const [s, x, y, z, age, grow, name, job, nick] of list || []) {
+    for (const [s, x, y, z, age, grow, name, job, nick, hat] of list || []) {
       const a = SPECIES_ORDER[s] && this.add(SPECIES_ORDER[s], x, y, z, true, age);
-      if (a) { a.grow = Math.max(0, Math.min(1, grow || 0)); if (BABY_NAMES[name]) a.name = name; if (a.grow >= 1) a.job = JOBS[job] || null; a.nick = cleanAnimalNick(nick); }
+      if (a) { a.grow = Math.max(0, Math.min(1, grow || 0)); if (BABY_NAMES[name]) a.name = name; if (a.grow >= 1) a.job = JOBS[job] || null; a.nick = cleanAnimalNick(nick); a.hat = cleanHat(hat); }
     }
   }
   serializeGifts() { return this.gifts.map(g => [g.item, g.n, +g.p[0].toFixed(2), +g.p[1].toFixed(2), +g.p[2].toFixed(2)]); }

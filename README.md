@@ -148,6 +148,7 @@ Tap a grown-up (hen, cow, pig, sheep or wolf) to pet it and open **Teach a job**
 
 - Every baby gets a name when it's born (from a list of 45 in `js/animals.js`). Toasts use it: "Pudding the lamb grew up into a sheep!", "Jellybean the wolf pup loves that!".
 - **Your own names:** pat a baby twice in a row (or tap a grown-up) and type in the **Name** box on its card (up to 14 letters). The name goes into toasts and the save, and the host shares it with everyone playing together (`nk` in the state message). Clear the box to go back to its born name.
+- **Animal hats:** the card (pat a baby twice, or tap a grown-up) has a **Hat** row with every hat you've sewn or got free in the Wardrobe. Each species has its own hat spot (`HAT_SPOT` in `js/models.js`); `animalHatModel()` adds the Wardrobe hat to the animal's model as part 10, so it nods with the head. Hatted models are named like `hen~6`. Hats are saved with the animal and shared like names (`ht` in the state message, `'hat'` from guests).
 - **Ambient sounds:** birds sing now and then by day and crickets trill at night when you're outside and above water (`bird()` and `cricket()` in `js/audio.js`).
 - **Rain** comes now and then (about 1–2 minutes, every 3–8 minutes; the host decides). The sky greys, drops fall and stop on roofs, and planter wheat grows 2.5× faster. When a shower ends by day, a rainbow shows opposite the sun for about 45 seconds. Code: `js/weather.js`.
 - More than 35 m from your tame babies, a **Nursery** tag at the screen edge points the way back.

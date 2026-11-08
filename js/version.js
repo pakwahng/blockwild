@@ -1,11 +1,17 @@
 // The game's version and what changed in each one. Shown on the front screen ("What's new")
 // and in CHANGELOG.md. When you release: bump VERSION, add an entry at the top of CHANGES,
 // and set the same number in sw.js (CACHE = 'blockwild-v<VERSION>') so phones pick it up.
-export const VERSION = 28;
+export const VERSION = 29;
 export const RELEASED = '8 Nov 2026';
 
 // [version, date, headline, [details]]
 export const CHANGES = [
+  [29, '8 Nov 2026', 'Hats for your animals', [
+    'Your animals can wear hats now! Tap one of your babies twice, or a grown-up once, and pick a hat on its card.',
+    'Any hat you’ve sewn in the Wardrobe can go on any animal: a party hat on a hen, a flower crown on a cow, bunny ears on a wolf…',
+    'Everyone playing together sees the hats, and they’re kept in your save.',
+    'New goal: put a hat on one of your animals.',
+  ]],
   [28, '8 Nov 2026', 'Treasure chests', [
     'Treasure chests are hidden about the world, out on the grass, sand and snow. When one is close by, a gold Treasure tag shows you the way.',
     'Tap a chest to open it: inside are two goodies (apples, wool, eggs, fish, a lamp…) and, most of the time, a recipe page.',

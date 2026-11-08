@@ -713,6 +713,26 @@ function kidHat(m, fit, w, h, d, top) {
     }
   }
 }
+
+// ---- hats for the animals ----
+// Where a hat sits on each animal: [top of the head, how far forward, head width, head depth].
+const HAT_SPOT = {
+  chick: [0.56, 0, 0.5, 0.46], hen: [0.715, 0.19, 0.26, 0.25], calf: [0.89, 0.3, 0.42, 0.34],
+  piglet: [0.63, 0.27, 0.38, 0.3], lamb: [0.98, 0.29, 0.38, 0.28], pup: [0.8, 0.22, 0.42, 0.34],
+};
+const HAT_TINT = { 1: 5, 2: 0, 3: 8, 4: 8, 5: 0, 6: 7, 7: 8, 8: 0 }; // a cheerful colour for each hat
+const BASE_MODEL = { chick: chickModel, hen: henModel, calf: calfModel, piglet: pigletModel, lamb: lambModel, pup: pupModel };
+export const HATTED = Object.keys(HAT_SPOT);
+// An animal's model with a hat on (the hat is part 10, so it nods along with the head).
+export function animalHatModel(kind, hat) {
+  const base = BASE_MODEL[kind](), [top, z, w, d] = HAT_SPOT[kind], m = new ModelBuilder();
+  kidHat(m, [0, 0, 0, 0, hat, HAT_TINT[hat], 0, 0], w, 0, d, top);
+  for (let k = 2; k < m.v.length; k += 10) m.v[k] += z;
+  const n = base.verts.length / 10, verts = new Float32Array(base.verts.length + m.v.length), idx = new Uint16Array(base.idx.length + m.i.length);
+  verts.set(base.verts); verts.set(m.v, base.verts.length);
+  idx.set(base.idx); idx.set(m.i.map(i => i + n), base.idx.length);
+  return { verts, idx, rig: base.rig };
+}
 // A kid in an outfit. char picks the face and hair (Lachie or Charli); fit is what they're wearing.
 export function kidModel(char, fit) {
   const m = new ModelBuilder(), H = 10;
