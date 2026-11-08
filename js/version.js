@@ -1,11 +1,17 @@
 // The game's version and what changed in each one. Shown on the front screen ("What's new")
 // and in CHANGELOG.md. When you release: bump VERSION, add an entry at the top of CHANGES,
 // and set the same number in sw.js (CACHE = 'blockwild-v<VERSION>') so phones pick it up.
-export const VERSION = 29;
+export const VERSION = 30;
 export const RELEASED = '8 Nov 2026';
 
 // [version, date, headline, [details]]
 export const CHANGES = [
+  [30, '8 Nov 2026', 'Save and load, and coloured wool', [
+    'New on the menu: Saved games. Save the world you’re playing in one of 5 slots, give it a name, and load it again any time.',
+    'Download a backup to keep your world safe in a file, or to move it to another phone or computer. Load a backup brings it back (with the clothes patterns you’ve learned too).',
+    'Your world still saves itself as you play, and loading always asks first, so nothing gets lost by accident.',
+    'Dye wool to build in colour: red, orange, yellow, pink and green wool, made from 2 wool and a flower (or clover). Learn each one from a recipe page.',
+  ]],
   [29, '8 Nov 2026', 'Hats for your animals', [
     'Your animals can wear hats now! Tap one of your babies twice, or a grown-up once, and pick a hat on its card.',
     'Any hat you’ve sewn in the Wardrobe can go on any animal: a party hat on a hen, a flower crown on a cow, bunny ears on a wolf…',

@@ -121,12 +121,25 @@
         </div>
         <div id="new-world" hidden>
           <label class="field">Seed <input id="seed-input" type="text" inputmode="numeric" placeholder="Random"></label>
-          <p class="warn">Starting a new world replaces your saved one.</p>
+          <p class="warn">Starting a new world replaces the one you’re playing. To keep it, save it in a slot first (Saved games, below).</p>
           <button id="btn-create" class="primary">Create world</button>
         </div>
         <details class="settings" id="whats-new">
           <summary>What’s new</summary>
           <div id="changelog" class="changelog"></div>
+        </details>
+        <details class="settings" id="saves">
+          <summary>Saved games</summary>
+          <p class="note">Your world saves itself as you play. To keep a copy, save it in a slot, then load it any time. Download a backup to keep it safe or move it to another device.</p>
+          <label class="save-name"><span>Name</span><input id="save-name" type="text" maxlength="20" autocomplete="off" spellcheck="false" placeholder="My world"></label>
+          <div id="save-slots" class="save-slots"></div>
+          <div class="save-file">
+            <button type="button" id="btn-export" class="secondary">Download a backup</button>
+            <button type="button" id="btn-import" class="secondary">Load a backup</button>
+            <input type="file" id="import-file" accept=".json,application/json" hidden>
+          </div>
+          <p id="save-msg" class="note" role="status" hidden></p>
+          <p id="save-busy" class="note" hidden>Saving and loading are off while you play together.</p>
         </details>
         <details class="settings" id="together">
           <summary>Play together</summary>
@@ -158,6 +171,7 @@
             <p><b>Baby animals:</b> each baby has a favourite treat: seeds for chicks, wheat for calves, apples for piglets, clover for lambs and a bone for wolf pups. Hold a treat and those babies follow you. Tap to throw it: a baby that eats one joins your nursery, and two fed babies of the same kind make a new baby. Calves like to munch beside hay and piglets love to roll in mud. Animals can’t hop over wood, hay or walls, so build a pen to keep them.</p>
             <p><b>Growing up:</b> babies in your nursery slowly grow up (about seven minutes) into a hen, cow, pig, sheep or wolf. Grown-ups leave gifts on the ground: walk over them to pick them up. Hens lay eggs (throw one and a chick hatches where it lands), cows give milk (throw it near a baby and it drinks it to grow up faster), sheep leave wool for building and pigs dig up apples. Grown wolves guard the nursery and chase off foxes and snakes.</p>
             <p><b>Jobs:</b> tap a grown-up to teach it a job. It costs one of its favourite treats. Workers <b>fetch wood</b> (logs), <b>fetch stone</b> (cobble) or <b>find seeds</b> near you by day and carry what they get back to you on their back. Or teach it to <b>follow you</b> everywhere, like a pet. Tap it again and pick <b>Just play</b> to stop.</p>
+            <p><b>Saved games:</b> your world saves itself, but on the menu you can also save it in one of 5 slots and load it again later, or download a backup file to keep it safe or move it to another device.</p>
             <p><b>Treasure:</b> chests are hidden about the world. When one is near, a gold Treasure tag points the way. Tap it to open it for goodies and, most times, a recipe page.</p>
             <p><b>Fishing:</b> once you’ve learned the fishing rod, make it at a crafting table. Hold it and tap to cast into water. When the float bobs under, tap quickly to reel in a fish (or something else!). Any grown-up will take a fish to learn a job.</p>
             <p><b>Names and hats:</b> pat a baby twice, or tap a grown-up, and type your own name for it in the <b>Name</b> box. Pick a <b>Hat</b> for it too: any hat you’ve sewn in the Wardrobe.</p>

@@ -87,6 +87,10 @@ Tap a grown-up (hen, cow, pig, sheep or wolf) to pet it and open **Teach a job**
 | Sword * | 2 Wood + 1 Stick |
 | 3 Ladders * | 7 Sticks |
 | Fishing rod * | 3 Sticks, 1 Wool |
+| 2 Red / Yellow wool | 2 Wool, 1 red / yellow flower |
+| 2 Orange wool | 2 Wool, 1 red flower, 1 yellow flower |
+| 2 Pink wool | 2 Wool, 1 red flower, 1 white flower |
+| 2 Green wool | 2 Wool, 1 clover |
 | 4 Fence * | 2 Wood + 2 Sticks |
 | 1 Gate * | 2 Wood + 4 Sticks |
 | Feeder * | 3 Wood |
@@ -174,6 +178,13 @@ Tap a grown-up (hen, cow, pig, sheep or wolf) to pet it and open **Teach a job**
 
 - **Surprise me!** only picks pieces you've already got. The list is `SEW` in `js/main.js`; what's sewn is saved with your settings.
 - More designs and colours to sew later.
+
+## Saved games
+
+- The world you're playing saves itself (every 10 seconds, and when you pause or switch away) to `blockwild.save.v1` in the browser's storage. **Continue** loads it.
+- **Saved games** on the menu keeps up to **5 named copies** on the device (`blockwild.slot.0`–`4`, listed in `blockwild.slots.v1` with name, time and number of animals). **Save here** copies the world you're playing into a slot (asking before it saves over one); **Load** swaps it in as the world you're playing (asking first). Loading never deletes a slot.
+- **Download a backup** saves a `.json` file with the world and your learned clothes patterns. **Load a backup** reads one back, on any device. Files that aren't a world are turned away and nothing changes; the bag is cleaned on load so only real items come in.
+- Saving and loading are off while you play together (host or guest). A save is usually a few KB; if the device runs out of room you're told, and the world you're playing is kept.
 
 ## Version and what's new
 

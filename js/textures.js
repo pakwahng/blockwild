@@ -51,6 +51,16 @@ function woodGrain(rnd, lines, vertical) {
   };
 }
 
+// Fluffy wool: lots of little round curls with soft shadows between them.
+function woolPainter(rnd, light, dark) {
+  const base = hex(light), shade = hex(dark);
+  const curls = blobs(rnd, 14, 0.09, 0.14);
+  return (u, v) => {
+    const [b] = curls(u, v);
+    return scale(mix(shade, base, sstep(0.05, 0.6, b)), rim(u, v, 0.12, 0.14));
+  };
+}
+
 const painters = {
   [T.GRASS_TOP]: rnd => {
     const base = hex('#62c24a'), dark = hex('#4fae3e'), light = hex('#7fd35f');
@@ -290,15 +300,13 @@ const painters = {
       return mix(inside, shade, sstep(0.13, 0.3, 0.5 - Math.abs(v - 0.5)) * 0.5 + (v < 0.35 ? 0.4 : 0));
     };
   },
-  [T.WOOL]: rnd => {
-    // fluffy cream wool: lots of little round curls with soft shadows between them
-    const base = hex('#fbf6ec'), shade = hex('#e6dccb');
-    const curls = blobs(rnd, 14, 0.09, 0.14);
-    return (u, v) => {
-      const [b] = curls(u, v);
-      return scale(mix(shade, base, sstep(0.05, 0.6, b)), rim(u, v, 0.12, 0.14));
-    };
-  },
+  [T.WOOL]: rnd => woolPainter(rnd, '#fbf6ec', '#e6dccb'),
+  // wool dyed with flowers and clover
+  [T.WOOL_RED]: rnd => woolPainter(rnd, '#e8524a', '#c63a34'),
+  [T.WOOL_ORANGE]: rnd => woolPainter(rnd, '#f59a48', '#d97a2c'),
+  [T.WOOL_YELLOW]: rnd => woolPainter(rnd, '#fbd94e', '#e0b832'),
+  [T.WOOL_PINK]: rnd => woolPainter(rnd, '#f7a8c4', '#e084a6'),
+  [T.WOOL_GREEN]: rnd => woolPainter(rnd, '#7ccc6a', '#5aa84c'),
 };
 
 function makeTile(i) {

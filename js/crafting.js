@@ -54,6 +54,12 @@ export const RECIPES = [
   R(ITEM_HOUSE, 1, [[B.PLANKS, 20], [B.GLASS, 2], [B.LAMP, 1]], 'build', true),
   R(B.WATER, 1, [[B.SNOW, 2]], 'build'),
   R(B.MUD, 2, [[B.DIRT, 2], [B.WATER, 1]], 'build'),
+  // dyed wool: two wool and a flower (or clover) makes two coloured blocks
+  R(B.WOOL_RED, 2, [[B.WOOL, 2], [B.FLOWER_RED, 1]], 'build'),
+  R(B.WOOL_ORANGE, 2, [[B.WOOL, 2], [B.FLOWER_RED, 1], [B.FLOWER_YELLOW, 1]], 'build'),
+  R(B.WOOL_YELLOW, 2, [[B.WOOL, 2], [B.FLOWER_YELLOW, 1]], 'build'),
+  R(B.WOOL_PINK, 2, [[B.WOOL, 2], [B.FLOWER_RED, 1], [B.FLOWER_WHITE, 1]], 'build'),
+  R(B.WOOL_GREEN, 2, [[B.WOOL, 2], [ITEM_CLOVER, 1]], 'build'),
 ];
 // How close (in blocks) you need to be to a crafting table.
 export const TABLE_REACH = 4;

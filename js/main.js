@@ -1703,6 +1703,127 @@ $('#btn-create').addEventListener('click', () => {
   hideHintLater();
 });
 
+
+// ---------- saved games: slots on this device, and backup files ----------
+// The world you're playing always lives in SAVE_KEY and saves itself. Slots are copies of it you can go back to.
+const SLOT_KEY = 'blockwild.slots.v1', SLOTS = 5, slotKey = n => 'blockwild.slot.' + n;
+const slotList = () => { const l = store.get(SLOT_KEY); return Array.isArray(l) ? l.filter(s => s && Number.isInteger(s.n)) : []; };
+const saveBusy = () => net.isGuest || net.isHost;
+let saveMsgTimer = 0;
+function saveMsg(text, bad = false) {
+  const el = $('#save-msg');
+  el.textContent = text; el.hidden = false; el.classList.toggle('bad', bad);
+  clearTimeout(saveMsgTimer); saveMsgTimer = setTimeout(() => { el.hidden = true; }, 6000);
+}
+// The world as it is right now (saving it first if you're playing).
+function currentSave() {
+  if (world && player && !net.isGuest) saveGame();
+  const s = store.get(SAVE_KEY);
+  return s && typeof s.seed === 'number' ? s : null;
+}
+const savedWhen = t => new Date(t).toLocaleString(undefined, { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
+function buildSlots() {
+  const box = $('#save-slots'), list = slotList(), busy = saveBusy();
+  $('#save-busy').hidden = !busy;
+  for (const id of ['#btn-export', '#btn-import']) $(id).disabled = busy;
+  box.textContent = '';
+  for (let n = 0; n < SLOTS; n++) {
+    const info = list.find(s => s.n === n), row = document.createElement('div');
+    row.className = 'save-slot' + (info ? '' : ' empty');
+    const text = document.createElement('div');
+    text.className = 'save-info';
+    const b = document.createElement('b'), small = document.createElement('span');
+    b.textContent = info ? info.name : `Slot ${n + 1}: empty`;
+    small.textContent = info ? `${savedWhen(info.t)} · ${info.animals} animal${info.animals === 1 ? '' : 's'}` : '';
+    text.append(b, small);
+    const save = document.createElement('button'), load = document.createElement('button');
+    save.type = load.type = 'button';
+    save.className = 'secondary'; save.textContent = 'Save here'; save.disabled = busy;
+    load.className = 'primary'; load.textContent = 'Load'; load.disabled = busy || !info;
+    save.addEventListener('click', () => saveToSlot(n));
+    load.addEventListener('click', () => loadSlot(n));
+    row.append(text, save, load);
+    box.appendChild(row);
+  }
+}
+function saveToSlot(n) {
+  if (saveBusy()) return;
+  const data = currentSave();
+  if (!data) { saveMsg('There’s no world to save yet. Tap Play first.', true); return; }
+  const list = slotList(), old = list.find(s => s.n === n);
+  const name = $('#save-name').value.trim().slice(0, 20) || old?.name || `My world ${n + 1}`;
+  if (old && !confirm(`Save over “${old.name}”? It will be replaced with the world you’re playing now.`)) return;
+  if (!store.set(slotKey(n), data)) { saveMsg('There isn’t room on this device to save that. Save over an old slot, or download a backup instead.', true); return; }
+  store.set(SLOT_KEY, [...list.filter(s => s.n !== n), { n, name, t: Date.now(), animals: (data.animals || []).length, seed: data.seed }]);
+  $('#save-name').value = '';
+  buildSlots();
+  sfx.pickup();
+  saveMsg(`Saved “${name}” in slot ${n + 1}.`);
+}
+function loadSlot(n) {
+  if (saveBusy()) return;
+  const info = slotList().find(s => s.n === n), data = store.get(slotKey(n));
+  if (!info || !data || typeof data.seed !== 'number') { saveMsg('That slot is empty.', true); return; }
+  if (!confirm(`Load “${info.name}”?\n\nThe world you’re playing now will be swapped for it. If you want to keep your world as it is, save it in a slot first.`)) return;
+  if (loadSave(data)) saveMsg(`Loaded “${info.name}”. Tap ${world ? 'Resume' : 'Continue'} to play.`);
+}
+// Makes a saved world the one you're playing. Returns false (and keeps your world) if it won't load.
+function loadSave(data) {
+  const before = store.get(SAVE_KEY);
+  try {
+    if (!data || typeof data !== 'object' || typeof data.seed !== 'number' || !Number.isFinite(data.seed)) throw new Error('not a world');
+    data = { ...data, inv: cleanBag(data.inv) };
+    if (!store.set(SAVE_KEY, data)) throw new Error('no room');
+    if (world) { startWorld(data); saveGame(); }
+    $('#btn-play').textContent = world ? 'Resume' : 'Continue';
+    sfx.grown();
+    return true;
+  } catch (e) {
+    if (before) store.set(SAVE_KEY, before);
+    if (world && before) try { startWorld(before); } catch { /* keep going */ }
+    saveMsg(e.message === 'no room' ? 'There isn’t room on this device to load that.' : 'That didn’t work: it doesn’t look like a Baby Chicken Empire world.', true);
+    return false;
+  }
+}
+// Only things that really are items, in sensible amounts.
+function cleanBag(bag) {
+  const out = {};
+  if (bag && typeof bag === 'object') for (const [k, v] of Object.entries(bag)) if (isItem(+k) && Number.isFinite(v) && v > 0) out[+k] = Math.min(99999, Math.floor(v));
+  return out;
+}
+$('#btn-export').addEventListener('click', () => {
+  if (saveBusy()) return;
+  const data = currentSave();
+  if (!data) { saveMsg('There’s no world to back up yet. Tap Play first.', true); return; }
+  const file = { game: 'Baby Chicken Empire', kind: 'world', version: VERSION, saved: new Date().toISOString(), world: data,
+    wardrobe: { patterns: settings.patterns || [], sewn: settings.sewn || [] } };
+  const url = URL.createObjectURL(new Blob([JSON.stringify(file)], { type: 'application/json' }));
+  const a = document.createElement('a');
+  a.href = url; a.download = `baby-chicken-empire-${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+  saveMsg('Backup downloaded. Keep the file somewhere safe: Load a backup brings it back, on this device or another one.');
+});
+$('#btn-import').addEventListener('click', () => { if (!saveBusy()) $('#import-file').click(); });
+$('#import-file').addEventListener('change', async e => {
+  const f = e.target.files?.[0];
+  e.target.value = '';
+  if (!f) return;
+  let file;
+  try { file = JSON.parse(await f.text()); } catch { saveMsg('That file isn’t a Baby Chicken Empire backup.', true); return; }
+  const data = file?.world ?? file;
+  if (!data || typeof data.seed !== 'number') { saveMsg('That file isn’t a Baby Chicken Empire backup.', true); return; }
+  const when = file.saved ? ` from ${savedWhen(file.saved)}` : '';
+  if (!confirm(`Load the backup${when}?\n\nThe world you’re playing now will be swapped for it. If you want to keep your world as it is, save it in a slot first.`)) return;
+  if (!loadSave(data)) return;
+  // patterns and clothes sewn on the other device come along too
+  const w = file.wardrobe || {}, keys = l => Array.isArray(l) ? l.filter(k => typeof k === 'string' && /^\d:\d$/.test(k)) : [];
+  settings.patterns = [...new Set([...(settings.patterns || []), ...keys(w.patterns)])];
+  settings.sewn = [...new Set([...(settings.sewn || []), ...keys(w.sewn)])];
+  store.set(SET_KEY, settings);
+  saveMsg(`Backup loaded. Tap ${world ? 'Resume' : 'Continue'} to play.`);
+});
+$('#saves').addEventListener('toggle', () => { if ($('#saves').open) buildSlots(); });
 function hideHintLater() { setTimeout(() => $('#touch-hint').classList.add('gone'), 7000); }
 
 // settings

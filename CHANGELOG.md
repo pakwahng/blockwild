@@ -2,6 +2,12 @@
 
 The same list is in the game: tap the version number on the front screen, or open **What’s new**.
 
+## 30. Save and load, and coloured wool (8 Nov 2026)
+- New on the menu: Saved games. Save the world you’re playing in one of 5 slots, give it a name, and load it again any time.
+- Download a backup to keep your world safe in a file, or to move it to another phone or computer. Load a backup brings it back (with the clothes patterns you’ve learned too).
+- Your world still saves itself as you play, and loading always asks first, so nothing gets lost by accident.
+- Dye wool to build in colour: red, orange, yellow, pink and green wool, made from 2 wool and a flower (or clover). Learn each one from a recipe page.
+
 ## 29. Hats for your animals (8 Nov 2026)
 - Your animals can wear hats now! Tap one of your babies twice, or a grown-up once, and pick a hat on its card.
 - Any hat you’ve sewn in the Wardrobe can go on any animal: a party hat on a hen, a flower crown on a cow, bunny ears on a wolf…
