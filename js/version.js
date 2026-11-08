@@ -1,11 +1,12 @@
 // The game's version and what changed in each one. Shown on the front screen ("What's new")
 // and in CHANGELOG.md. When you release: bump VERSION, add an entry at the top of CHANGES,
 // and set the same number in sw.js (CACHE = 'blockwild-v<VERSION>') so phones pick it up.
-export const VERSION = 19;
+export const VERSION = 19.1;
 export const RELEASED = '8 Nov 2026';
 
 // [version, date, headline, [details]]
 export const CHANGES = [
+[19.1, '8 Nov 2026', 'Bag scrolling fix', [    'Fixed: on some Android phones (like Xiaomi) the bag and crafting lists ran off the bottom of the screen and wouldn’t scroll. They now fit the screen and scroll.',  ]],
   [19, '8 Nov 2026', 'Names, rain and rainbows', [
     'Every baby has its own name, like Nugget or Pudding. You’ll see it when you pet one or when it grows up.',
     'Rain showers now and then: the sky turns grey and it stays dry under a roof. Wheat grows faster in the rain.',

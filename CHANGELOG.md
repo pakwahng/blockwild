@@ -2,6 +2,9 @@
 
 The same list is in the game: tap the version number on the front screen, or open **What’s new**.
 
+## 19.1. Bag scrolling fix (8 Nov 2026)
+- Fixed: on some Android phones (like Xiaomi) the bag and crafting lists ran off the bottom of the screen and wouldn’t scroll. They now fit the screen and scroll.
+
 ## 19. Names, rain and rainbows (8 Nov 2026)
 - Every baby has its own name, like Nugget or Pudding. You’ll see it when you pet one or when it grows up.
 - Rain showers now and then: the sky turns grey and it stays dry under a roof. Wheat grows faster in the rain.
