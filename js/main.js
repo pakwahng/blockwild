@@ -2,12 +2,13 @@
 import { B, T, BLOCKS, SOLID, PLACEABLE, TILE_COUNT, ITEM_SEEDS, ITEM_WHEAT, ITEM_SWORD, ITEM_BONE, ITEM_APPLE, ITEM_STICK, ITEM_EGG, ITEM_MILK, ITEM_HOUSE, IS_DOOR, DOOR_TOPS, TREATS, ITEM_NAMES, SHAPED, FEEDER_OF, FEEDER_TREAT, IS_FEEDER } from './blocks.js';
 import { Snakes } from './snakes.js';
 import { Raiders } from './raiders.js';
+import { Weather } from './weather.js';
 import { GOALS, newStats, bump } from './goals.js';
 import { drops, RECIPES, TABS, TOOLS, STARTER, OLD_SAVE_BAG, TABLE_REACH, FEEDER_FILL } from './crafting.js';
 import { skyAt, CYCLE } from './sky.js';
 import { buildTextures, blockIcon } from './textures.js';
 import * as M from './models.js';
-import { Nursery, SPECIES, SPECIES_ORDER, isTreat, GIFTS } from './animals.js';
+import { Nursery, SPECIES, SPECIES_ORDER, isTreat, GIFTS, BABY_NAMES } from './animals.js';
 import { Sfx } from './audio.js';
 import { World, CS, CH } from './world.js';
 import { buildMesh } from './mesher.js';
@@ -60,12 +61,13 @@ try {
   renderer.addModel('egg', M.eggModel());
   renderer.addModel('milk', M.milkModel());
   renderer.addModel('woolTuft', M.woolTuftModel());
+  renderer.addModel('rain', M.rainModel());
 } catch (err) {
   console.error(err);
   showError('This device or browser cannot run Baby Chicken Empire (WebGL2 is required). ' + err.message);
 }
 
-let world = null, player = null, flock = null, snakes = null, raiders = null, running = false, firsts = [];
+let world = null, player = null, flock = null, snakes = null, raiders = null, weather = null, running = false, firsts = [];
 let clock = 0.08, nights = 0, swingCool = 0, wasBreaking = false;
 let crown = false, seat = null;
 // hotbar: nine slots holding item ids (0 = empty); inv: how many of each item you're carrying
@@ -339,6 +341,7 @@ function startWorld(save) {
   firsts = save?.firsts || [];
   snakes = new Snakes(world);
   raiders = new Raiders(world, snakes);
+  weather = new Weather(world);
   clock = save?.clock ?? 0.08;
   nights = save?.nights || 0;
   crown = !!save?.crown;
@@ -513,12 +516,17 @@ function editBlock(x, y, z, id) {
 }
 
 let toastTimer = 0;
-function toast(text) {
+function toast(text, ms = 4200) {
   const t = $('#toast');
   t.textContent = text;
   t.classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('show'), 4200);
+  toastTimer = setTimeout(() => t.classList.remove('show'), ms);
+}
+// "Nugget the lamb", or "Your lamb" / "a lamb" for a baby with no name.
+function callName(n, sp, fallback) {
+  const nm = BABY_NAMES[n], s = SPECIES[sp] ? SPECIES[sp].name : 'baby';
+  return nm ? `${nm} the ${s}` : `${fallback} ${s}`;
 }
 
 // Screen position of a 3D point, or null when it's behind the camera or well off screen.
@@ -552,6 +560,7 @@ function handleChickEvents() {
     for (const ev of flock.events) netEvents.push({ ...ev, f: 1 });
     for (const ev of snakes.events) netEvents.push(ev);
     for (const ev of raiders.events) netEvents.push({ ...ev, r: 1 });
+    for (const ev of weather.events) netEvents.push({ ...ev, w: 1 });
     if (netEvents.length > 120) netEvents.splice(0, netEvents.length - 120);
   }
   for (const ev of flock.events) {
@@ -574,7 +583,8 @@ function handleChickEvents() {
       snakes.burst([ev.p[0], ev.p[1] + 0.4, ev.p[2]], 26, [1, 1, 2, 3], false);
       const first = !firsts.includes('grown' + ev.sp);
       if (first) firsts.push('grown' + ev.sp);
-      toast(first ? GROWN_TIP[ev.sp] : `Your ${SPECIES[ev.sp].name} grew up into a ${ADULT_NAME[ev.sp]}!`);
+      const who = callName(ev.name, ev.sp, 'Your');
+      toast(first ? GROWN_TIP[ev.sp].replace(/^Your [a-z ]+ grew up/, `${who} grew up`) : `${who} grew up into a ${ADULT_NAME[ev.sp]}!`);
       continue;
     }
     if (ev.type === 'laid') { if (d < 16) sfx.call(ev.sp, 0.4 * (1 - d / 16)); continue; }
@@ -615,7 +625,7 @@ function handleChickEvents() {
     } else if (ev.type === 'hiss') { if (d < 24) sfx.hiss(0.25 * (1 - d / 24)); }
     else if (ev.type === 'spook') {
       sfx.hiss(0.4); sfx.call(ev.sp, 0.5);
-      toast(`The snake spooked a ${SPECIES[ev.sp].name} out of your nursery! Feed it again to bring it back.`);
+      toast(`The snake spooked ${callName(ev.name, ev.sp, 'a')} out of your nursery! Feed it again to bring it back.`);
     } else if (ev.type === 'bonk') { sfx.bonk(); floatFx(ev.p, 'bonk'); buzz(30); }
     else if (ev.type === 'poof' && ev.wolf) {
       sfx.poof(); buzz(40);
@@ -641,7 +651,7 @@ function handleChickEvents() {
     else if (ev.type === 'steal') { if (d < 40) { sfx.caw(0.3); toast('A crow pinched a treat and flew off!'); } }
     else if (ev.type === 'foxSpook') {
       sfx.yelp(0.4); sfx.call(ev.sp, 0.5);
-      toast(`The fox spooked a ${SPECIES[ev.sp].name} out of your nursery! Feed it again to bring it back.`);
+      toast(`The fox spooked ${callName(ev.name, ev.sp, 'a')} out of your nursery! Feed it again to bring it back.`);
     } else if (ev.type === 'foxChased') { sfx.yelp(0.45); if (d < 60) toast('Your grown-up wolf chased the fox away!'); }
     else if (ev.type === 'foxGiveUp') { if (d < 60) toast('The fox couldn’t get past your fence and slunk off home.'); }
     else if (ev.type === 'bonk') { sfx.bonk(); floatFx(ev.p, 'bonk'); buzz(30); }
@@ -657,6 +667,12 @@ function handleChickEvents() {
     }
   }
   raiders.events.length = 0;
+  for (const ev of weather.events) {
+    if (ev.type === 'rain') {
+      if (!firsts.includes('rain')) { firsts.push('rain'); toast('It’s raining! Wheat in your planters grows faster in the rain. Stay dry under a roof.'); }
+    } else if (ev.type === 'rainEnd' && ev.rainbow) { sfx.grown(); toast('The rain stopped. Look, a rainbow!'); }
+  }
+  weather.events.length = 0;
   updateNursery();
 }
 
@@ -833,7 +849,9 @@ function petBaby(wildHint) { // wildHint: say so when it's a wild baby (not when
   floatFx([best.p[0], best.p[1] + best.S.height * 0.4, best.p[2]], 'heart');
   sfx.call(best.sp, 0.5); sfx.happy(); buzz(12);
   bump(stats, 'petted');
-  if (!firsts.includes('pet')) { firsts.push('pet'); toast(`Aww! Your ${SPECIES[best.sp].name} loves a pat. Pets help babies grow up a little too.`); }
+  const who = callName(best.name, best.sp, 'Your');
+  if (!firsts.includes('pet')) { firsts.push('pet'); toast(`Aww! ${who} loves a pat. Pets help babies grow up a little too.`); }
+  else toast(`${who} loves that!`, 1600);
   return true;
 }
 
@@ -1236,10 +1254,30 @@ function updateTags() {
     const d = Math.hypot(tx - eye[0], tz - eye[2]);
     const name = CHAR_NAMES[o.char] + (d > 12 ? ` · ${Math.round(d)} m` : '');
     if (el.lastName !== name) { el.querySelector('.name').textContent = name; el.lastName = name; }
+    pinTag(el, 'tag ' + o.char, tx, ty, tz, W, H, eye, f, r, u);
+  }
+  // The home arrow: when you wander far from your tame babies, it points the way back to them.
+  let n = 0, hx = 0, hy = 0, hz = 0;
+  for (const a of flock.animals) if (a.tame) { n++; hx += a.p[0]; hy += a.p[1]; hz += a.p[2]; }
+  const far = n && Math.hypot(hx / n - eye[0], hz / n - eye[2]);
+  if (!homeEl) {
+    homeEl = document.createElement('div');
+    homeEl.innerHTML = '<span class="arrow" aria-hidden="true"></span><span class="name"></span>';
+    box.appendChild(homeEl);
+  }
+  homeEl.hidden = !(far > 35);
+  if (homeEl.hidden) return;
+  const label = `Nursery · ${Math.round(far)} m`;
+  if (homeEl.lastName !== label) { homeEl.querySelector('.name').textContent = label; homeEl.lastName = label; }
+  pinTag(homeEl, 'tag home', hx / n, hy / n + 1.2, hz / n, W, H, eye, f, r, u);
+}
+let homeEl = null;
+// Puts a tag over a point, or pins it to the screen edge with an arrow when the point is off screen.
+function pinTag(el, cls, tx, ty, tz, W, H, eye, f, r, u) {
     const at = project(tx, ty, tz);
     const onScreen = at && at[0] > 30 && at[0] < W - 30 && at[1] > 50 && at[1] < H - 30;
-    el.className = 'tag ' + o.char + (onScreen ? '' : ' edge');
-    if (onScreen) { el.style.left = at[0] + 'px'; el.style.top = at[1] + 'px'; continue; }
+    el.className = cls + (onScreen ? '' : ' edge');
+    if (onScreen) { el.style.left = at[0] + 'px'; el.style.top = at[1] + 'px'; return; }
     // direction on screen towards them: right/up in camera space (behind you counts as "turn this way")
     const rel = [tx - eye[0], ty - eye[1], tz - eye[2]];
     let dx = rel[0] * r[0] + rel[1] * r[1] + rel[2] * r[2];
@@ -1251,7 +1289,6 @@ function updateTags() {
     const t = Math.min(hw / Math.max(Math.abs(dx), 1e-3), hh / Math.max(Math.abs(dy), 1e-3));
     el.style.left = (W / 2 + dx * t) + 'px'; el.style.top = (H / 2 + dy * t) + 'px';
     el.querySelector('.arrow').style.transform = `rotate(${Math.atan2(dy, dx)}rad)`;
-  }
 }
 
 function addOther(id, char) {
@@ -1291,7 +1328,7 @@ function netStep(dt) {
   const pl = [[0, settings.char, ...myPose()]];
   for (const o of others.values()) pl.push([o.id, o.char, ...o.tp, o.tyaw, o.pitch, o.held, o.sit ? 1 : 0]);
   const ev = netEvents.splice(0);
-  const common = { t: 's', clock: +clock.toFixed(5), nights, crown, counts: flock.counts(), pl, sn: snakes.snapshot(), rd: raiders.snapshot(), tr: flock.treatSnapshot(), gf: flock.giftSnapshot(), ev };
+  const common = { t: 's', clock: +clock.toFixed(5), nights, crown, counts: flock.counts(), pl, sn: snakes.snapshot(), rd: raiders.snapshot(), tr: flock.treatSnapshot(), gf: flock.giftSnapshot(), wx: weather.snapshot(), ev };
   for (const [id] of net.conns) {
     const o = others.get(id);
     // animals go every other update (about 4 a second): the copies glide in between
@@ -1370,11 +1407,13 @@ function guestMessage(msg) {
       for (const ev of msg.ev || []) {
         if (ev.type === 'crown') { if (!crown) awardCrown(); continue; }
         if (ev.f) flock.events.push(ev);
+        else if (ev.w) weather.events.push(ev);
         else if (ev.r) { raiders.remoteEvent(ev); raiders.events.push(ev); }
         else { snakes.remoteEvent(ev); snakes.events.push(ev); }
       }
       snakes.applySnapshot(msg.sn || []);
       raiders.applySnapshot(msg.rd || []);
+      weather.applySnapshot(msg.wx);
       const seen = new Set();
       for (const [id, char, x, y, z, yaw, pitch, held, sit] of msg.pl || []) {
         if (id === myNetId) continue;
@@ -1511,6 +1550,7 @@ function frame(now, photo = false) {
       flock.puppetStep(dt);
       snakes.puppetStep(dt);
       raiders.puppetStep(dt);
+      weather.step(dt);
     } else {
       const isNight = skyAt(clock).night > 0.5;
       const players = [{ pos: player.pos, holding: running ? hotbar[selected] : null, id: myNetId }];
@@ -1533,17 +1573,18 @@ function frame(now, photo = false) {
         const grows = new Set();
         for (const q of players) for (const [x, y, z, id] of world.placedNear(q.pos[0], q.pos[2], 48, id => id === B.PLANTER_SEEDED || id === B.PLANTER_GROWING)) {
           const k = x + ',' + y + ',' + z;
-          if (grows.has(k) || Math.random() > 0.035) continue;
+          if (grows.has(k) || Math.random() > 0.035 * (1 + 1.5 * weather.amount)) continue;
           grows.add(k);
           editBlock(x, y, z, id + 1); remeshAround(x, z);
         }
       }
       snakes.update(dt, flock, player, isNight, nights);
+      weather.update(dt, skyAt(clock).night < 0.3);
     }
     handleChickEvents();
   }
   netStep(dt);
-  const sky = skyAt(clock);
+  const sky = weather.shade(skyAt(clock));
   const pending = stream(running ? 5 : 10);
   $('#loading').hidden = pending === 0 || running;
 
@@ -1559,17 +1600,19 @@ function frame(now, photo = false) {
   s.groups.push(...r.groups); s.shadowGroups.push(...r.shadowGroups);
   const k = kidInstances(dt);
   s.groups.push(...k.groups); s.shadowGroups.push(...k.shadowGroups);
+  if (weather.amount > 0.01) s.groups.push(weather.instances(eye, dt));
+  sfx.rain(running && !underwater ? weather.amount : 0);
   renderer.render({
     eye, forward: fwd, fov: 70 * Math.PI / 180,
     fogColor: underwater ? waterFog : sky.horizon, zenith: underwater ? waterFog : sky.zenith,
-    sunDir: sky.sunDir, moonDir: sky.moonDir, night: underwater ? 0 : sky.night, clouds: underwater ? 0 : 1,
+    sunDir: sky.sunDir, moonDir: sky.moonDir, night: underwater ? 0 : sky.night, clouds: underwater ? 0 : 1 + weather.amount, rainbow: underwater ? 0 : weather.rainbow,
     fogNear: underwater ? 0 : far * 0.6, fogFar: underwater ? 22 : far,
     tint: underwater ? [0.6 * sky.tint[0], 0.75 * sky.tint[1], sky.tint[2]] : sky.tint,
     entTint: sky.entTint, glowLayer: T.LAMP,
   }, world.chunks.values(), target, now / 1000, { groups: [...a.groups, ...s.groups], shadowGroups: [...a.shadowGroups, ...s.shadowGroups] });
   if (photo) grabPhoto();
 
-  if (net.active) updateTags();
+  updateTags();
   if (settings.showFps) {
     const p = player.pos;
     $('#info').textContent = `${fps} fps  ${renderer.stats.chunks} chunks  ${Math.round(renderer.stats.tris / 1000)}k tris\n` +
@@ -1579,7 +1622,7 @@ function frame(now, photo = false) {
 requestAnimationFrame(loop);
 
 // handy for debugging from the console
-window.blockwild = { get world() { return world; }, get player() { return player; }, get target() { return target; }, get flock() { return flock; }, get nursery() { return flock; }, get snakes() { return snakes; }, get raiders() { return raiders; }, get inv() { return inv; }, addItem, RECIPES, craft, input, raycast,
+window.blockwild = { get world() { return world; }, get player() { return player; }, get target() { return target; }, get flock() { return flock; }, get nursery() { return flock; }, get snakes() { return snakes; }, get raiders() { return raiders; }, get weather() { return weather; }, get inv() { return inv; }, addItem, RECIPES, craft, input, raycast,
   get clock() { return clock; }, setTime(t) { clock = t; }, swing: () => swing(),
   net, others, get myNetId() { return myNetId; },
   get seat() { return seat; }, awardCrown: () => awardCrown(), sit: (x, y, z) => sit(x, y, z), standUp: () => standUp(),

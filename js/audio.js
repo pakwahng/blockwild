@@ -40,6 +40,26 @@ export class Sfx {
     src.start(start);
   }
 
+  // A soft, steady patter of rain. level 0 is silent; it fades smoothly towards the level you set.
+  rain(level) {
+    if (!this.ctx) return;
+    if (!this.rainGain) {
+      if (level <= 0.01) return;
+      const c = this.ctx, len = c.sampleRate * 2;
+      const buf = c.createBuffer(1, len, c.sampleRate), d = buf.getChannelData(0);
+      for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (Math.random() < 0.02 ? 1 : 0.35); // hiss with little taps
+      const src = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain();
+      src.buffer = buf; src.loop = true;
+      f.type = 'lowpass'; f.frequency.value = 2400;
+      g.gain.value = 0;
+      src.connect(f).connect(g).connect(this.master);
+      src.start();
+      this.rainGain = g;
+    }
+    const want = this.enabled ? Math.max(0, Math.min(1, level)) * 0.16 : 0;
+    this.rainGain.gain.setTargetAtTime(want, this.ctx.currentTime, 0.6);
+  }
+
   cheep(vol = 0.3, pitch = 1) {
     if (!this.ready || vol < 0.02) return;
     const t = this.ctx.currentTime + 0.01, p = pitch * (0.9 + Math.random() * 0.25);

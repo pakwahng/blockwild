@@ -193,7 +193,7 @@ export class Snakes {
       t.tame = false; t.love = 0; t.flee = 6; t.fleeFrom = [...s.p];
       s.pause = 2.5; s.target = null; s.retarget = 2.6;
       this.spooked++;
-      this.events.push({ type: 'spook', sp: t.sp, p: [...t.p] });
+      this.events.push({ type: 'spook', sp: t.sp, name: t.name, p: [...t.p] });
     }
 
     this.track(s);

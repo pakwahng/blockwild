@@ -178,7 +178,7 @@ export class Raiders {
     const t = f.target;
     if (!f.leaving && t && dist2(t.p, f.p) < (0.5 + t.S.half) ** 2 && Math.abs(t.p[1] - f.p[1]) < 1.2) {
       t.tame = false; t.love = 0; t.flee = 6; t.fleeFrom = [...f.p];
-      this.events.push({ type: 'foxSpook', sp: t.sp, p: [...t.p] });
+      this.events.push({ type: 'foxSpook', sp: t.sp, name: t.name, p: [...t.p] });
       this.leave(f);
       f.yaw += Math.PI; // turn tail and run
     }

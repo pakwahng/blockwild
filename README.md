@@ -104,6 +104,12 @@ Foxes and snakes don't go after grown wolves. Growth, gifts lying on the ground 
 - The **camera** button takes a photo of your world with a "Day N" label, and shares it (phones) or downloads it.
 - Each sunrise says which day it is.
 
+## Names, rain and rainbows
+
+- Every baby gets a name when it's born (from a list of 45 in `js/animals.js`). Toasts use it: "Pudding the lamb grew up into a sheep!", "Jellybean the wolf pup loves that!".
+- **Rain** comes now and then (about 1–2 minutes, every 3–8 minutes; the host decides). The sky greys, drops fall and stop on roofs, and planter wheat grows 2.5× faster. When a shower ends by day, a rainbow shows opposite the sun for about 45 seconds. Code: `js/weather.js`.
+- More than 35 m from your tame babies, a **Nursery** tag at the screen edge points the way back.
+
 ## Version and what's new
 
 The front screen shows the version number. Tap it, or open **What’s new**, for the change log. It lives in `js/version.js` (and [CHANGELOG.md](CHANGELOG.md)). To release: bump `VERSION`, add an entry at the top of `CHANGES` and in CHANGELOG.md, and set `CACHE` in `sw.js` to the same number.
@@ -166,6 +172,7 @@ A full day lasts 10 minutes: about 6 minutes of daylight, a pink dusk, roughly 3
 | `js/raiders.js` | Daytime foxes and crows: sneaking, stealing treats, fences, sword hits |
 | `js/goals.js` | The goals list, progress and rewards |
 | `js/version.js` | Version number and the change log shown in What’s new |
+| `js/weather.js` | Rain showers, rain drops and the rainbow |
 | `js/crafting.js` | What digging gives you, crafting recipes, starter bag |
 | `js/snakes.js` | The night snake: spawning, slithering body, spooking babies, sword hits, confetti |
 | `js/sky.js` | Day/night clock: sky colours, light tint, sun and moon |

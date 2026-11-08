@@ -15,6 +15,12 @@ export const GIFTS = { chick: [ITEM_EGG, 1], calf: [ITEM_MILK, 1], lamb: [B.WOOL
 const GIFT_TIME = [60, 120], MAX_GIFTS = 60, GUARD_RANGE = 14;
 const GIFT_MODEL = { [ITEM_EGG]: 'egg', [ITEM_MILK]: 'milk', [B.WOOL]: 'woolTuft', [ITEM_APPLE]: 'apple' };
 const ease = t => t * t * (3 - 2 * t);
+// Every baby gets a name (an index into this list, so it travels and saves as a number).
+export const BABY_NAMES = ['Nugget', 'Peep', 'Biscuit', 'Pudding', 'Pip', 'Waffles', 'Mochi', 'Pickle', 'Dumpling', 'Sprout',
+  'Button', 'Pebble', 'Muffin', 'Noodle', 'Tofu', 'Bean', 'Sunny', 'Daisy', 'Honey', 'Maple', 'Poppy', 'Toffee', 'Bubbles',
+  'Cupcake', 'Jellybean', 'Popcorn', 'Snowy', 'Fluffy', 'Ziggy', 'Coco', 'Peanut', 'Marshmallow', 'Pancake', 'Teacup',
+  'Nibbles', 'Squeak', 'Wiggles', 'Dot', 'Cookie', 'Sesame', 'Custard', 'Jelly', 'Bramble', 'Clementine', 'Pom-pom'];
+export const babyName = a => BABY_NAMES[a.name | 0] || 'Baby';
 
 export const SPECIES_ORDER = ['chick', 'calf', 'piglet', 'lamb', 'pup'];
 export const SPECIES = {
@@ -61,7 +67,7 @@ export class Nursery {
       hop: Math.random() * 6, squash: 0, peck: 0, love: 0, cool: 0, wag: 0, wagT: Math.random() * 6,
       spot: null, enjoy: 0, look: Math.random() * 3,
       tame, age, call: 2 + Math.random() * 10, born: 0,
-      grow: 0, gift: GIFT_TIME[0] * Math.random(), bite: 0,
+      grow: 0, name: Math.random() * BABY_NAMES.length | 0, gift: GIFT_TIME[0] * Math.random(), bite: 0,
     };
     this.animals.push(a);
     return a;
@@ -132,7 +138,7 @@ export class Nursery {
   growBy(a, f) {
     if (a.grow >= 1) return;
     a.grow = Math.min(1, a.grow + f);
-    if (a.grow === 1) { a.gift = GIFT_TIME[0] * (0.3 + Math.random() * 0.4); this.events.push({ type: 'grown', sp: a.sp, p: [...a.p] }); }
+    if (a.grow === 1) { a.gift = GIFT_TIME[0] * (0.3 + Math.random() * 0.4); this.events.push({ type: 'grown', sp: a.sp, name: a.name, p: [...a.p] }); }
   }
 
   // A pat from a player: a happy hop and a wag, and now and then a little push towards growing up.
@@ -448,24 +454,24 @@ export class Nursery {
   }
 
   // ---- play together: the host sends its animals, a guest shows copies of them ----
-  // 15 numbers each: id, species + flags, x, y, z, yaw, vx, vz, hop, squash, peck, wag, age, ground y, grown-up.
+  // 15 numbers each: id, species + flags, x, y, z, yaw, vx, vz, hop, squash, peck, wag, age, ground y, grown-up, name.
   snapshot(centre, r) {
     const list = this.animals.filter(a => dist2(a.p, centre) < r * r);
-    const f = new Float32Array(list.length * 15);
+    const f = new Float32Array(list.length * 16);
     let i = 0;
     for (const a of list) {
       const flags = (a.onGround ? 1 : 0) | (a.tame ? 2 : 0) | (a.sleep ? 4 : 0) | (a.enjoy > 0 ? 8 : 0) | (a.love > 0 ? 16 : 0) | (a.mode === 'cheer' ? 32 : 0);
       f[i++] = a.id; f[i++] = SPECIES_ORDER.indexOf(a.sp) + flags * 8;
       f[i++] = a.p[0]; f[i++] = a.p[1]; f[i++] = a.p[2]; f[i++] = a.yaw;
       f[i++] = a.v[0]; f[i++] = a.v[2]; f[i++] = a.hop; f[i++] = a.squash; f[i++] = a.peck; f[i++] = a.wag;
-      f[i++] = Math.min(9999, a.age); f[i++] = a.gy; f[i++] = a.grow;
+      f[i++] = Math.min(9999, a.age); f[i++] = a.gy; f[i++] = a.grow; f[i++] = a.name;
     }
     return Array.from(f, v => Math.round(v * 100) / 100); // plain numbers: JSON travels between any two browsers
   }
   applySnapshot(buf) {
     const f = buf, byId = new Map(this.animals.map(a => [a.id, a]));
     const keep = [];
-    for (let i = 0; i < f.length; i += 15) {
+    for (let i = 0; i < f.length; i += 16) {
       const id = f[i], spf = f[i + 1], spi = spf % 8, flags = Math.floor(spf / 8);
       let a = byId.get(id);
       if (!a) {
@@ -475,7 +481,7 @@ export class Nursery {
       }
       a.tp = [f[i + 2], f[i + 3], f[i + 4]]; a.tyaw = f[i + 5];
       a.v[0] = f[i + 6]; a.v[2] = f[i + 7]; a.hop = f[i + 8]; a.squash = f[i + 9]; a.peck = f[i + 10]; a.wag = f[i + 11];
-      a.age = f[i + 12]; a.gy = f[i + 13]; a.grow = f[i + 14];
+      a.age = f[i + 12]; a.gy = f[i + 13]; a.grow = f[i + 14]; a.name = f[i + 15];
       a.onGround = !!(flags & 1); a.tame = !!(flags & 2); a.sleep = !!(flags & 4); a.enjoy = flags & 8 ? 1 : 0;
       a.love = flags & 16 ? 1 : 0; a.mode = flags & 32 ? 'cheer' : 'wander';
       a.born = Math.max(0, 0.6 - a.age);
@@ -707,12 +713,12 @@ export class Nursery {
   }
 
   serialize() {
-    return this.animals.filter(a => a.tame).map(a => [SPECIES_ORDER.indexOf(a.sp), +a.p[0].toFixed(2), +a.p[1].toFixed(2), +a.p[2].toFixed(2), Math.min(999, Math.round(a.age)), +a.grow.toFixed(4)]);
+    return this.animals.filter(a => a.tame).map(a => [SPECIES_ORDER.indexOf(a.sp), +a.p[0].toFixed(2), +a.p[1].toFixed(2), +a.p[2].toFixed(2), Math.min(999, Math.round(a.age)), +a.grow.toFixed(4), a.name]);
   }
   load(list) {
-    for (const [s, x, y, z, age, grow] of list || []) {
+    for (const [s, x, y, z, age, grow, name] of list || []) {
       const a = SPECIES_ORDER[s] && this.add(SPECIES_ORDER[s], x, y, z, true, age);
-      if (a) a.grow = Math.max(0, Math.min(1, grow || 0));
+      if (a) { a.grow = Math.max(0, Math.min(1, grow || 0)); if (BABY_NAMES[name]) a.name = name; }
     }
   }
   serializeGifts() { return this.gifts.map(g => [g.item, g.n, +g.p[0].toFixed(2), +g.p[1].toFixed(2), +g.p[2].toFixed(2)]); }

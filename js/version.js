@@ -1,11 +1,18 @@
 // The game's version and what changed in each one. Shown on the front screen ("What's new")
 // and in CHANGELOG.md. When you release: bump VERSION, add an entry at the top of CHANGES,
 // and set the same number in sw.js (CACHE = 'blockwild-v<VERSION>') so phones pick it up.
-export const VERSION = 18;
+export const VERSION = 19;
 export const RELEASED = '8 Nov 2026';
 
 // [version, date, headline, [details]]
 export const CHANGES = [
+  [19, '8 Nov 2026', 'Names, rain and rainbows', [
+    'Every baby has its own name, like Nugget or Pudding. You’ll see it when you pet one or when it grows up.',
+    'Rain showers now and then: the sky turns grey and it stays dry under a roof. Wheat grows faster in the rain.',
+    'When a shower ends on a sunny day, look away from the sun for a rainbow.',
+    'Wander far from your nursery and an arrow at the edge of the screen points the way home.',
+    'The front screen is a little wider.',
+  ]],
   [18, '8 Nov 2026', 'Planters, petting and photos', [
     'The version number is on the front screen, with this list of what’s new.',
     'Planter boxes: fill one with seeds and wheat grows in it. Tap it when it’s golden to pick it.',

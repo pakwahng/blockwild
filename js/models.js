@@ -320,6 +320,11 @@ export function woolTuftModel() {
   return m.done(NO_RIG);
 }
 
+// A falling rain streak.
+export function rainModel() {
+  return new ModelBuilder().box([0, 0, 0], [0.035, 0.42, 0.035], 0.012, '#bfe0ff', 0, false).done(NO_RIG);
+}
+
 export function shadowModel() {
   return new ModelBuilder().disc(0.5, 14, '#000000', 9).done(NO_RIG);
 }

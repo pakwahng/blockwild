@@ -2,6 +2,13 @@
 
 The same list is in the game: tap the version number on the front screen, or open **What’s new**.
 
+## 19. Names, rain and rainbows (8 Nov 2026)
+- Every baby has its own name, like Nugget or Pudding. You’ll see it when you pet one or when it grows up.
+- Rain showers now and then: the sky turns grey and it stays dry under a roof. Wheat grows faster in the rain.
+- When a shower ends on a sunny day, look away from the sun for a rainbow.
+- Wander far from your nursery and an arrow at the edge of the screen points the way home.
+- The front screen is a little wider.
+
 ## 18. Planters, petting and photos (8 Nov 2026)
 - The version number is on the front screen, with this list of what’s new.
 - Planter boxes: fill one with seeds and wheat grows in it. Tap it when it’s golden to pick it.

@@ -55,7 +55,7 @@ const SKY_FS = `#version 300 es
 precision highp float;
 uniform vec3 uRight, uUp, uFwd, uZenith, uHorizon, uSunDir, uMoonDir;
 uniform vec2 uTan;
-uniform float uTime, uClouds, uNight;
+uniform float uTime, uClouds, uNight, uRainbow;
 in vec2 vNdc;
 out vec4 outColor;
 float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
@@ -86,13 +86,27 @@ void main() {
     }
   }
   if (d.y > 0.0 && uClouds > 0.0) {
+    // uClouds above 1 means rain: more, greyer clouds
+    float rain = clamp(uClouds - 1.0, 0.0, 1.0);
     vec2 p = d.xz / (d.y + 0.12) * 1.6 + vec2(uTime * 0.02, uTime * 0.006);
     float n = vnoise(p) * 0.55 + vnoise(p * 2.1 + 3.7) * 0.3 + vnoise(p * 4.3 - 1.3) * 0.15;
-    float c = smoothstep(0.52, 0.66, n) * smoothstep(0.02, 0.2, d.y);
+    float c = smoothstep(0.52 - 0.3 * rain, 0.66 - 0.2 * rain, n) * smoothstep(0.02, 0.2, d.y);
     float shade = smoothstep(0.52, 0.8, n);
     vec3 cloud = mix(vec3(0.86, 0.9, 0.97), vec3(1.0), shade);
+    cloud = mix(cloud, vec3(0.6, 0.64, 0.7) * (0.85 + 0.15 * shade), rain);
     cloud = mix(cloud, vec3(0.16, 0.2, 0.42), uNight);
-    col = mix(col, cloud, c * 0.92 * uClouds * (1.0 - 0.5 * uNight));
+    col = mix(col, cloud, c * 0.92 * min(uClouds, 1.0) * (1.0 - 0.5 * uNight));
+  }
+  if (uRainbow > 0.0 && d.y > -0.02) {
+    // a rainbow arcing up opposite the sun after a shower
+    vec3 anti = normalize(vec3(-uSunDir.x, -0.18, -uSunDir.z));
+    float a = degrees(acos(clamp(dot(d, anti), -1.0, 1.0)));
+    float t = (a - 38.5) / 4.0;
+    if (t > 0.0 && t < 1.0) {
+      float hue = (1.0 - t) * 0.78;
+      vec3 rb = clamp(abs(mod(hue * 6.0 + vec3(0.0, 4.0, 2.0), 6.0) - 3.0) - 1.0, 0.0, 1.0);
+      col = mix(col, rb, 0.42 * uRainbow * sin(t * 3.14159) * smoothstep(-0.02, 0.12, d.y) * (1.0 - uNight));
+    }
   }
   float md = dot(d, uMoonDir);
   if (uNight > 0.01 && md > 0.0) {
@@ -407,6 +421,7 @@ export class Renderer {
     gl.uniform3fv(sk.u.uSunDir, view.sunDir);
     gl.uniform1f(sk.u.uTime, time);
     gl.uniform1f(sk.u.uClouds, view.clouds);
+    gl.uniform1f(sk.u.uRainbow, view.rainbow || 0);
     gl.uniform1f(sk.u.uNight, view.night || 0);
     gl.uniform3fv(sk.u.uMoonDir, view.moonDir || [0, -1, 0]);
     gl.bindVertexArray(this.skyVao);
