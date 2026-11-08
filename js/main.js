@@ -1,5 +1,5 @@
 // Baby Chicken Empire: bootstrap, game loop, streaming, interaction, UI and saving.
-import { B, T, BLOCKS, SOLID, PLACEABLE, TILE_COUNT, ITEM_SEEDS, ITEM_SWORD, ITEM_BONE, ITEM_APPLE, ITEM_STICK, ITEM_EGG, ITEM_MILK, TREATS, ITEM_NAMES, SHAPED, FEEDER_OF, FEEDER_TREAT, IS_FEEDER } from './blocks.js';
+import { B, T, BLOCKS, SOLID, PLACEABLE, TILE_COUNT, ITEM_SEEDS, ITEM_SWORD, ITEM_BONE, ITEM_APPLE, ITEM_STICK, ITEM_EGG, ITEM_MILK, ITEM_HOUSE, IS_DOOR, DOOR_TOPS, TREATS, ITEM_NAMES, SHAPED, FEEDER_OF, FEEDER_TREAT, IS_FEEDER } from './blocks.js';
 import { Snakes } from './snakes.js';
 import { Raiders } from './raiders.js';
 import { GOALS, newStats, bump } from './goals.js';
@@ -84,17 +84,17 @@ let myNetId = 0, netTimer = 0, poseTimer = 0, shownOthers = -1, pendingEdits = {
 const netEdits = [], netEvents = [];
 
 const icons = {};
-const SHAPE_ICON = { [B.FENCE]: 'fence', [B.GATE]: 'gate', [B.TABLE]: 'table', [B.LADDER]: 'ladder', [B.FEEDER]: 'feeder',
+const SHAPE_ICON = { [B.FENCE]: 'fence', [B.GATE]: 'gate', [B.DOOR]: 'door', [B.TABLE]: 'table', [B.LADDER]: 'ladder', [B.FEEDER]: 'feeder',
   [B.FLOWER_RED]: 'flower-red', [B.FLOWER_YELLOW]: 'flower-yellow', [B.FLOWER_WHITE]: 'flower-white' };
 if (textures) for (const id of [...PLACEABLE, B.THRONE]) {
   icons[id] = SHAPED[id] ? M.treatIcon(SHAPE_ICON[id], 64).toDataURL() : blockIcon(BLOCKS[id], textures.tiles, 64).toDataURL();
 }
-for (const id of [...TREATS, ITEM_SWORD, ITEM_STICK, ITEM_EGG, ITEM_MILK]) icons[id] = M.treatIcon(ITEM_NAMES[id].toLowerCase(), 64).toDataURL();
+for (const id of [...TREATS, ITEM_SWORD, ITEM_STICK, ITEM_EGG, ITEM_MILK, ITEM_HOUSE]) icons[id] = M.treatIcon(ITEM_NAMES[id].toLowerCase(), 64).toDataURL();
 $('#held').src = icons[ITEM_SWORD] || '';
 const itemName = id => ITEM_NAMES[id] || BLOCKS[id]?.name || '';
 const isItem = id => !!icons[id];
 // the order things are listed in your bag
-const BAG_ORDER = [...TREATS, ITEM_EGG, ITEM_MILK, ITEM_SWORD, ITEM_STICK, B.THRONE, ...PLACEABLE];
+const BAG_ORDER = [...TREATS, ITEM_EGG, ITEM_MILK, ITEM_SWORD, ITEM_STICK, ITEM_HOUSE, B.THRONE, ...PLACEABLE];
 
 // ---------- your bag: collecting and using things up ----------
 const have = id => inv[id] || 0;
@@ -394,6 +394,52 @@ function buildThrone(x, y, z) {
   for (const s of [-1, 1]) put(x + side[0] * s, y, z + side[1] * s, B.HAY); // arms
 }
 
+// A house kit builds a little cottage: 5×5, cream walls with log corners, windows, a lamp,
+// a red roof with gables, and its door at (x, y, z) facing the player.
+function buildHouse(x, y, z) {
+  const dx = player.pos[0] - (x + 0.5), dz = player.pos[2] - (z + 0.5);
+  const F = Math.abs(dx) > Math.abs(dz) ? [Math.sign(dx), 0] : [0, Math.sign(dz) || 1]; // towards the player
+  const Rt = [-F[1], F[0]];
+  const at = (lx, lz) => [x + Rt[0] * lx - F[0] * lz, z + Rt[1] * lx - F[1] * lz];
+  const plan = new Map();
+  const set = (lx, ly, lz, id) => plan.set(lx + ',' + ly + ',' + lz, id);
+  const edge = (lx, lz) => Math.abs(lx) === 2 || lz === 0 || lz === 4;
+  for (let lx = -2; lx <= 2; lx++) for (let lz = 0; lz <= 4; lz++) {
+    set(lx, -1, lz, edge(lx, lz) ? B.COBBLE : B.PLANKS);                              // floor
+    for (let ly = 0; ly <= 6; ly++) set(lx, ly, lz, B.AIR);                            // room inside
+    if (edge(lx, lz)) for (let ly = 0; ly <= 2; ly++) set(lx, ly, lz, B.CREAM);        // walls
+    if (lz === 0 || lz === 4) set(lx, 3, lz, B.CREAM);                                 // front and back up to the roof
+  }
+  for (const lx of [-2, 2]) for (const lz of [0, 4]) for (let ly = 0; ly <= 3; ly++) set(lx, ly, lz, B.LOG); // corner posts
+  set(0, 0, 0, B.DOOR); set(0, 1, 0, B.DOOR_TOP);
+  for (const [lx, lz] of [[-1, 0], [1, 0], [-2, 2], [2, 2], [0, 4]]) set(lx, 1, lz, B.GLASS);
+  set(0, 2, 4, B.LAMP);
+  for (let k = 0; k <= 2; k++) {
+    for (let lx = -3; lx <= 3; lx++) { set(lx, 3 + k, k - 1, B.ROOF); set(lx, 3 + k, 5 - k, B.ROOF); }
+    if (k) for (const lx of [-2, 2]) for (let lz = k; lz <= 4 - k; lz++) set(lx, 3 + k, lz, B.CREAM); // gables
+  }
+  for (let lx = -3; lx <= 3; lx++) set(lx, 6, 2, B.ROOF);                              // ridge
+  for (const [key, id] of plan) {
+    const [lx, ly, lz] = key.split(',').map(Number), [wx, wz] = at(lx, lz);
+    if (world.getBlock(wx, y + ly, wz) !== B.BEDROCK) editBlock(wx, y + ly, wz, id);
+  }
+  // fill any gap under the floor so it doesn't float over a dip
+  for (let lx = -2; lx <= 2; lx++) for (let lz = 0; lz <= 4; lz++) {
+    const [wx, wz] = at(lx, lz);
+    for (let ly = -2; ly >= -5 && !SOLID[world.getBlock(wx, y + ly, wz)]; ly--) editBlock(wx, y + ly, wz, B.DIRT);
+  }
+  // any baby caught in a wall pops up onto the roof rather than getting stuck
+  for (const a of flock.animals) {
+    const bx = Math.floor(a.p[0]), by = Math.floor(a.p[1]), bz = Math.floor(a.p[2]);
+    if (SOLID[world.getBlock(bx, by, bz)]) { let ty = by; while (ty < CH - 1 && SOLID[world.getBlock(bx, ty, bz)]) ty++; a.p[1] = ty; }
+  }
+  const [cx, cz] = at(0, 2);
+  for (const [ox, oz] of [[-4, -4], [4, -4], [-4, 4], [4, 4]]) remeshAround(cx + ox, cz + oz);
+  sfx.place(); sfx.fanfare(); buzz(40);
+  snakes.burst([x + 0.5, y + 1.5, z + 0.5], 40, undefined, net.isHost);
+  if (!firsts.includes('house')) { firsts.push('house'); toast('A cosy cottage! Tap the door to open or shut it. Shut your babies in at night and the snake can’t get them.'); }
+}
+
 // The front of a throne faces away from its hay back.
 function throneFront(x, y, z) {
   for (const [bx, bz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
@@ -640,6 +686,16 @@ function placeBlock() {
     remeshAround(target.x, target.z); sfx.place(); buzz(8);
     return;
   }
+  if (target && IS_DOOR(target.id)) {
+    // tap either half of a door to open or shut the whole thing
+    const by = DOOR_TOPS.has(target.id) ? target.y - 1 : target.y;
+    const open = world.getBlock(target.x, by, target.z) === B.DOOR;
+    if (!open && (player.intersectsBlock(target.x, by, target.z) || player.intersectsBlock(target.x, by + 1, target.z))) return;
+    editBlock(target.x, by, target.z, open ? B.DOOR_OPEN : B.DOOR);
+    if (IS_DOOR(world.getBlock(target.x, by + 1, target.z))) editBlock(target.x, by + 1, target.z, open ? B.DOOR_OPEN_TOP : B.DOOR_TOP);
+    remeshAround(target.x, target.z); sfx.place(); buzz(8);
+    return;
+  }
   if (target && IS_FEEDER(target.id) && FEEDER_OF[id]) {
     // fill a feeder with the treat you're holding
     if (FEEDER_TREAT[target.id] === id) { toast(`That feeder’s already full of ${itemName(id).toLowerCase()}.`); return; }
@@ -666,6 +722,25 @@ function placeBlock() {
   const x = target.x + target.nx, y = target.y + target.ny, z = target.z + target.nz;
   const here = world.getBlock(x, y, z);
   if (here !== B.AIR && here !== B.WATER) return;
+  if (id === ITEM_HOUSE) {
+    if (target.ny !== 1) { toast('Put the house kit down on top of the ground.'); return; }
+    if (player.flying) { toast('Land on the ground first, then put the house kit down in front of you.'); return; }
+    useItem(id); bump(stats, 'placed', id);
+    buildHouse(x, y, z);
+    return;
+  }
+  if (id === B.DOOR) {
+    // a door is two blocks tall: it needs room above
+    const up = world.getBlock(x, y + 1, z);
+    if (up !== B.AIR && up !== B.WATER) { toast('A door needs two blocks of room.'); return; }
+    if (player.intersectsBlock(x, y, z) || player.intersectsBlock(x, y + 1, z)) return;
+    if (editBlock(x, y, z, B.DOOR)) {
+      editBlock(x, y + 1, z, B.DOOR_TOP);
+      useItem(id); bump(stats, 'placed', id);
+      remeshAround(x, z); buzz(8); sfx.place();
+    }
+    return;
+  }
   if (SOLID[id] && player.intersectsBlock(x, y, z)) return;
   if (editBlock(x, y, z, id)) {
     useItem(id); bump(stats, 'placed', id);
@@ -698,6 +773,11 @@ function updateBreaking(dt) {
     const nearWater = [[1, 0, 0], [-1, 0, 0], [0, 0, 1], [0, 0, -1], [0, 1, 0]]
       .some(([dx, dy, dz]) => world.getBlock(target.x + dx, target.y + dy, target.z + dz) === B.WATER);
     editBlock(target.x, target.y, target.z, nearWater ? B.WATER : B.AIR);
+    if (IS_DOOR(target.id)) {
+      // the other half of the door comes away with it
+      const oy = DOOR_TOPS.has(target.id) ? target.y - 1 : target.y + 1;
+      if (IS_DOOR(world.getBlock(target.x, oy, target.z))) editBlock(target.x, oy, target.z, B.AIR);
+    }
     remeshAround(target.x, target.z);
     buzz(15);
     sfx.dig();

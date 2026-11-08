@@ -13,6 +13,7 @@ export const B = {
   HAY: 16, ROOF: 17, CREAM: 18, MUD: 19, THRONE: 20, FENCE: 21, GATE: 22, GATE_OPEN: 23,
   TABLE: 24, LADDER: 25, FEEDER: 26, FEEDER_SEEDS: 27, FEEDER_WHEAT: 28, FEEDER_APPLE: 29, FEEDER_CLOVER: 30, FEEDER_BONE: 31,
   FLOWER_RED: 32, FLOWER_YELLOW: 33, FLOWER_WHITE: 34, WOOL: 35,
+  DOOR: 36, DOOR_TOP: 37, DOOR_OPEN: 38, DOOR_OPEN_TOP: 39,
 };
 
 // kind: 'opaque' | 'cutout' (alpha-tested, e.g. leaves) | 'liquid' (translucent pass)
@@ -59,6 +60,11 @@ const defs = [
   { id: B.FLOWER_WHITE, name: 'White flower', kind: 'cutout', all: T.LEAVES, petal: T.SNOW, middle: T.SAND, hard: 0.05, shape: 'flower', passable: true },
   // soft wool from your grown-up sheep
   { id: B.WOOL, name: 'Wool', kind: 'opaque', all: T.WOOL, hard: 0.25, round: 0.22 },
+  // wooden doors: two blocks tall (a bottom and a top half), tap to open or shut
+  { id: B.DOOR, name: 'Door', kind: 'cutout', all: T.PLANKS, knob: T.THRONE_TOP, pane: T.GLASS, hard: 0.5, shape: 'door' },
+  { id: B.DOOR_TOP, name: 'Door', kind: 'cutout', all: T.PLANKS, knob: T.THRONE_TOP, pane: T.GLASS, hard: 0.5, shape: 'door' },
+  { id: B.DOOR_OPEN, name: 'Door', kind: 'cutout', all: T.PLANKS, knob: T.THRONE_TOP, pane: T.GLASS, hard: 0.5, shape: 'door', passable: true },
+  { id: B.DOOR_OPEN_TOP, name: 'Door', kind: 'cutout', all: T.PLANKS, knob: T.THRONE_TOP, pane: T.GLASS, hard: 0.5, shape: 'door', passable: true },
 ];
 
 export const BLOCKS = [];
@@ -79,7 +85,7 @@ for (const b of BLOCKS) {
   KIND[b.id] = { air: 0, opaque: 1, cutout: 2, liquid: 3 }[b.kind];
 }
 
-export const PLACEABLE = [B.FENCE, B.GATE, B.TABLE, B.LADDER, B.FEEDER, B.FLOWER_RED, B.FLOWER_YELLOW, B.FLOWER_WHITE, B.GRASS, B.DIRT, B.PLANKS, B.WOOL, B.LOG, B.HAY, B.MUD, B.ROOF, B.CREAM, B.BRICK,
+export const PLACEABLE = [B.FENCE, B.GATE, B.DOOR, B.TABLE, B.LADDER, B.FEEDER, B.FLOWER_RED, B.FLOWER_YELLOW, B.FLOWER_WHITE, B.GRASS, B.DIRT, B.PLANKS, B.WOOL, B.LOG, B.HAY, B.MUD, B.ROOF, B.CREAM, B.BRICK,
   B.STONE, B.COBBLE, B.GLASS, B.LEAVES, B.SAND, B.SNOW, B.CLAY, B.LAMP, B.WATER];
 // Non-block items (animal treats) share the hotbar with blocks; their ids sit above the block range.
 export const ITEM_SEEDS = 200, ITEM_WHEAT = 201, ITEM_APPLE = 202, ITEM_CLOVER = 203, ITEM_BONE = 204;
@@ -92,7 +98,13 @@ ITEM_NAMES[ITEM_STICK] = 'Sticks';
 // Gifts from the grown-ups: throw an egg and it hatches a chick, throw milk and a baby drinks it to grow faster.
 export const ITEM_EGG = 207, ITEM_MILK = 208;
 ITEM_NAMES[ITEM_EGG] = 'Egg'; ITEM_NAMES[ITEM_MILK] = 'Milk';
-export const THROWN = [...TREATS, ITEM_EGG, ITEM_MILK]; // everything you can throw, in the order they travel over the network
+// A house kit: place it and a little cottage builds itself, its door facing you.
+export const ITEM_HOUSE = 209;
+ITEM_NAMES[ITEM_HOUSE] = 'House kit';
+// The two halves of a door, open or shut.
+export const IS_DOOR = id => id >= B.DOOR && id <= B.DOOR_OPEN_TOP;
+export const DOOR_TOPS = new Set([B.DOOR_TOP, B.DOOR_OPEN_TOP]);
+export const THROWN =[...TREATS, ITEM_EGG, ITEM_MILK]; // everything you can throw, in the order they travel over the network
 export const SHAPED = new Uint8Array(256); // fences and gates: thin shapes, not full cubes
 for (const b of BLOCKS) if (b?.shape) SHAPED[b.id] = 1;
 // Fences and gates join up with each other and with solid full blocks.

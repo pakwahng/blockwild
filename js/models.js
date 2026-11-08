@@ -408,6 +408,22 @@ export function treatIcon(kind, px = 64) {
       rr(g, -14, 9, 28, 7, 3, '#b5763a');
       rr(g, -4, 15, 8, 12, 3, '#7a4a28');
       g.fillStyle = '#e04a3c'; g.beginPath(); g.arc(0, 29, 4.5, 0, Math.PI * 2); g.fill();
+    } else if (kind === 'door') {
+      rr(g, 14, 2, 36, 60, 4, '#8f5f34'); rr(g, 17, 5, 30, 55, 3, '#d8924e');
+      for (const x of [26, 36]) rr(g, x, 5, 2, 55, 1, '#b8743c');                       // plank lines
+      rr(g, 20, 9, 24, 16, 3, '#8f5f34'); rr(g, 22, 11, 20, 12, 2, '#cfeefa');         // window
+      rr(g, 31, 11, 2, 12, 1, '#8f5f34');
+      rr(g, 17, 32, 30, 5, 2, '#b8743c'); rr(g, 17, 50, 30, 5, 2, '#b8743c');          // braces
+      g.fillStyle = '#ffcf3a'; g.beginPath(); g.arc(41, 40, 3.5, 0, Math.PI * 2); g.fill();
+    } else if (kind === 'house kit') {
+      g.fillStyle = '#e2443a'; g.beginPath(); g.moveTo(4, 30); g.lineTo(32, 6); g.lineTo(60, 30); g.closePath(); g.fill(); // roof
+      g.fillStyle = '#f26a5a'; g.beginPath(); g.moveTo(12, 28); g.lineTo(32, 11); g.lineTo(52, 28); g.closePath(); g.fill();
+      rr(g, 10, 28, 44, 32, 2, '#f4e4c4');                                             // cream walls
+      rr(g, 10, 28, 5, 32, 1, '#9a6238'); rr(g, 49, 28, 5, 32, 1, '#9a6238');          // log corners
+      rr(g, 27, 38, 11, 22, 2, '#c08850'); g.fillStyle = '#ffcf3a'; g.beginPath(); g.arc(35, 50, 1.6, 0, Math.PI * 2); g.fill();
+      rr(g, 16, 36, 8, 8, 1, '#8f5f34'); rr(g, 17, 37, 6, 6, 1, '#cfeefa');            // windows
+      rr(g, 41, 36, 8, 8, 1, '#8f5f34'); rr(g, 42, 37, 6, 6, 1, '#cfeefa');
+      rr(g, 42, 10, 6, 12, 1, '#a3acb6');                                              // chimney
     } else if (kind === 'egg') {
       g.fillStyle = '#f6ead2'; g.beginPath(); g.ellipse(32, 35, 17, 22, 0, 0, Math.PI * 2); g.fill();
       g.fillStyle = '#e3d2b2'; g.beginPath(); g.ellipse(36, 42, 11, 13, 0, 0, Math.PI * 2); g.fill();

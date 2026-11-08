@@ -1,6 +1,6 @@
 // Goals: a short list of things to try, in order, each with a little reward.
 // They lead a new player from digging their first block to building a pen and surviving the night.
-import { B, ITEM_SEEDS, ITEM_WHEAT, ITEM_APPLE, ITEM_CLOVER, ITEM_BONE, ITEM_STICK, ITEM_EGG, ITEM_MILK } from './blocks.js';
+import { B, ITEM_SEEDS, ITEM_WHEAT, ITEM_APPLE, ITEM_CLOVER, ITEM_BONE, ITEM_STICK, ITEM_EGG, ITEM_MILK, ITEM_HOUSE } from './blocks.js';
 
 // stats: { dug: {id: n}, got: {id: n}, made: {id: n}, placed: {id: n}, tamed, hatched, bonked, filled, nights, climbed, chicks, grown, gifts: {id: n} }
 const n = (map, id) => (map && map[id]) || 0;
@@ -22,6 +22,7 @@ export const GOALS = [
   ['feeder', 'Make a feeder and fill it with treats', 1, s => s.filled || 0, [[ITEM_WHEAT, 5]]],
   ['bonk', 'Bonk a fox, crow or snake with the sword', 1, s => s.bonked || 0, [[ITEM_BONE, 3]]],
   ['ladder', 'Climb a ladder', 1, s => s.climbed || 0, [[B.LAMP, 2]]],
+  ['house', 'Build a house: put down a house kit, or a door in your own walls', 1, s => n(s.placed, ITEM_HOUSE) + n(s.placed, B.DOOR), [[B.GLASS, 2], [ITEM_APPLE, 4]]],
   ['night', 'Keep the nursery safe through a night', 1, s => s.nights || 0, [[B.LAMP, 3]]],
   ['grow', 'Look after a baby until it grows up', 1, s => s.grown || 0, [[ITEM_MILK, 2]]],
   ['gifts', 'Pick up 5 gifts from your grown-ups', 5, s => Object.values(s.gifts || {}).reduce((a, b) => a + b, 0), [[ITEM_EGG, 3]]],

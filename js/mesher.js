@@ -302,8 +302,28 @@ function shapeMesh(buf, id, p, wx, wy, wz) {
     if (fill !== undefined) shapeBox(buf, wx, wy, wz, fill, 0.13, 0.1, 0.28, 0.87, 0.4, 0.72, false);
     return;
   }
-  // gates run between the fences beside them: along x unless the neighbours are along z
+  // gates and doors run between the fences or walls beside them: along x unless the neighbours are along z
   const swap = !(px || nx) && (pz || nz);
+  if (BLOCKS[id].shape === 'door') {
+    const { knob, pane } = BLOCKS[id], open = id === B.DOOR_OPEN || id === B.DOOR_OPEN_TOP, top = id === B.DOOR_TOP || id === B.DOOR_OPEN_TOP;
+    // drawn shut across the doorway; an open door is the same thing swung back against its hinge side
+    const db = (l, x0, y0, z0, x1, y1, z1) => {
+      if (open) [x0, x1, z0, z1] = [z0 - 0.42, z1 - 0.42, 0.42 + x0 * 0.58, 0.42 + x1 * 0.58];
+      shapeBox(buf, wx, wy, wz, l, x0, y0, z0, x1, y1, z1, swap);
+    };
+    if (!top) {
+      db(layer, 0, 0, 0.43, 1, 1, 0.57);                                        // the planks
+      db(layer, 0.08, 0.14, 0.41, 0.92, 0.24, 0.59);                            // cross braces
+      db(layer, 0.08, 0.72, 0.41, 0.92, 0.82, 0.59);
+      db(knob, 0.78, 0.92, 0.36, 0.88, 1.02, 0.64);                             // round gold handle
+    } else {
+      db(layer, 0, 0, 0.43, 0.16, 1, 0.57); db(layer, 0.84, 0, 0.43, 1, 1, 0.57); // frame
+      db(layer, 0.16, 0, 0.43, 0.84, 0.3, 0.57); db(layer, 0.16, 0.86, 0.43, 0.84, 1, 0.57);
+      db(pane, 0.16, 0.3, 0.48, 0.84, 0.86, 0.52);                              // little window
+      db(layer, 0.47, 0.3, 0.45, 0.53, 0.86, 0.55);
+    }
+    return;
+  }
   box(0, 0, 0.42, 0.14, 1, 0.58, swap);                                        // hinge post
   box(0.86, 0, 0.42, 1, 1, 0.58, swap);                                        // latch post
   const bands = [[0.2, 0.34], [0.48, 0.62], [0.76, 0.9]];

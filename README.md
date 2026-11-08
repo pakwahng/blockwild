@@ -75,6 +75,8 @@ Foxes and snakes don't go after grown wolves. Growth, gifts lying on the ground 
 | 2 Wall | 1 Sand + 1 Clay |
 | 2 Roof | 1 Brick + 1 Wood |
 | Lamp * | 1 Glass + 1 Stick + 1 Apple |
+| Door * | 3 Wood + 1 Stick |
+| House kit * | 20 Wood + 2 Glass + 1 Lamp |
 | Water | 2 Snow |
 | 2 Mud | 2 Dirt + 1 Water |
 
@@ -93,6 +95,11 @@ Foxes and snakes don't go after grown wolves. Growth, gifts lying on the ground 
 ## Flowers
 
 - Red, yellow and white **wild flowers** grow in clumps on the grass. Dig one to pick it, and place it anywhere to plant it. You can walk through them.
+
+## Doors and houses
+
+- **Doors** are two blocks tall (put one down where there are two blocks of room). Tap either half to open or shut it. Babies, foxes and snakes can't get past a shut door; dig it to pick it back up.
+- A **house kit** builds a 5×5 cottage where you put it down, its door facing you: cream walls with log corners, glass windows, a lamp, a plank floor and a red gabled roof. The walls are too tall for the snake, so babies shut in a house are safe at night.
 
 ## Day raiders
 

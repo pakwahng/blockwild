@@ -1,5 +1,5 @@
 // Collecting and crafting: what each block gives you when you dig it, and what you can make.
-import { B, ITEM_SEEDS, ITEM_WHEAT, ITEM_APPLE, ITEM_CLOVER, ITEM_BONE, ITEM_SWORD, ITEM_STICK } from './blocks.js';
+import { B, ITEM_SEEDS, ITEM_WHEAT, ITEM_APPLE, ITEM_CLOVER, ITEM_BONE, ITEM_SWORD, ITEM_STICK, ITEM_HOUSE } from './blocks.js';
 
 // What you get for digging a block. Extra treats turn up now and then.
 export function drops(id) {
@@ -17,6 +17,7 @@ export function drops(id) {
     case B.STONE: add(B.COBBLE); if (chance(0.03)) add(ITEM_BONE); break;
     case B.LEAVES: add(B.LEAVES); if (chance(0.22)) add(ITEM_APPLE); if (chance(0.15)) add(ITEM_STICK); break;
     case B.GATE_OPEN: add(B.GATE); break;
+    case B.DOOR: case B.DOOR_TOP: case B.DOOR_OPEN: case B.DOOR_OPEN_TOP: add(B.DOOR); break;
     case B.FEEDER_SEEDS: case B.FEEDER_WHEAT: case B.FEEDER_APPLE: case B.FEEDER_CLOVER: case B.FEEDER_BONE: add(B.FEEDER); break;
     case B.BEDROCK: case B.WATER: case B.AIR: break;
     default: add(id);
@@ -44,6 +45,8 @@ export const RECIPES = [
   R(B.CREAM, 2, [[B.SAND, 1], [B.CLAY, 1]], 'build'),
   R(B.ROOF, 2, [[B.BRICK, 1], [B.PLANKS, 1]], 'build'),
   R(B.LAMP, 1, [[B.GLASS, 1], [ITEM_STICK, 1], [ITEM_APPLE, 1]], 'build', true),
+  R(B.DOOR, 1, [[B.PLANKS, 3], [ITEM_STICK, 1]], 'build', true),
+  R(ITEM_HOUSE, 1, [[B.PLANKS, 20], [B.GLASS, 2], [B.LAMP, 1]], 'build', true),
   R(B.WATER, 1, [[B.SNOW, 2]], 'build'),
   R(B.MUD, 2, [[B.DIRT, 2], [B.WATER, 1]], 'build'),
 ];
