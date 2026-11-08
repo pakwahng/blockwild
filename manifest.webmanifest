@@ -2,10 +2,10 @@
   "name": "Baby Chicken Empire",
   "short_name": "Chick Empire",
   "description": "Build a nursery for baby animals, bonk the night snake and become the chicken king.",
+  "id": "./",
   "start_url": "./",
   "scope": "./",
-  "display": "fullscreen",
-  "orientation": "landscape",
+  "display": "standalone",
   "background_color": "#1b2430",
   "theme_color": "#1b2430",
   "icons": [
