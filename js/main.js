@@ -627,7 +627,9 @@ function handleChickEvents() {
       const first = !firsts.includes('grown' + ev.sp);
       if (first) firsts.push('grown' + ev.sp);
       const who = callName(ev.name, ev.sp, 'Your');
-      toast(first ? GROWN_TIP[ev.sp].replace(/^Your [a-z ]+ grew up/, `${who} grew up`) : `${who} grew up into a ${ADULT_NAME[ev.sp]}!`);
+      const jobTip = firsts.includes('jobtip') ? '' : ' Tap it to teach it a job, like fetching wood!';
+      if (jobTip) firsts.push('jobtip');
+      toast((first ? GROWN_TIP[ev.sp].replace(/^Your [a-z ]+ grew up/, `${who} grew up`) : `${who} grew up into a ${ADULT_NAME[ev.sp]}!`) + jobTip, jobTip ? 7000 : 4200);
       continue;
     }
     if (ev.type === 'laid') { if (d < 16) sfx.call(ev.sp, 0.4 * (1 - d / 16)); continue; }

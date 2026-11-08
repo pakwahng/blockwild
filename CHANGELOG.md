@@ -2,6 +2,11 @@
 
 The same list is in the game: tap the version number on the front screen, or open **What’s new**.
 
+## 22.1. Wolf and job fixes (8 Nov 2026)
+- Fixed: a grown wolf chasing a fox could follow it a very long way from home. It now gives up after about 20 blocks and trots back.
+- New goal: teach a grown-up a job.
+- When your first baby grows up, you’re told you can tap it to teach it a job.
+
 ## 22. Working animals (8 Nov 2026)
 - Teach your grown-ups a job! Tap a hen, cow, pig, sheep or wolf and pick Fetch wood, Fetch stone or Find seeds. It costs one of its favourite treats.
 - By day a worker finds a tree, bare rock or grass near you, works at it, then carries a log, some cobble or seeds back on its back and drops it at your feet.

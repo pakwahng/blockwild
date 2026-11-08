@@ -1,11 +1,16 @@
 // The game's version and what changed in each one. Shown on the front screen ("What's new")
 // and in CHANGELOG.md. When you release: bump VERSION, add an entry at the top of CHANGES,
 // and set the same number in sw.js (CACHE = 'blockwild-v<VERSION>') so phones pick it up.
-export const VERSION = 22;
+export const VERSION = 22.1;
 export const RELEASED = '8 Nov 2026';
 
 // [version, date, headline, [details]]
 export const CHANGES = [
+  [22.1, '8 Nov 2026', 'Wolf and job fixes', [
+    'Fixed: a grown wolf chasing a fox could follow it a very long way from home. It now gives up after about 20 blocks and trots back.',
+    'New goal: teach a grown-up a job.',
+    'When your first baby grows up, you’re told you can tap it to teach it a job.',
+  ]],
   [22, '8 Nov 2026', 'Working animals', [
     'Teach your grown-ups a job! Tap a hen, cow, pig, sheep or wolf and pick Fetch wood, Fetch stone or Find seeds. It costs one of its favourite treats.',
     'By day a worker finds a tree, bare rock or grass near you, works at it, then carries a log, some cobble or seeds back on its back and drops it at your feet.',

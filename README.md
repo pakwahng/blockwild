@@ -47,7 +47,7 @@ Babies in your nursery slowly grow up (about seven minutes of being tame), getti
 | Lamb | Sheep | 2 **wool**, a soft building block |
 | Wolf pup | Wolf | Guards the nursery: chases off foxes and nips snakes into confetti (two nips) |
 
-Foxes and snakes don't go after grown wolves. Growth, gifts lying on the ground and grown-ups all save, and guests see them too.
+Foxes and snakes don't go after grown wolves. A wolf chases no more than about 20 blocks from where it was, then trots back. Growth, gifts lying on the ground and grown-ups all save, and guests see them too.
 
 ### Jobs: training grown-ups to help
 
@@ -105,7 +105,7 @@ Tap a grown-up (hen, cow, pig, sheep or wolf) to pet it and open **Teach a job**
 ## Goals
 
 - The star line under the nursery counters shows your **next goal** (tap it to see them all in the bag's **★ Goals** tab).
-- Goals lead from digging your first blocks to chopping a tree, building a crafting table, penning your babies in with fences and a gate, filling a feeder, climbing a ladder, bonking a raider, keeping the nursery safe for a night, watching a baby grow up, picking up gifts from the grown-ups and growing to 37 chickens.
+- Goals lead from digging your first blocks to chopping a tree, building a crafting table, penning your babies in with fences and a gate, filling a feeder, climbing a ladder, bonking a raider, keeping the nursery safe for a night, watching a baby grow up, picking up gifts from the grown-ups, teaching a grown-up a job and growing to 37 chickens.
 - Each goal gives a reward (seeds, wheat, apples, bones, wood, a gate, hay or lamps) when you finish it.
 
 ## Flowers

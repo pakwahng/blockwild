@@ -12,7 +12,7 @@ const LOVE_TIME = 25, BREED_COOLDOWN = 25, GROW_TIME = 120;
 export const ADULT_TIME = 420, ADULT_SCALE = 1.45, MILK_GROW = 0.25;
 // What each grown-up leaves on the ground for you now and then: [item, how many]. Grown wolves guard instead.
 export const GIFTS = { chick: [ITEM_EGG, 1], calf: [ITEM_MILK, 1], lamb: [B.WOOL, 2], piglet: [ITEM_APPLE, 2] };
-const GIFT_TIME = [60, 120], MAX_GIFTS = 60, GUARD_RANGE = 14;
+const GIFT_TIME = [60, 120], MAX_GIFTS = 60, GUARD_RANGE = 14, CHASE_LIMIT = 20;
 const GIFT_MODEL = { [ITEM_EGG]: 'egg', [ITEM_MILK]: 'milk', [B.WOOL]: 'woolTuft', [ITEM_APPLE]: 'apple', [B.LOG]: 'logChunk', [B.COBBLE]: 'stoneChunk', [ITEM_SEEDS]: 'seed' };
 const ease = t => t * t * (3 - 2 * t);
 // Jobs a tame grown-up can learn. It finds a tree, a rock or a grassy patch near by, works at it for a bit
@@ -407,13 +407,23 @@ export class Nursery {
       if (threat) { a.flee = Math.max(a.flee, 1.5); a.fleeFrom = threat; }
       // a grown wolf chases off foxes and snakes that come near the nursery
       let foe = null;
+      let homeward = false;
       if (guard) {
-        let fd = GUARD_RANGE * GUARD_RANGE;
-        for (const f of foes) { const d = dist2(a.p, f.p); if (d < fd && Math.abs(f.p[1] - a.p[1]) < 4) { fd = d; foe = f; } }
+        // it chases from where it was standing, but no further than CHASE_LIMIT, then trots back
+        a.guardBack = Math.max(0, (a.guardBack || 0) - dt);
+        if (!a.home) a.home = [...a.p];
+        if (a.guardBack === 0) {
+          let fd = GUARD_RANGE * GUARD_RANGE;
+          for (const f of foes) { const d = dist2(a.p, f.p); if (d < fd && Math.abs(f.p[1] - a.p[1]) < 4 && dist2(f.p, a.home) < CHASE_LIMIT * CHASE_LIMIT) { fd = d; foe = f; } }
+          if (foe && dist2(a.p, a.home) > CHASE_LIMIT * CHASE_LIMIT) { foe = null; a.guardBack = 10; }
+          if (!foe) a.home = [...a.p];
+        } else if (dist2(a.p, a.home) > 2 * 2) homeward = true;
       }
       const treat = a.flee > 0 || foe ? null : this.nearestTreat(a, 10);
       let cheering = false;
-      if (foe) {
+      if (homeward) {
+        goal = a.home; speed = S.walk * 1.6;
+      } else if (foe) {
         goal = foe.p; speed = S.run * 1.25;
         a.spot = null; a.enjoy = 0; a.sleep = false; a.wag = 1;
         if (dist2(a.p, foe.p) < 1.7 * 1.7 && a.bite === 0) {
