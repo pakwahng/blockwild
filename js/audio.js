@@ -167,6 +167,23 @@ export class Sfx {
   }
 
   whoosh() { if (this.ready) this.noise(this.ctx.currentTime + 0.01, 0.14, 0.2, 2200); }
+  // the dinner bell: a bright ding-ding with a long ring
+  ding() {
+    if (!this.ready) return;
+    const t = this.ctx.currentTime + 0.01;
+    for (const [at, f] of [[0, 1320], [0.32, 1320], [0.64, 1180]]) {
+      this.tone('sine', f, f * 0.995, t + at, 1.1, 0.22); this.tone('sine', f * 2.76, f * 2.7, t + at, 0.5, 0.05); this.tone('triangle', f / 2, f / 2, t + at, 0.7, 0.06);
+    }
+  }
+  // a rocket going up
+  rocket(vol = 0.12) { if (this.ready) { const t = this.ctx.currentTime + 0.01; this.tone('sawtooth', 300, 1400, t, 0.9, vol * 0.25); this.noise(t, 0.9, vol, 1800); } }
+  // a firework bursting, quieter further away
+  bang(vol = 0.4) {
+    if (!this.ready || vol < 0.01) return;
+    const t = this.ctx.currentTime + 0.01;
+    this.noise(t, 0.5, vol, 260); this.tone('sine', 120, 40, t, 0.4, vol * 0.6);
+    for (let k = 0; k < 6; k++) this.noise(t + 0.25 + Math.random() * 0.6, 0.04, vol * 0.25, 3000 + Math.random() * 2000); // crackles
+  }
   crackle(vol = 0.06) { if (this.ready) { const t = this.ctx.currentTime + 0.01; this.noise(t, 0.03, vol, 2600 + Math.random() * 1800); if (Math.random() < 0.4) this.noise(t + 0.05, 0.02, vol * 0.7, 3200); } }
 
   nightfall() {

@@ -163,6 +163,27 @@ export class Nursery {
     }
     return n;
   }
+  // A firework bursting overhead: tame animals close by look up, hop and wag (no growing, unlike a party).
+  cheer(p, r = 18) {
+    for (const a of this.animals) {
+      if (!a.tame || dist2(a.p, p) > r * r || Math.random() < 0.3) continue;
+      a.wag = 1; a.sleep = false;
+      if (a.onGround) a.v[1] = 3 + Math.random() * 2;
+      if (Math.random() < 0.35) this.events.push({ type: 'party', sp: a.sp, p: [...a.p] });
+    }
+  }
+  // The dinner bell: every tame animal within r comes running to stand round it (for up to half a minute).
+  callHome(p, r = 70) {
+    let n = 0;
+    for (const a of this.animals) {
+      if (!a.tame || dist2(a.p, p) > r * r) continue;
+      const ang = Math.random() * Math.PI * 2, d = 1.6 + Math.random() * 2.4;
+      a.callTo = [p[0] + 0.5 + Math.cos(ang) * d, p[1], p[2] + 0.5 + Math.sin(ang) * d];
+      a.called = 30; a.sleep = false; a.spot = null; a.enjoy = 0; a.wag = 1;
+      n++;
+    }
+    return n;
+  }
   growBy(a, f) {
     if (a.grow >= 1) return;
     a.grow = Math.min(1, a.grow + f);
@@ -511,6 +532,11 @@ export class Nursery {
         const g = a.gatherSlot;
         if (dist2(a.p, g) > 0.35 * 0.35) { goal = g; speed = S.run * 0.9; }
         else { cheering = true; a.spot = null; a.enjoy = 0; a.sleep = false; }
+      } else if (a.called > 0 && a.callTo) {
+        // the dinner bell rang: run to it, then a happy hop on arrival
+        a.called -= dt;
+        if (dist2(a.p, a.callTo) > 0.6 * 0.6) { goal = a.callTo; speed = S.run; }
+        else { a.called = 0; a.home = [...a.callTo]; a.wag = 1; if (a.onGround) a.v[1] = 4; this.events.push({ type: 'party', sp: a.sp, p: [...a.p] }); }
       } else if (treat) {
         goal = treat.p; speed = S.run;
         if (dist2(a.p, treat.p) < (S.half + 0.3) ** 2 && Math.abs(a.p[1] - treat.p[1]) < 0.8) {

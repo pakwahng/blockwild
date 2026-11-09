@@ -1,6 +1,6 @@
 // Goals: a short list of things to try, in order, each with a little reward.
 // They lead a new player from digging their first block to building a pen and surviving the night.
-import { B, ITEM_SEEDS, ITEM_WHEAT, ITEM_APPLE, ITEM_CLOVER, ITEM_BONE, ITEM_STICK, ITEM_EGG, ITEM_MILK, ITEM_HOUSE, ITEM_FISH, FOODS } from './blocks.js';
+import { B, ITEM_SEEDS, ITEM_WHEAT, ITEM_APPLE, ITEM_CLOVER, ITEM_BONE, ITEM_STICK, ITEM_EGG, ITEM_MILK, ITEM_HOUSE, ITEM_FISH, FOODS, ITEM_FIREWORK } from './blocks.js';
 
 // stats: { dug: {id: n}, got: {id: n}, made: {id: n}, placed: {id: n}, tamed, hatched, bonked, filled, nights, climbed, chicks, grown, gifts: {id: n} }
 const n = (map, id) => (map && map[id]) || 0;
@@ -38,6 +38,10 @@ export const GOALS = [
   ['cook', 'Make a campfire and cook something on it', 1, s => sum(s.made, FOODS), [[ITEM_WHEAT, 4], [ITEM_EGG, 2]]],
   ['party', 'Throw a party: use a party cake near your babies', 1, s => s.parties || 0, [[ITEM_MILK, 2], [B.FLOWER_RED, 3]]],
   ['trade', 'Swap something with Pip the travelling goose (she visits every other day)', 1, s => s.traded || 0, [[ITEM_APPLE, 4], [ITEM_FISH, 2]]],
+  ['scare', 'Make a scarecrow and stand it by your nursery: snakes slow right down near it', 1, s => n(s.placed, B.SCARECROW), [[B.LAMP, 2], [B.HAY, 2]]],
+  ['bell', 'Make a dinner bell and ring it: tap it and your animals come running', 1, s => s.rang || 0, [[ITEM_APPLE, 4], [ITEM_CLOVER, 3]]],
+  ['firework', 'Launch a firework (they look best at night!)', 1, s => s.fireworks || 0, [[B.FLOWER_RED, 2], [B.FLOWER_YELLOW, 2]]],
+  ['streak', 'Keep every baby safe 3 nights in a row', 3, s => s.bestStreak || 0, [[ITEM_FIREWORK, 3], [ITEM_MILK, 2]]],
   ['chicks', 'Grow your nursery to 37 chickens', 37, s => s.chicks || 0, [[B.HAY, 4], [ITEM_APPLE, 5]]],
 ];
 export const GOAL_IDS = GOALS.map(g => g[0]);

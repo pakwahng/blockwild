@@ -60,6 +60,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 #nursery .pill.crown[data-level="3"] path { fill: #dff6ff; stroke: #6fb6e0; }
 #nursery .pill.crown[data-level="3"] rect { fill: #9fdcff; }
 #nursery .pill.crown[data-level="3"] circle { fill: #ffffff; }
+#nursery .pill.streak { background: rgba(20, 24, 70, 0.6); border-color: rgba(170, 180, 255, 0.6); font-weight: 800; }
 @keyframes bump { 30% { transform: scale(1.25); } 100% { transform: scale(1); } }
 
 #toast {

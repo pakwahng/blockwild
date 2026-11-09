@@ -275,6 +275,14 @@ A full day lasts 10 minutes: about 6 minutes of daylight, a pink dusk, roughly 3
 - Place the throne: it builds a red-cushioned seat with a hay back (facing you) and arms.
 - Tap the throne to sit. Every baby in your nursery nearby gathers in rows in front of it, hopping and wagging. Walk or jump to stand up.
 
+## Scarecrows, the dinner bell and fireworks
+
+- **Scarecrow** (Farm tab, at a crafting table: 2 hay, 2 sticks, 1 wool): block snakes within 7 blocks of one creep along at under half speed, giving you time to reach them with the sword. Learned from the cooking goal.
+- **Dinner bell** (Farm tab, at a crafting table: 3 wood, 2 sticks, 1 lamp): tap it and every tame animal within 70 blocks runs to stand round it. Grown wolves then guard from there. Its bell glows at night. Learned by swapping with Pip.
+- **Fireworks** (Wood & tools tab, at a crafting table: 1 stick, 1 sand, 1 red and 1 yellow flower makes 3): hold one and tap to launch it. It whooshes up, trailing sparks, and bursts into a ball or ring of glowing colour. Animals nearby hop about. Learned by throwing a party. Everyone playing together sees the same firework.
+- The **🌙 badge** next to your crown counts perfect nights in a row, and how many the next crown needs.
+- New goals: make a scarecrow, ring the bell, launch a firework, and keep every baby safe 3 nights in a row.
+
 ## Play together
 
 - Pick **Lachie** or **Charli**, your name and your clothes in the **Wardrobe** (front screen or pause menu). That's how other players see you.
@@ -305,6 +313,8 @@ A full day lasts 10 minutes: about 6 minutes of daylight, a pink dusk, roughly 3
 | `js/mesher.js` | Turns chunks into triangles, with rounded block edges and ambient occlusion |
 | `js/animals.js` | Baby animal behaviour: species table, wandering, treats, taming, breeding, hay and mud habits, pens, growing up, gifts, wolf guards, jobs (finding work, path-finding round hills and fences, carrying things home) |
 | `js/critters.js` | Butterflies by day and fireflies at night, just for looking at |
+| `js/fireworks.js` | Fireworks: the rocket, its spark trail and the glowing burst |
+| `js/music.js` | The theme song: when it plays on the menu and in the game |
 | `js/raiders.js` | Daytime foxes and crows: sneaking, stealing treats, fences, sword hits |
 | `js/goals.js` | The goals list, progress and rewards |
 | `js/version.js` | Version number and the change log shown in What’s new |

@@ -552,6 +552,30 @@ export function treatIcon(kind, px = 64) {
       g.save(); g.translate(32, 48); g.rotate(-0.35); rr(g, -22, -4, 44, 8, 3, '#8f5f34'); g.restore();
       g.fillStyle = '#ff8a2a'; g.beginPath(); g.moveTo(14, 46); g.quadraticCurveTo(12, 24, 32, 6); g.quadraticCurveTo(52, 24, 50, 46); g.closePath(); g.fill();
       g.fillStyle = '#ffd23c'; g.beginPath(); g.moveTo(22, 46); g.quadraticCurveTo(22, 30, 32, 20); g.quadraticCurveTo(42, 30, 42, 46); g.closePath(); g.fill();
+    } else if (kind === 'scarecrow') {
+      rr(g, 29, 30, 6, 32, 2, '#7e5230');                                              // pole
+      rr(g, 4, 28, 56, 6, 3, '#b5763a');                                               // arms
+      for (const x of [2, 56]) rr(g, x, 26, 7, 11, 3, '#e3c25a');                       // straw hands
+      rr(g, 19, 30, 26, 24, 5, '#e3c25a'); rr(g, 22, 36, 20, 3, 1.5, '#c99a3a');         // straw body
+      rr(g, 22, 12, 20, 18, 7, '#f08a2a'); rr(g, 30, 9, 4, 5, 2, '#5c8a2e');             // pumpkin head
+      g.fillStyle = '#5a2a10'; for (const x of [27, 37]) { g.beginPath(); g.arc(x, 19, 2.2, 0, Math.PI * 2); g.fill(); }
+      rr(g, 27, 24, 10, 2.5, 1, '#5a2a10');
+      rr(g, 12, 9, 40, 5, 2, '#f2cf6a'); rr(g, 21, 1, 22, 10, 4, '#e3c25a');             // hay hat
+    } else if (kind === 'dinner bell') {
+      for (const x of [6, 52]) rr(g, x, 8, 6, 52, 2, '#7e5230');                        // posts
+      rr(g, 3, 6, 58, 7, 3, '#b5763a');                                                // beam
+      g.fillStyle = '#ffcf3a'; g.beginPath(); g.moveTo(32, 14); g.quadraticCurveTo(18, 16, 18, 36); g.lineTo(13, 46); g.lineTo(51, 46); g.lineTo(46, 36); g.quadraticCurveTo(46, 16, 32, 14); g.fill();
+      rr(g, 22, 18, 5, 18, 2.5, '#fff1a8');                                            // shine
+      g.fillStyle = '#c98a00'; g.beginPath(); g.arc(32, 49, 4.5, 0, Math.PI * 2); g.fill(); // clapper
+    } else if (kind === 'firework') {
+      g.save(); g.translate(32, 34); g.rotate(0.45);
+      rr(g, -2, 8, 4, 26, 2, '#b5763a');                                               // stick
+      rr(g, -8, -18, 16, 28, 4, '#e8443a'); rr(g, -8, -8, 16, 5, 2, '#ffffff');          // rocket
+      g.fillStyle = '#4aa8ff'; g.beginPath(); g.moveTo(-8, -18); g.lineTo(0, -30); g.lineTo(8, -18); g.closePath(); g.fill();
+      g.restore();
+      for (const [x, y, c] of [[10, 12, '#ffd23c'], [52, 18, '#4cc25a'], [14, 46, '#ff6fb0'], [54, 50, '#ffd23c']]) {
+        g.fillStyle = c; g.beginPath(); for (let k = 0; k < 10; k++) { const r = k % 2 ? 2.2 : 5.5, a = k * Math.PI / 5; g.lineTo(x + Math.cos(a) * r, y + Math.sin(a) * r); } g.fill();
+      }
     } else if (kind === 'bread') {
       rr(g, 6, 22, 52, 30, 14, '#b9722f'); rr(g, 9, 22, 46, 22, 11, '#dc9a4c');
       for (const x of [18, 30, 42]) { g.save(); g.translate(x, 30); g.rotate(0.5); rr(g, -2, -7, 4, 14, 2, '#f2c98a'); g.restore(); }
@@ -938,4 +962,18 @@ export function fireflyModel() {
   m.box([0, 0, -0.03], [0.06, 0.055, 0.065], 0.024, '#e4ff70', 11, false);
   for (const [sx, part] of [[1, 1], [-1, 2]]) m.box([sx * 0.035, 0.022, 0.01], [0.05, 0.006, 0.05], 0.003, '#c8d0e0', part, false);
   return m.done({ wing: [0.01, 0.02], leg: [0, 0, 0], head: [0, 0], tail: [0] });
+}
+
+// ---- fireworks: glowing sparks (part 11 stays bright at night) and the rocket ----
+export const SPARK_COLORS = ['#ff5c7a', '#ffd23c', '#4cc25a', '#4aa8ff', '#b05cff', '#ffffff'];
+export function sparkModel(color) {
+  return new ModelBuilder().box([0, 0, 0], [0.26, 0.26, 0.26], 0.08, color, 11, false).done(NO_RIG);
+}
+export function rocketModel() {
+  const m = new ModelBuilder();
+  m.box([0, 0.2, 0], [0.14, 0.34, 0.14], 0.04, '#e8443a', 11, false);
+  m.box([0, 0.2, 0], [0.15, 0.06, 0.15], 0.02, '#ffffff', 11, false);
+  m.box([0, 0.42, 0], [0.08, 0.1, 0.08], 0.03, '#4aa8ff', 11, false);
+  m.box([0, -0.12, 0], [0.03, 0.32, 0.03], 0.01, '#b5763a', 11, false);
+  return m.done(NO_RIG);
 }

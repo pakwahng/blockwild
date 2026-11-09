@@ -19,7 +19,7 @@ export const B = {
   PLANTER: 40, PLANTER_SEEDED: 41, PLANTER_GROWING: 42, PLANTER_RIPE: 43,
   CHEST: 44, CHEST_OPEN: 45,
   WOOL_RED: 46, WOOL_ORANGE: 47, WOOL_YELLOW: 48, WOOL_PINK: 49, WOOL_GREEN: 50,
-  BED: 51, SIGN: 52, CAMPFIRE: 53,
+  BED: 51, SIGN: 52, CAMPFIRE: 53, SCARECROW: 54, BELL: 55,
 };
 
 // kind: 'opaque' | 'cutout' (alpha-tested, e.g. leaves) | 'liquid' (translucent pass)
@@ -91,6 +91,10 @@ const defs = [
   { id: B.SIGN, name: 'Sign', kind: 'cutout', all: T.PLANKS, post: T.LOG_SIDE, hard: 0.3, shape: 'sign', passable: true },
   // a campfire ringed with stones: cook food on it (its flames glow like a lamp)
   { id: B.CAMPFIRE, name: 'Campfire', kind: 'cutout', all: T.COBBLE, log: T.LOG_SIDE, flame: T.LAMP, hard: 0.5, shape: 'campfire' },
+  // a straw scarecrow in a pumpkin head and a hay hat: block snakes near it slow right down
+  { id: B.SCARECROW, name: 'Scarecrow', kind: 'cutout', all: T.HAY_SIDE, post: T.LOG_SIDE, head: T.WOOL_ORANGE, hat: T.HAY_TOP, arm: T.PLANKS, hard: 0.4, shape: 'scarecrow' },
+  // a dinner bell on a little frame: tap it and your animals all come running home to it
+  { id: B.BELL, name: 'Dinner bell', kind: 'cutout', all: T.PLANKS, post: T.LOG_SIDE, bell: T.LAMP, hard: 0.4, shape: 'bell' },
 ];
 
 export const BLOCKS = [];
@@ -111,7 +115,7 @@ for (const b of BLOCKS) {
   KIND[b.id] = { air: 0, opaque: 1, cutout: 2, liquid: 3 }[b.kind];
 }
 
-export const PLACEABLE = [B.FENCE, B.GATE, B.DOOR, B.BED, B.SIGN, B.PLANTER, B.TABLE, B.CAMPFIRE, B.LADDER, B.FEEDER, B.FLOWER_RED, B.FLOWER_YELLOW, B.FLOWER_WHITE, B.GRASS, B.DIRT, B.PLANKS, B.WOOL, B.WOOL_RED, B.WOOL_ORANGE, B.WOOL_YELLOW, B.WOOL_PINK, B.WOOL_GREEN, B.LOG, B.HAY, B.MUD, B.ROOF, B.CREAM, B.BRICK,
+export const PLACEABLE = [B.FENCE, B.GATE, B.DOOR, B.BED, B.SIGN, B.PLANTER, B.TABLE, B.CAMPFIRE, B.SCARECROW, B.BELL, B.LADDER, B.FEEDER, B.FLOWER_RED, B.FLOWER_YELLOW, B.FLOWER_WHITE, B.GRASS, B.DIRT, B.PLANKS, B.WOOL, B.WOOL_RED, B.WOOL_ORANGE, B.WOOL_YELLOW, B.WOOL_PINK, B.WOOL_GREEN, B.LOG, B.HAY, B.MUD, B.ROOF, B.CREAM, B.BRICK,
   B.STONE, B.COBBLE, B.GLASS, B.LEAVES, B.SAND, B.SNOW, B.CLAY, B.LAMP, B.WATER];
 // Non-block items (animal treats) share the hotbar with blocks; their ids sit above the block range.
 export const ITEM_SEEDS = 200, ITEM_WHEAT = 201, ITEM_APPLE = 202, ITEM_CLOVER = 203, ITEM_BONE = 204;
@@ -147,3 +151,6 @@ export const IS_FEEDER = id => id === B.FEEDER || FEEDER_TREAT[id] !== undefined
 export const ITEM_BREAD = 212, ITEM_GRILLED = 213, ITEM_PIE = 214, ITEM_CAKE = 215;
 ITEM_NAMES[ITEM_BREAD] = 'Bread'; ITEM_NAMES[ITEM_GRILLED] = 'Grilled fish'; ITEM_NAMES[ITEM_PIE] = 'Apple pie'; ITEM_NAMES[ITEM_CAKE] = 'Party cake';
 export const FOODS = [ITEM_BREAD, ITEM_GRILLED, ITEM_PIE, ITEM_CAKE];
+// Fireworks: launch one and it whooshes up and bursts into colours (your babies love them).
+export const ITEM_FIREWORK = 216;
+ITEM_NAMES[ITEM_FIREWORK] = 'Firework';

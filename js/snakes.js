@@ -8,6 +8,7 @@ import { CONFETTI_COLORS } from './models.js';
 // SIZE scales the whole snake: its blocks, spacing, body and reach (3 = a big scary snake).
 const SIZE = 3;
 const SEGMENTS = 9, SPACING = 0.4 * SIZE, SPEED = 1.7, HALF = 0.45, HEIGHT = 0.9, GRAVITY = 20;
+export const SCARE_RANGE = 7, SCARE_SLOW = 0.4; // snakes near a scarecrow slow right down
 const GROUND = new Set([B.GRASS, B.DIRT, B.SAND, B.MUD, B.SNOW]);
 const MAX_SNAKES = 4;
 
@@ -228,6 +229,15 @@ export class Snakes {
     const fast = s.kind === K_FLYING ? 1.35 : 1;
     let speed = s.pause > 0 || s.hit > 0 || s.fuse > 0 ? 0 : (lunge ? SPEED * 1.6 : SPEED) * fast;
     if (!s.target && gd < 3) speed = 0;
+    // a scarecrow close by: the snake creeps along, nervous, at under half speed
+    s.scareT = (s.scareT || 0) - dt;
+    if (s.scareT <= 0) {
+      s.scareT = 0.8;
+      const was = s.scared;
+      s.scared = world.placedNear(s.p[0], s.p[2], SCARE_RANGE, id => id === B.SCARECROW).some(t => Math.abs(t[1] - s.p[1]) < 5);
+      if (s.scared && !was) this.events.push({ type: 'scared', p: [...s.p] });
+    }
+    if (s.scared) speed *= SCARE_SLOW;
 
     // boom snake: stops next to a baby (or you) and fizzes, then goes BOOM
     if (s.kind === K_BOOM) {

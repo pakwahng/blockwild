@@ -1,5 +1,5 @@
 // Collecting and crafting: what each block gives you when you dig it, and what you can make.
-import { B, ITEM_SEEDS, ITEM_WHEAT, ITEM_APPLE, ITEM_CLOVER, ITEM_BONE, ITEM_SWORD, ITEM_STICK, ITEM_HOUSE, ITEM_ROD, ITEM_FISH, ITEM_EGG, ITEM_MILK, ITEM_BREAD, ITEM_GRILLED, ITEM_PIE, ITEM_CAKE } from './blocks.js';
+import { B, ITEM_SEEDS, ITEM_WHEAT, ITEM_APPLE, ITEM_CLOVER, ITEM_BONE, ITEM_SWORD, ITEM_STICK, ITEM_HOUSE, ITEM_ROD, ITEM_FISH, ITEM_EGG, ITEM_MILK, ITEM_BREAD, ITEM_GRILLED, ITEM_PIE, ITEM_CAKE, ITEM_FIREWORK } from './blocks.js';
 
 // What you get for digging a block. Extra treats turn up now and then.
 export function drops(id) {
@@ -40,12 +40,15 @@ export const RECIPES = [
   R(ITEM_SWORD, 1, [[B.PLANKS, 2], [ITEM_STICK, 1]], 'wood', true),
   R(B.LADDER, 3, [[ITEM_STICK, 7]], 'wood', true),
   R(ITEM_ROD, 1, [[ITEM_STICK, 3], [B.WOOL, 1]], 'wood', true),
+  R(ITEM_FIREWORK, 3, [[ITEM_STICK, 1], [B.SAND, 1], [B.FLOWER_RED, 1], [B.FLOWER_YELLOW, 1]], 'wood', true),
   R(B.FENCE, 4, [[B.PLANKS, 2], [ITEM_STICK, 2]], 'farm', true),
   R(B.GATE, 1, [[B.PLANKS, 2], [ITEM_STICK, 4]], 'farm', true),
   R(B.FEEDER, 1, [[B.PLANKS, 3]], 'farm', true),
   R(B.HAY, 1, [[ITEM_WHEAT, 4]], 'farm'),
   R(ITEM_SEEDS, 3, [[ITEM_WHEAT, 1]], 'farm'),
   R(B.PLANTER, 1, [[B.PLANKS, 3], [B.DIRT, 2]], 'farm', true),
+  R(B.SCARECROW, 1, [[B.HAY, 2], [ITEM_STICK, 2], [B.WOOL, 1]], 'farm', true),
+  R(B.BELL, 1, [[B.PLANKS, 3], [ITEM_STICK, 2], [B.LAMP, 1]], 'farm', true),
   R(B.GLASS, 1, [[B.SAND, 2]], 'build'),
   R(B.BRICK, 1, [[B.CLAY, 2]], 'build'),
   R(B.CREAM, 2, [[B.SAND, 1], [B.CLAY, 1]], 'build'),

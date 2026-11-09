@@ -350,6 +350,30 @@ function shapeMesh(buf, id, p, wx, wy, wz) {
     pb(flame, 0.46, 0.62, 0.46, 0.54, 0.74, 0.54); pb(flame, 0.28, 0.24, 0.44, 0.36, 0.36, 0.56); pb(flame, 0.62, 0.24, 0.44, 0.72, 0.4, 0.56);
     return;
   }
+  if (BLOCKS[id].shape === 'scarecrow') {
+    const { post, head, hat, arm } = BLOCKS[id];
+    const pb = (l, ...a) => shapeBox(buf, wx, wy, wz, l, ...a, false);
+    pb(post, 0.45, 0, 0.45, 0.55, 0.4, 0.55);                                       // pole
+    box(0.32, 0.34, 0.36, 0.68, 0.7, 0.64);                                          // straw body
+    box(0.36, 0.26, 0.4, 0.44, 0.36, 0.6); box(0.56, 0.26, 0.4, 0.64, 0.36, 0.6);    // straw tufts below
+    pb(arm, 0.02, 0.58, 0.46, 0.98, 0.66, 0.54);                                     // cross arm
+    box(0.0, 0.52, 0.43, 0.1, 0.62, 0.57); box(0.9, 0.52, 0.43, 1.0, 0.62, 0.57);    // straw hands
+    pb(head, 0.36, 0.7, 0.38, 0.64, 0.92, 0.62);                                     // pumpkin head
+    pb(hat, 0.28, 0.9, 0.3, 0.72, 0.94, 0.7); pb(hat, 0.38, 0.94, 0.4, 0.62, 1.0, 0.6); // hay hat
+    return;
+  }
+  if (BLOCKS[id].shape === 'bell') {
+    const { post, bell } = BLOCKS[id];
+    const pb = (l, ...a) => shapeBox(buf, wx, wy, wz, l, ...a, false);
+    pb(post, 0.1, 0, 0.42, 0.2, 0.92, 0.58); pb(post, 0.8, 0, 0.42, 0.9, 0.92, 0.58); // two posts
+    box(0.06, 0.86, 0.38, 0.94, 0.98, 0.62);                                          // beam
+    box(0.04, 0, 0.32, 0.26, 0.08, 0.68); box(0.74, 0, 0.32, 0.96, 0.08, 0.68);        // feet
+    pb(bell, 0.44, 0.76, 0.44, 0.56, 0.86, 0.56);                                     // bell top
+    pb(bell, 0.38, 0.56, 0.38, 0.62, 0.78, 0.62);                                     // bell
+    pb(bell, 0.33, 0.44, 0.33, 0.67, 0.58, 0.67);                                     // flared rim
+    pb(post, 0.46, 0.36, 0.46, 0.54, 0.44, 0.54);                                     // clapper
+    return;
+  }
   if (BLOCKS[id].shape === 'feeder') {
     box(0.05, 0, 0.2, 0.95, 0.1, 0.8);                                         // floor
     box(0.05, 0.1, 0.2, 0.95, 0.46, 0.28); box(0.05, 0.1, 0.72, 0.95, 0.46, 0.8); // long sides

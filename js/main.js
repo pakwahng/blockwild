@@ -1,5 +1,5 @@
 // Baby Chicken Empire: bootstrap, game loop, streaming, interaction, UI and saving.
-import { B, T, BLOCKS, SOLID, PLACEABLE, TILE_COUNT, ITEM_SEEDS, ITEM_WHEAT, ITEM_SWORD, ITEM_BONE, ITEM_APPLE, ITEM_CLOVER, ITEM_STICK, ITEM_EGG, ITEM_MILK, ITEM_HOUSE, ITEM_ROD, ITEM_FISH, ITEM_BREAD, ITEM_GRILLED, ITEM_PIE, ITEM_CAKE, FOODS, IS_DOOR, DOOR_TOPS, TREATS, ITEM_NAMES, SHAPED, FEEDER_OF, FEEDER_TREAT, IS_FEEDER } from './blocks.js';
+import { B, T, BLOCKS, SOLID, PLACEABLE, TILE_COUNT, ITEM_SEEDS, ITEM_WHEAT, ITEM_SWORD, ITEM_BONE, ITEM_APPLE, ITEM_CLOVER, ITEM_STICK, ITEM_EGG, ITEM_MILK, ITEM_HOUSE, ITEM_ROD, ITEM_FISH, ITEM_BREAD, ITEM_GRILLED, ITEM_PIE, ITEM_CAKE, ITEM_FIREWORK, FOODS, IS_DOOR, DOOR_TOPS, TREATS, ITEM_NAMES, SHAPED, FEEDER_OF, FEEDER_TREAT, IS_FEEDER } from './blocks.js';
 import { Snakes, SNAKE_KINDS, K_POISON, K_FLYING, K_DIGGER, K_BOOM } from './snakes.js';
 import { Raiders } from './raiders.js';
 import { Weather } from './weather.js';
@@ -13,6 +13,7 @@ import * as M from './models.js';
 import { Nursery, SPECIES, SPECIES_ORDER, isTreat, GIFTS, BABY_NAMES, cleanAnimalNick, ANIMAL_HATS } from './animals.js';
 import { Sfx } from './audio.js';
 import { Music } from './music.js';
+import { Fireworks } from './fireworks.js';
 import { World, CS, CH, SEA } from './world.js';
 import { buildMesh } from './mesher.js';
 import { Renderer } from './renderer.js';
@@ -75,6 +76,8 @@ try {
   renderer.addModel('egg', M.eggModel());
   renderer.addModel('bobber', M.bobberModel());
   renderer.addModel('trader', M.traderModel());
+  M.SPARK_COLORS.forEach((c, k) => renderer.addModel('spark' + k, M.sparkModel(c)));
+  renderer.addModel('rocket', M.rocketModel());
   renderer.addModel('milk', M.milkModel());
   renderer.addModel('woolTuft', M.woolTuftModel());
   renderer.addModel('logChunk', M.logChunkModel());
@@ -113,17 +116,17 @@ let myNetId = 0, netTimer = 0, poseTimer = 0, shownOthers = -1, pendingEdits = {
 const netEdits = [], netEvents = [];
 
 const icons = {};
-const SHAPE_ICON = { [B.FENCE]: 'fence', [B.GATE]: 'gate', [B.DOOR]: 'door', [B.BED]: 'bed', [B.SIGN]: 'sign', [B.CAMPFIRE]: 'campfire', [B.PLANTER]: 'planter', [B.TABLE]: 'table', [B.LADDER]: 'ladder', [B.FEEDER]: 'feeder',
+const SHAPE_ICON = { [B.FENCE]: 'fence', [B.GATE]: 'gate', [B.DOOR]: 'door', [B.BED]: 'bed', [B.SIGN]: 'sign', [B.CAMPFIRE]: 'campfire', [B.SCARECROW]: 'scarecrow', [B.BELL]: 'dinner bell', [B.PLANTER]: 'planter', [B.TABLE]: 'table', [B.LADDER]: 'ladder', [B.FEEDER]: 'feeder',
   [B.FLOWER_RED]: 'flower-red', [B.FLOWER_YELLOW]: 'flower-yellow', [B.FLOWER_WHITE]: 'flower-white' };
 if (textures) for (const id of [...PLACEABLE, B.THRONE]) {
   icons[id] = SHAPED[id] ? M.treatIcon(SHAPE_ICON[id], 64).toDataURL() : blockIcon(BLOCKS[id], textures.tiles, 64).toDataURL();
 }
-for (const id of [...TREATS, ITEM_SWORD, ITEM_STICK, ITEM_EGG, ITEM_MILK, ITEM_HOUSE, ITEM_ROD, ITEM_FISH, ...FOODS]) icons[id] = M.treatIcon(ITEM_NAMES[id].toLowerCase(), 64).toDataURL();
+for (const id of [...TREATS, ITEM_SWORD, ITEM_STICK, ITEM_EGG, ITEM_MILK, ITEM_HOUSE, ITEM_ROD, ITEM_FISH, ITEM_FIREWORK, ...FOODS]) icons[id] = M.treatIcon(ITEM_NAMES[id].toLowerCase(), 64).toDataURL();
 $('#held').src = icons[ITEM_SWORD] || '';
 const itemName = id => ITEM_NAMES[id] || BLOCKS[id]?.name || '';
 const isItem = id => !!icons[id];
 // the order things are listed in your bag
-const BAG_ORDER = [...TREATS, ITEM_FISH, ITEM_EGG, ITEM_MILK, ITEM_SWORD, ITEM_ROD, ITEM_STICK, ITEM_HOUSE, B.THRONE, ...PLACEABLE];
+const BAG_ORDER = [...TREATS, ITEM_FISH, ITEM_EGG, ITEM_MILK, ITEM_SWORD, ITEM_ROD, ITEM_STICK, ITEM_HOUSE, ITEM_FIREWORK, B.THRONE, ...PLACEABLE];
 
 // ---------- your bag: collecting and using things up ----------
 const have = id => inv[id] || 0;
@@ -425,6 +428,7 @@ function startWorld(save) {
   loadSigns(save?.signs);
   snackT = 0; boostEl.hidden = true;
   trader.here = false; trader.day = -1; trader.look = 0;
+  fireworks.rockets.length = 0; fireworks.sparks.length = 0;
   seat = null;
   showCrown();
   // a few wild babies of each kind close by, so there's someone to feed straight away
@@ -492,6 +496,9 @@ crownEl.className = 'pill crown';
 crownEl.setAttribute('aria-label', 'Chicken king crown');
 crownEl.innerHTML = `<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M4 11l6 6 6-10 6 10 6-6-2 15H6z" fill="#ffcf3a" stroke="#c98a00" stroke-width="1.6" stroke-linejoin="round"/><rect x="6" y="23" width="20" height="4" rx="1.5" fill="#ffb800"/><circle cx="16" cy="18" r="2.4" fill="#e8443a"/><circle cx="10" cy="20" r="1.6" fill="#4aa8ff"/><circle cx="22" cy="20" r="1.6" fill="#4cc25a"/><circle cx="4" cy="10" r="1.8" fill="#ffcf3a"/><circle cx="16" cy="6" r="1.8" fill="#ffcf3a"/><circle cx="28" cy="10" r="1.8" fill="#ffcf3a"/></svg>`;
 nurseryEl.prepend(crownEl);
+const streakEl = document.createElement('div');
+streakEl.className = 'pill streak'; streakEl.hidden = true;
+crownEl.after(streakEl);
 { const br = document.createElement('div'); br.className = 'break'; nurseryEl.append(br, $('#goal')); }
 // Crowns get harder: each needs more perfect nights in a row (no baby spooked) and a bigger nursery.
 // The snakes grow in number and kind every night too, so a long streak is a real feat.
@@ -501,7 +508,14 @@ const CROWNS = [
   { name: 'ruby crown', nights: 5, flock: 20 },
   { name: 'diamond crown', nights: 8, flock: 40 },
 ];
+function showStreak() {
+  const next = CROWNS[crown + 1];
+  streakEl.hidden = !streak;
+  streakEl.textContent = next ? `🌙 ${streak}/${next.nights}` : `🌙 ${streak}`;
+  streakEl.setAttribute('aria-label', next ? `${streak} perfect ${streak === 1 ? 'night' : 'nights'} in a row, of ${next.nights} for the ${next.name}` : `${streak} perfect nights in a row`);
+}
 function showCrown() {
+  showStreak();
   crownEl.hidden = !crown;
   crownEl.dataset.level = crown;
   crownEl.setAttribute('aria-label', crown ? `Chicken king: ${CROWNS[crown].name}` : 'Chicken king crown');
@@ -531,8 +545,8 @@ function crownDawn(spooked, babies) {
   const slept = sleptNight; sleptNight = false;
   if (babies <= 0) return '';                 // nobody to keep safe: the streak waits
   if (slept && !spooked) return CROWNS[crown + 1] ? ' (A night slept through doesn’t count towards a crown: stay up and guard it!)' : '';
-  if (spooked) { const lost = streak; streak = 0; return lost >= 2 ? ` That ends your run of ${lost} perfect nights.` : ''; }
-  streak++;
+  if (spooked) { const lost = streak; streak = 0; showStreak(); return lost >= 2 ? ` That ends your run of ${lost} perfect nights.` : ''; }
+  streak++; stats.bestStreak = Math.max(stats.bestStreak || 0, streak); showStreak();
   const next = CROWNS[crown + 1];
   if (!next) return streak > 1 ? ` ${streak} perfect nights in a row!` : '';
   if (streak >= next.nights && babies >= next.flock) { awardCrown(crown + 1); return null; }
@@ -774,6 +788,8 @@ function handleChickEvents() {
       sfx.fanfare();
       toast((ev.spooked ? `Day ${nights + 1}. Sunrise! The snake spooked ${ev.spooked} ${ev.spooked === 1 ? 'baby' : 'babies'}, but the nursery made it.`
         : `Day ${nights + 1}. Sunrise! Every baby made it safely through the night.`) + more);
+    } else if (ev.type === 'scared') {
+      if (!firsts.includes('scared')) { firsts.push('scared'); toast('Eek! The scarecrow gave the snake a fright. Near a scarecrow it creeps along at under half speed.'); }
     } else if (ev.type === 'hiss') { if (d < 24) sfx.hiss(0.25 * (1 - d / 24)); }
     else if (ev.type === 'spawn') {
       const k = ev.kind | 0;
@@ -1026,6 +1042,7 @@ function placeBlock() {
   }
   if (target && target.id === B.CHEST) { openChest(target); return; }
   if (target && target.id === B.BED) { sleepInBed(); return; }
+  if (target && target.id === B.BELL) { ringBell(target); return; }
   if (target && target.id === B.SIGN) { openSign(target.x, target.y, target.z); return; }
   if (target && IS_DOOR(target.id)) {
     // tap either half of a door to open or shut the whole thing
@@ -1075,6 +1092,7 @@ function placeBlock() {
   if (id === ITEM_SWORD) { swing(); return; }
   if (id === ITEM_CAKE) { party(); return; }
   if (SNACK[id]) { eat(id); return; }
+  if (id === ITEM_FIREWORK) { launchFirework(); return; }
   if (isTreat(id)) {
     if (throwCool > 0) return;
     throwCool = id === ITEM_SEEDS ? 0.2 : 0.3;
@@ -1994,13 +2012,14 @@ function updateSignTags(box, eye) {
 // ---------- the map ----------
 // A bird's-eye view around you: the ground you've been to (with your buildings), and the lie of the land beyond
 // from the world's own shape. Markers show you, your nursery, signs, beds, campfires, chests, the trader and friends.
+const MAP_MARK = { [B.BED]: '🛏️', [B.CAMPFIRE]: '🔥', [B.SCARECROW]: '🎃', [B.BELL]: '🔔' };
 const MAP_COL = {
   [B.GRASS]: '#62b04c', [B.DIRT]: '#8a5a35', [B.STONE]: '#8e9196', [B.SAND]: '#e6d49a', [B.LOG]: '#7a5230', [B.LEAVES]: '#3c8a38',
   [B.PLANKS]: '#c08850', [B.GLASS]: '#cfeefa', [B.WATER]: '#3a7bd5', [B.COBBLE]: '#8a8d92', [B.BRICK]: '#b5523b', [B.SNOW]: '#f4f7fb',
   [B.LAMP]: '#ffe08a', [B.CLAY]: '#b9a39a', [B.HAY]: '#e3c25a', [B.ROOF]: '#c94a3a', [B.CREAM]: '#f1e3c4', [B.MUD]: '#6b4a2e',
   [B.THRONE]: '#ffcf3a', [B.WOOL]: '#f4efe3', [B.WOOL_RED]: '#d8443a', [B.WOOL_ORANGE]: '#f08a2a', [B.WOOL_YELLOW]: '#f2cf3a',
   [B.WOOL_PINK]: '#f29ab8', [B.WOOL_GREEN]: '#5cbf4a', [B.CHEST]: '#ffcf3a', [B.CHEST_OPEN]: '#b58a3a', [B.BED]: '#e2443a',
-  [B.CAMPFIRE]: '#ff8a2a', [B.SIGN]: '#d8924e', [B.PLANTER_RIPE]: '#f2c35a',
+  [B.CAMPFIRE]: '#ff8a2a', [B.SCARECROW]: '#e3c25a', [B.BELL]: '#ffcf3a', [B.SIGN]: '#d8924e', [B.PLANTER_RIPE]: '#f2c35a',
 };
 const mapView = { size: 128, open: false };
 const SEE_THROUGH = id => id === B.AIR || (SHAPED[id] && !IS_FEEDER(id) && id !== B.TABLE && id !== B.BED && id !== B.CAMPFIRE && id !== B.SIGN && !(id >= B.PLANTER && id <= B.PLANTER_RIPE));
@@ -2052,8 +2071,9 @@ function drawMap() {
   for (let cz = c0z; cz <= c1z; cz++) for (let cx = c0x; cx <= c1x; cx++) {
     const m = world.edits.get(World.key(cx, cz));
     if (m) for (const [i, id] of m) {
-      if (id !== B.BED && id !== B.CAMPFIRE) continue;
-      emoji(id === B.BED ? '🛏️' : '🔥', cx * CS + (i % CS) + 0.5, cz * CS + (Math.floor(i / CS) % CS) + 0.5, 18);
+      const mark = MAP_MARK[id];
+      if (!mark) continue;
+      emoji(mark, cx * CS + (i % CS) + 0.5, cz * CS + (Math.floor(i / CS) % CS) + 0.5, 18);
     }
     const ch = world.getChunk(cx, cz)?.chest;
     if (ch && world.getBlock(ch[0], ch[1], ch[2]) === B.CHEST) emoji('✨', ch[0] + 0.5, ch[2] + 0.5, 20);
@@ -2306,6 +2326,49 @@ function partyAt(p, who) {
   else toast(n ? `Party time! ${n} ${n === 1 ? 'animal came' : 'animals came'} for cake, and the babies grew a little.` : 'Party time! But nobody came… throw a party close to your babies.');
 }
 
+// ---------- the dinner bell and fireworks ----------
+const okP = p => Array.isArray(p) && p.length === 3 && p.every(Number.isFinite);
+function ringBell(t) {
+  const p = [t.x, t.y, t.z];
+  sfx.ding(); buzz(20); bump(stats, 'rang');
+  floatFx([t.x + 0.5, t.y + 0.6, t.z + 0.5], 'heart');
+  if (net.isGuest) { net.toHost({ t: 'bell', p }); toast('Ding ding! Dinner time: your animals are on their way.', 3000); return; }
+  bellAt(p);
+}
+function bellAt(p, who, from) {
+  const n = flock.callHome(p);
+  if (net.isHost) net.broadcast({ t: 'ding', p }, from);
+  if (who) { sfx.ding(); toast(`${nameOf(who)} rang the dinner bell!`, 2500); }
+  else toast(n ? `Ding ding! Dinner time: ${n} ${n === 1 ? 'animal is' : 'animals are'} on the way to the bell.` : 'Ding ding! Nobody came… tame some babies, then ring it to call them home.', 3500);
+}
+
+const fireworks = new Fireworks();
+let fwCool = 0;
+function launchFirework() {
+  if (fwCool > 0) return;
+  fwCool = 0.5;
+  const f = player.forward(), l = Math.hypot(f[0], f[2]) || 1;
+  const p = [player.pos[0] + f[0] / l * 1.6, player.pos[1], player.pos[2] + f[2] / l * 1.6];
+  const seed = Math.random() * 1e9 | 0;
+  useItem(ITEM_FIREWORK); bump(stats, 'fireworks'); buzz(12);
+  fireworks.launch(p, seed);
+  if (net.isGuest) net.toHost({ t: 'fw', p, seed }); else if (net.isHost) net.broadcast({ t: 'fw', p, seed });
+  if (!firsts.includes('firework')) {
+    firsts.push('firework');
+    toast(skyAt(clock).night > 0.5 ? 'Whoosh… BANG! Your babies love a firework show.' : 'Whoosh… BANG! Fireworks look even better at night.');
+  }
+}
+function fireworkStep(dt, eye) {
+  fwCool = Math.max(0, fwCool - dt);
+  fireworks.update(dt);
+  for (const ev of fireworks.events) {
+    const d = Math.hypot(ev.p[0] - eye[0], ev.p[1] - eye[1], ev.p[2] - eye[2]);
+    if (ev.type === 'launch') sfx.rocket(0.12 * Math.max(0, 1 - d / 50));
+    else { sfx.bang(0.4 * Math.max(0, 1 - d / 110)); if (!net.isGuest) flock.cheer(ev.p, 18); }
+  }
+  fireworks.events.length = 0;
+}
+
 // ---------- sleeping ----------
 // Tap a bed when it's dark: the screen fades out and you wake up at sunrise.
 // Playing together, anyone can sleep: the host moves the clock on for everybody.
@@ -2553,7 +2616,7 @@ function netStep(dt) {
   const pl = [[0, settings.char, ...myPose(), myName(), myFit()]];
   for (const o of others.values()) pl.push([o.id, o.char, ...o.tp, o.tyaw, o.pitch, o.held, o.sit ? 1 : 0, o.nick, o.fit]);
   const ev = netEvents.splice(0);
-  const common = { t: 's', clock: +clock.toFixed(5), nights, crown, counts: flock.counts(), pl, sn: snakes.snapshot(), rd: raiders.snapshot(), tr: flock.treatSnapshot(), gf: flock.giftSnapshot(), wx: weather.snapshot(), ev,
+  const common = { t: 's', clock: +clock.toFixed(5), nights, crown, sk: streak, counts: flock.counts(), pl, sn: snakes.snapshot(), rd: raiders.snapshot(), tr: flock.treatSnapshot(), gf: flock.giftSnapshot(), wx: weather.snapshot(), ev,
     td: trader.here ? [...trader.p, +trader.yaw.toFixed(3), trader.day] : 0 };
   for (const [id] of net.conns) {
     const o = others.get(id);
@@ -2612,6 +2675,8 @@ function hostMessage(from, msg) {
     case 'hat': if (typeof msg.id === 'number') flock.setHat(msg.id, msg.hat); break;
     case 'sign': if (Array.isArray(msg.at)) { const [x, y, z] = msg.at; if (setSign(x, y, z, msg.text, true)) net.broadcast(msg, from); } break;
     case 'sleep': if (o) sleepInBed(o); break;
+    case 'bell': if (o && okP(msg.p)) bellAt(msg.p, o, from); break;
+    case 'fw': if (okP(msg.p) && Number.isFinite(msg.seed)) { fireworks.launch(msg.p, msg.seed | 0); net.broadcast(msg, from); } break;
     case 'party': if (o && Array.isArray(msg.p) && msg.p.length === 3 && msg.p.every(Number.isFinite)) partyAt(msg.p, o); break;
     case 'sit': flock.gatherAt(msg.seat, msg.front); break;
     case 'stand': flock.endGather(); break;
@@ -2631,6 +2696,8 @@ function guestMessage(msg) {
     case 'e': for (const [x, y, z, id] of msg.b || []) { world.applyEdit(x, y, z, id); remeshAround(x, z); } break;
     case 'sign': if (Array.isArray(msg.at)) { const [x, y, z] = msg.at; setSign(x, y, z, msg.text, true); } break;
     case 'slept': sleepFade(); break;
+    case 'ding': sfx.ding(); break;
+    case 'fw': if (okP(msg.p) && Number.isFinite(msg.seed)) fireworks.launch(msg.p, msg.seed | 0); break;
     case 's': {
       if (Math.abs(msg.clock - clock) > 0.002 && Math.abs(msg.clock - clock) < 0.998) clock = msg.clock;
       nights = msg.nights;
@@ -2661,6 +2728,7 @@ function guestMessage(msg) {
       for (const id of [...others.keys()]) if (!seen.has(id)) others.delete(id);
       if (others.size !== shownOthers) { shownOthers = others.size; updateRoomUi(); }
       if ((msg.crown | 0) > crown) { crown = msg.crown | 0; showCrown(); }
+      if ((msg.sk | 0) !== streak) { streak = msg.sk | 0; showStreak(); }
       break;
     }
   }
@@ -2848,6 +2916,8 @@ function frame(now, photo = false) {
   fishStep(dt);
   if (fishing) s.groups.push(bobberGroup());
   if (trader.here) s.groups.push(traderGroup(now / 1000));
+  fireworkStep(dt, eye);
+  s.groups.push(...fireworks.instances(eye, far + 8));
   sfx.rain(running && !underwater && !weather.snowing ? weather.amount : 0);
   music.day = skyAt(clock).night < 0.3;
   if (running) snackStep(dt);
@@ -2885,7 +2955,7 @@ requestAnimationFrame(loop);
 window.blockwild = { fishTap, get fishing() { return fishing; }, selectSlot, get hotbar() { return hotbar; }, get known() { return knownList(); }, learn, unlearned: () => unlearned(knownList(), settings.patterns || []), get settings() { return settings; }, get world() { return world; }, get player() { return player; }, get target() { return target; }, get flock() { return flock; }, get nursery() { return flock; }, get snakes() { return snakes; }, get raiders() { return raiders; }, get weather() { return weather; }, get critters() { return critters; }, music, trader, openMap, get nights() { return nights; }, set nights(n) { nights = n; }, wardrobe, selfieCam, petBaby, openJobs, get inv() { return inv; }, addItem, RECIPES, craft, input, raycast,
   get clock() { return clock; }, setTime(t) { clock = t; }, swing: () => swing(),
   net, others, get myNetId() { return myNetId; },
-  get seat() { return seat; }, awardCrown: l => awardCrown(l), get streak() { return streak; }, set streak(v) { streak = v; }, sit: (x, y, z) => sit(x, y, z), standUp: () => standUp(),
+  get seat() { return seat; }, awardCrown: l => awardCrown(l), fireworks, get streak() { return streak; }, set streak(v) { streak = v; }, sit: (x, y, z) => sit(x, y, z), standUp: () => standUp(),
   // advance n frames by hand (useful when the page is in a background tab)
   step(n = 1) { for (let i = 0; i < n; i++) { last = performance.now() - 33; frame(performance.now()); } } };
 

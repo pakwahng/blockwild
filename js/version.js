@@ -1,11 +1,19 @@
 // The game's version and what changed in each one. Shown on the front screen ("What's new")
 // and in CHANGELOG.md. When you release: bump VERSION, add an entry at the top of CHANGES,
 // and set the same number in sw.js (CACHE = 'blockwild-v<VERSION>') so phones pick it up.
-export const VERSION = 34;
+export const VERSION = 35;
 export const RELEASED = '9 Nov 2026';
 
 // [version, date, headline, [details]]
 export const CHANGES = [
+  [35, '9 Nov 2026', 'Scarecrows, a dinner bell and fireworks', [
+    'New scarecrow (Farm tab, at a crafting table): stand one by your nursery and block snakes that come near it creep along at under half speed. You learn it from the cooking goal.',
+    'New dinner bell (Farm tab): tap it and every animal in your nursery comes running to stand round it. Handy before night falls! You learn it by swapping with Pip.',
+    'Fireworks! Make three at a crafting table from a stick, sand and a red and yellow flower, then tap to launch one. It whooshes up and bursts into colour, and your animals hop about. Best at night. You learn them by throwing a party.',
+    'A moon badge next to your crown counts your perfect nights in a row, and how many the next crown needs.',
+    'Four new goals: make a scarecrow, ring the dinner bell, launch a firework and keep every baby safe 3 nights in a row.',
+    'Scarecrows and bells show on the map.',
+  ]],
   [34, '9 Nov 2026', 'Crowns you have to earn', [
     'The gold crown is harder now: keep every baby safe for 3 nights in a row, with at least 8 animals in your nursery (raising 100 chicks still works too).',
     'Keep the run going for two new crowns: the ruby crown (5 nights in a row, 20 animals) and the diamond crown (8 nights, 40 animals). Your crown changes colour as it grows.',
