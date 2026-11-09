@@ -61,18 +61,25 @@ export class Player {
       if (input.jump) v[1] = Math.min(v[1] + 30 * dt, 3.8);
     } else {
       v[1] = Math.max(v[1] - GRAVITY * dt, -55);
-      if (input.jump && this.onGround) v[1] = JUMP_V * (this.spring || 1); // spring: a snack of grilled fish or pie
+      if (input.jump && this.onGround) v[1] = JUMP_V * (this.spring || 1) * (this.onPad ? 1.45 : 1); // spring: a snack of grilled fish or pie
     }
 
     // integrate with sub-steps so nothing tunnels through blocks
     const steps = Math.max(1, Math.ceil(Math.max(Math.abs(v[0]), Math.abs(v[1]), Math.abs(v[2])) * dt / 0.35));
     const sdt = dt / steps;
-    this.onGround = false;
+    this.onGround = false; this.onPad = false;
     let bump = false;
     for (let s = 0; s < steps; s++) {
       bump = this.moveAxis(world, 1, v[1] * sdt) || bump;
       bump = this.moveAxis(world, 0, v[0] * sdt) || bump;
       bump = this.moveAxis(world, 2, v[2] * sdt) || bump;
+    }
+    if (this.bounce) {
+      // landed on a bouncy pad: spring back up, higher still if you hold jump
+      // (let go and the bounces die down till you're standing on it)
+      const up = input.jump ? Math.min(22, Math.max(11.5, this.bounce * 0.85) * 1.35) : this.bounce * 0.8;
+      if (up > 4) { v[1] = up; this.onGround = false; this.bounced = (this.bounced || 0) + 1; }
+      this.bounce = 0;
     }
     const moving = Math.hypot(input.moveX, input.moveZ) > 0.1;
     if (bump && this.autoJump && moving && this.onGround && !this.flying && !this.inWater) v[1] = JUMP_V;
@@ -91,7 +98,10 @@ export class Player {
       if (!SOLID[world.getBlock(x, y, z)]) continue;
       if (axis === 1) {
         if (d > 0) p[1] = y - HEIGHT - 1e-4;
-        else { p[1] = y + 1; this.onGround = true; }
+        else {
+          p[1] = y + 1; this.onGround = true;
+          if (world.getBlock(x, y, z) === B.BOUNCE) { this.onPad = true; if (this.vel[1] < -1.5) this.bounce = Math.max(this.bounce || 0, -this.vel[1]); }
+        }
         this.vel[1] = 0;
         return false;
       }

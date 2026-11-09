@@ -5,7 +5,7 @@ import { SPARK_COLORS } from './models.js';
 const RISE = 14, FUSE = [1.1, 1.5], SPARKS = 90, MAX_SPARKS = 1400;
 
 export class Fireworks {
-  constructor() { this.rockets = []; this.sparks = []; this.events = []; this.buf = {}; }
+  constructor() { this.rockets = []; this.stars = []; this.sparks = []; this.events = []; this.buf = {}; }
 
   // p: where it starts; seed picks its colours and shape (so everyone sees the same one)
   launch(p, seed = Math.random() * 1e9 | 0) {
@@ -16,7 +16,17 @@ export class Fireworks {
     this.events.push({ type: 'launch', p: [...p] });
   }
 
+  // A shooting star: a bright white streak across the night sky that leaves a fading trail. Not shared.
+  star(p, v, life = 1.6) { const s = { p: [...p], v: [...v], life, trail: 0, big: 4.5 }; this.stars.push(s); return s; }
+
   update(dt) {
+    for (const s of this.stars) {
+      s.life -= dt;
+      for (let a = 0; a < 3; a++) s.p[a] += s.v[a] * dt;
+      s.trail -= dt;
+      if (s.trail <= 0) { s.trail = 0.02; this.sparks.push({ p: [...s.p], v: [s.v[0] * 0.05, -0.3, s.v[2] * 0.05], c: 5, life: 0.7, max: 0.7, drag: 2, big: s.big * 0.8 }); }
+    }
+    this.stars = this.stars.filter(s => s.life > 0);
     for (const k of this.rockets) {
       k.t -= dt;
       k.v[1] -= 4 * dt;
@@ -56,10 +66,15 @@ export class Fireworks {
     for (const s of this.sparks) {
       const dx = s.p[0] - eye[0], dz = s.p[2] - eye[2];
       if (dx * dx + dz * dz > f2) continue;
-      const d = data[s.c], i = count[s.c]++ * 12, sc = Math.min(1, s.life / s.max * 1.6) * (s.drag === 1 ? 0.7 : 1);
+      const d = data[s.c], i = count[s.c]++ * 12, sc = Math.min(1, s.life / s.max * 1.6) * (s.drag === 1 ? 0.7 : 1) * (s.big || 1);
       d.set([s.p[0], s.p[1], s.p[2], s.life * 7, sc, 0, 0, 0, 0, 0, 0, 0], i);
     }
     SPARK_COLORS.forEach((_, k) => { if (count[k]) groups.push({ model: 'spark' + k, data: data[k], count: count[k] }); });
+    if (this.stars.length) {
+      const d = need('st', this.stars.length);
+      this.stars.forEach((s, i) => d.set([s.p[0], s.p[1], s.p[2], 0, s.big * 1.3 * Math.min(1, s.life * 3), 0, 0, 0, 0, 0, 0, 0], i * 12));
+      groups.push({ model: 'spark5', data: d, count: this.stars.length });
+    }
     if (this.rockets.length) {
       const d = need('r', this.rockets.length);
       this.rockets.forEach((k, i) => d.set([k.p[0], k.p[1], k.p[2], 0, 1, 0, 0, 0, 0, 0, 0, 0], i * 12));

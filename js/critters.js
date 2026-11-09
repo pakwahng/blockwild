@@ -110,6 +110,21 @@ export class Critters {
     c.yaw = Math.atan2(c.v[0], c.v[2]);
   }
 
+  // The firefly nearest the line you're looking along (within reach), or null. Catching it takes it away.
+  catchAt(eye, fwd, reach = 4.5) {
+    let best = null, bd = 0.75;
+    for (const c of this.list) {
+      if (c.kind !== 'f' || c.leaving) continue;
+      const dx = c.p[0] - eye[0], dy = c.p[1] - eye[1], dz = c.p[2] - eye[2];
+      const t = dx * fwd[0] + dy * fwd[1] + dz * fwd[2];
+      if (t < 0.3 || t > reach) continue;
+      const off = Math.hypot(dx - fwd[0] * t, dy - fwd[1] * t, dz - fwd[2] * t);
+      if (off < bd) { bd = off; best = c; }
+    }
+    if (best) best.gone = true;
+    return best;
+  }
+
   // Per-instance data for the renderer, in the same layout as the animals.
   instances(eye, maxDist, time) {
     const groups = [];

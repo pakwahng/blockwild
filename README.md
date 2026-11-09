@@ -283,6 +283,13 @@ A full day lasts 10 minutes: about 6 minutes of daylight, a pink dusk, roughly 3
 - The **🌙 badge** next to your crown counts perfect nights in a row, and how many the next crown needs.
 - New goals: make a scarecrow, ring the bell, launch a firework, and keep every baby safe 3 nights in a row.
 
+## Bouncy pads, firefly jars and shooting stars
+
+- **Bouncy pad** (Building tab, at a crafting table: 2 pink wool, 2 wood, 1 hay makes 2): land on it and you spring back up. Let go and the bounces die down. Hold jump as you land and each bounce goes higher, up to about 8 blocks. Jumping off one goes higher too. Learned from the scarecrow goal.
+- **Firefly jar**: at night, hold glass and tap a firefly to catch it. You get a jar with a firefly inside that glows like a lamp when you put it down.
+- **Shooting stars**: on clear nights one streaks across the sky every minute or so. Look right at it before it fades to make a wish and get a small present (fireworks, milk, eggs, a pie, a cake, lamps, apples or pink wool). Each device sees its own stars.
+- New goals: bounce on a bouncy pad 5 times, catch a firefly, and wish on a shooting star.
+
 ## Play together
 
 - Pick **Lachie** or **Charli**, your name and your clothes in the **Wardrobe** (front screen or pause menu). That's how other players see you.

@@ -362,6 +362,14 @@ function shapeMesh(buf, id, p, wx, wy, wz) {
     pb(hat, 0.28, 0.9, 0.3, 0.72, 0.94, 0.7); pb(hat, 0.38, 0.94, 0.4, 0.62, 1.0, 0.6); // hay hat
     return;
   }
+  if (BLOCKS[id].shape === 'jar') {
+    const { lid, light } = BLOCKS[id];
+    const pb = (l, ...a) => shapeBox(buf, wx, wy, wz, l, ...a, false);
+    pb(light, 0.42, 0.14, 0.42, 0.58, 0.3, 0.58); pb(light, 0.36, 0.34, 0.5, 0.46, 0.42, 0.6);  // two glowing fireflies
+    box(0.26, 0, 0.26, 0.74, 0.58, 0.74);                                             // glass jar
+    pb(lid, 0.3, 0.58, 0.3, 0.7, 0.68, 0.7); pb(lid, 0.44, 0.68, 0.44, 0.56, 0.74, 0.56); // wooden lid and knob
+    return;
+  }
   if (BLOCKS[id].shape === 'bell') {
     const { post, bell } = BLOCKS[id];
     const pb = (l, ...a) => shapeBox(buf, wx, wy, wz, l, ...a, false);

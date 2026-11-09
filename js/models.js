@@ -567,6 +567,11 @@ export function treatIcon(kind, px = 64) {
       g.fillStyle = '#ffcf3a'; g.beginPath(); g.moveTo(32, 14); g.quadraticCurveTo(18, 16, 18, 36); g.lineTo(13, 46); g.lineTo(51, 46); g.lineTo(46, 36); g.quadraticCurveTo(46, 16, 32, 14); g.fill();
       rr(g, 22, 18, 5, 18, 2.5, '#fff1a8');                                            // shine
       g.fillStyle = '#c98a00'; g.beginPath(); g.arc(32, 49, 4.5, 0, Math.PI * 2); g.fill(); // clapper
+    } else if (kind === 'firefly jar') {
+      g.fillStyle = 'rgba(255,240,150,0.35)'; g.beginPath(); g.arc(32, 38, 27, 0, Math.PI * 2); g.fill();      // soft glow
+      rr(g, 14, 18, 36, 42, 9, 'rgba(200,235,255,0.55)'); rr(g, 18, 22, 6, 30, 3, 'rgba(255,255,255,0.7)'); // glass jar and shine
+      rr(g, 16, 10, 32, 9, 3, '#b5763a'); rr(g, 27, 5, 10, 6, 3, '#8f5f34');                                   // lid
+      for (const [x, y, r] of [[32, 42, 6], [41, 32, 4.5]]) { g.fillStyle = '#fff6a0'; g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill(); g.fillStyle = '#ffd23c'; g.beginPath(); g.arc(x, y, r * 0.55, 0, Math.PI * 2); g.fill(); }
     } else if (kind === 'firework') {
       g.save(); g.translate(32, 34); g.rotate(0.45);
       rr(g, -2, 8, 4, 26, 2, '#b5763a');                                               // stick

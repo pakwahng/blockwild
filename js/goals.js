@@ -42,6 +42,9 @@ export const GOALS = [
   ['bell', 'Make a dinner bell and ring it: tap it and your animals come running', 1, s => s.rang || 0, [[ITEM_APPLE, 4], [ITEM_CLOVER, 3]]],
   ['firework', 'Launch a firework (they look best at night!)', 1, s => s.fireworks || 0, [[B.FLOWER_RED, 2], [B.FLOWER_YELLOW, 2]]],
   ['streak', 'Keep every baby safe 3 nights in a row', 3, s => s.bestStreak || 0, [[ITEM_FIREWORK, 3], [ITEM_MILK, 2]]],
+  ['bounce', 'Make a bouncy pad and bounce on it 5 times (hold jump as you land to go higher)', 5, s => s.bounced || 0, [[B.WOOL_PINK, 2], [ITEM_APPLE, 3]]],
+  ['jar', 'Catch a firefly at night: hold glass and tap a firefly to put it in a jar', 1, s => s.jars || 0, [[B.GLASS, 2], [ITEM_CLOVER, 3]]],
+  ['wish', 'Spot a shooting star at night and make a wish: look right at it before it goes', 1, s => s.wishes || 0, [[ITEM_FIREWORK, 2], [ITEM_MILK, 1]]],
   ['chicks', 'Grow your nursery to 37 chickens', 37, s => s.chicks || 0, [[B.HAY, 4], [ITEM_APPLE, 5]]],
 ];
 export const GOAL_IDS = GOALS.map(g => g[0]);

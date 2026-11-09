@@ -116,7 +116,7 @@ let myNetId = 0, netTimer = 0, poseTimer = 0, shownOthers = -1, pendingEdits = {
 const netEdits = [], netEvents = [];
 
 const icons = {};
-const SHAPE_ICON = { [B.FENCE]: 'fence', [B.GATE]: 'gate', [B.DOOR]: 'door', [B.BED]: 'bed', [B.SIGN]: 'sign', [B.CAMPFIRE]: 'campfire', [B.SCARECROW]: 'scarecrow', [B.BELL]: 'dinner bell', [B.PLANTER]: 'planter', [B.TABLE]: 'table', [B.LADDER]: 'ladder', [B.FEEDER]: 'feeder',
+const SHAPE_ICON = { [B.FENCE]: 'fence', [B.GATE]: 'gate', [B.DOOR]: 'door', [B.BED]: 'bed', [B.SIGN]: 'sign', [B.CAMPFIRE]: 'campfire', [B.SCARECROW]: 'scarecrow', [B.BELL]: 'dinner bell', [B.JAR]: 'firefly jar', [B.PLANTER]: 'planter', [B.TABLE]: 'table', [B.LADDER]: 'ladder', [B.FEEDER]: 'feeder',
   [B.FLOWER_RED]: 'flower-red', [B.FLOWER_YELLOW]: 'flower-yellow', [B.FLOWER_WHITE]: 'flower-white' };
 if (textures) for (const id of [...PLACEABLE, B.THRONE]) {
   icons[id] = SHAPED[id] ? M.treatIcon(SHAPE_ICON[id], 64).toDataURL() : blockIcon(BLOCKS[id], textures.tiles, 64).toDataURL();
@@ -428,7 +428,7 @@ function startWorld(save) {
   loadSigns(save?.signs);
   snackT = 0; boostEl.hidden = true;
   trader.here = false; trader.day = -1; trader.look = 0;
-  fireworks.rockets.length = 0; fireworks.sparks.length = 0;
+  fireworks.rockets.length = 0; fireworks.sparks.length = 0; fireworks.stars.length = 0; starT = 20; wishStar = null;
   seat = null;
   showCrown();
   // a few wild babies of each kind close by, so there's someone to feed straight away
@@ -1055,6 +1055,7 @@ function placeBlock() {
     return;
   }
   if (id === ITEM_ROD && have(id)) { fishTap(); return; }
+  if (id === B.GLASS && have(id) && catchFirefly()) return;
   if (!isTreat(id) && id !== ITEM_SWORD && petBaby(!id || id >= 200)) return;
   if (target && target.id === B.PLANTER_RIPE) {
     // pick the golden wheat: some wheat and a few seeds to plant again
@@ -2019,7 +2020,7 @@ const MAP_COL = {
   [B.LAMP]: '#ffe08a', [B.CLAY]: '#b9a39a', [B.HAY]: '#e3c25a', [B.ROOF]: '#c94a3a', [B.CREAM]: '#f1e3c4', [B.MUD]: '#6b4a2e',
   [B.THRONE]: '#ffcf3a', [B.WOOL]: '#f4efe3', [B.WOOL_RED]: '#d8443a', [B.WOOL_ORANGE]: '#f08a2a', [B.WOOL_YELLOW]: '#f2cf3a',
   [B.WOOL_PINK]: '#f29ab8', [B.WOOL_GREEN]: '#5cbf4a', [B.CHEST]: '#ffcf3a', [B.CHEST_OPEN]: '#b58a3a', [B.BED]: '#e2443a',
-  [B.CAMPFIRE]: '#ff8a2a', [B.SCARECROW]: '#e3c25a', [B.BELL]: '#ffcf3a', [B.SIGN]: '#d8924e', [B.PLANTER_RIPE]: '#f2c35a',
+  [B.CAMPFIRE]: '#ff8a2a', [B.SCARECROW]: '#e3c25a', [B.BELL]: '#ffcf3a', [B.JAR]: '#fff6a0', [B.BOUNCE]: '#f7a8c4', [B.SIGN]: '#d8924e', [B.PLANTER_RIPE]: '#f2c35a',
 };
 const mapView = { size: 128, open: false };
 const SEE_THROUGH = id => id === B.AIR || (SHAPED[id] && !IS_FEEDER(id) && id !== B.TABLE && id !== B.BED && id !== B.CAMPFIRE && id !== B.SIGN && !(id >= B.PLANTER && id <= B.PLANTER_RIPE));
@@ -2367,6 +2368,44 @@ function fireworkStep(dt, eye) {
     else { sfx.bang(0.4 * Math.max(0, 1 - d / 110)); if (!net.isGuest) flock.cheer(ev.p, 18); }
   }
   fireworks.events.length = 0;
+}
+
+// ---------- fireflies in jars and shooting stars ----------
+// Hold glass and tap a firefly at night: it goes into a jar that glows like a little lamp.
+function catchFirefly() {
+  const c = critters.catchAt(player.eye(), player.forward());
+  if (!c) return false;
+  useItem(B.GLASS); addItem(B.JAR, 1, true); bump(stats, 'jars'); bump(stats, 'got', B.JAR);
+  sfx.twinkle(); buzz(10);
+  pickupPop({ x: c.p[0] - 0.5, y: c.p[1] - 0.8, z: c.p[2] - 0.5 }, [[B.JAR, 1]]);
+  if (!firsts.includes('jar')) { firsts.push('jar'); toast('You caught a firefly! Put the jar down and it glows like a little lamp all night.'); }
+  return true;
+}
+
+// Now and then on a clear night a shooting star streaks across the sky. Look right at it before it
+// fades and you make a wish, and a little present turns up in your bag.
+const WISHES = [[ITEM_FIREWORK, 2, '2 fireworks'], [ITEM_MILK, 2, '2 bottles of milk'], [ITEM_EGG, 2, '2 eggs'], [ITEM_PIE, 1, 'an apple pie'], [ITEM_CAKE, 1, 'a party cake'], [B.LAMP, 2, '2 lamps'], [ITEM_APPLE, 5, '5 apples'], [B.WOOL_PINK, 3, '3 pink wool']];
+let starT = 20, wishStar = null;
+function starStep(dt, eye, fwd, far) {
+  if (running && skyAt(clock).night > 0.8 && weather.amount < 0.2 && !sleeping) starT -= dt;
+  if (starT <= 0) {
+    starT = 35 + Math.random() * 50;
+    // up in the sky, more or less in front of you, sliding sideways and a little down
+    const yaw = Math.atan2(fwd[0], fwd[2]) + (Math.random() - 0.5) * 2.2, el = 0.45 + Math.random() * 0.4, d = Math.min(far * 0.75, 70);
+    const p = [eye[0] + Math.sin(yaw) * Math.cos(el) * d, eye[1] + Math.sin(el) * d, eye[2] + Math.cos(yaw) * Math.cos(el) * d];
+    const side = Math.random() < 0.5 ? 1 : -1, sp = d * 0.55;
+    wishStar = fireworks.star(p, [Math.cos(yaw) * side * sp, -sp * 0.25, -Math.sin(yaw) * side * sp], 1.8);
+    sfx.twinkle(0.08);
+  }
+  if (!wishStar) return;
+  if (wishStar.life <= 0) { wishStar = null; return; }
+  const dx = wishStar.p[0] - eye[0], dy = wishStar.p[1] - eye[1], dz = wishStar.p[2] - eye[2], l = Math.hypot(dx, dy, dz) || 1;
+  if ((dx * fwd[0] + dy * fwd[1] + dz * fwd[2]) / l > 0.965) {
+    wishStar.big = 7; wishStar = null;
+    const [item, k, what] = WISHES[Math.random() * WISHES.length | 0];
+    addItem(item, k, true); bump(stats, 'wishes'); sfx.twinkle(0.3); buzz(15);
+    toast(`✨ You made a wish on a shooting star… and got ${what}!`, 4000);
+  }
 }
 
 // ---------- sleeping ----------
@@ -2846,6 +2885,10 @@ function frame(now, photo = false) {
     if (gooey && !firsts.includes('goo')) { firsts.push('goo'); toast('Yuck, poison goo! It makes you slow. Step out of it, it dries up soon.'); }
     if (!seat && world.getChunk(Math.floor(player.pos[0] / CS), Math.floor(player.pos[2] / CS))) player.update(dt, input.state, world);
     if (player.pos[1] < -20) { player.pos[1] = CH; player.vel[1] = 0; }
+    if (player.bounced) {
+      sfx.boing(Math.min(1.4, player.vel[1] / 14)); bump(stats, 'bounced', undefined, player.bounced); player.bounced = 0;
+      if (!firsts.includes('boing')) { firsts.push('boing'); toast('Boing! Hold jump just as you land to bounce higher and higher.'); }
+    }
     if (player.onLadder && player.vel[1] > 1) { climbT += dt; if (climbT > 0.8 && !stats.climbed) stats.climbed = 1; }
     goalTimer -= dt;
     if (goalTimer <= 0) { goalTimer = 0.5; checkGoals(); }
@@ -2917,6 +2960,7 @@ function frame(now, photo = false) {
   if (fishing) s.groups.push(bobberGroup());
   if (trader.here) s.groups.push(traderGroup(now / 1000));
   fireworkStep(dt, eye);
+  starStep(dt, eye, fwd, far);
   s.groups.push(...fireworks.instances(eye, far + 8));
   sfx.rain(running && !underwater && !weather.snowing ? weather.amount : 0);
   music.day = skyAt(clock).night < 0.3;
@@ -2953,7 +2997,7 @@ requestAnimationFrame(loop);
 
 // handy for debugging from the console
 window.blockwild = { fishTap, get fishing() { return fishing; }, selectSlot, get hotbar() { return hotbar; }, get known() { return knownList(); }, learn, unlearned: () => unlearned(knownList(), settings.patterns || []), get settings() { return settings; }, get world() { return world; }, get player() { return player; }, get target() { return target; }, get flock() { return flock; }, get nursery() { return flock; }, get snakes() { return snakes; }, get raiders() { return raiders; }, get weather() { return weather; }, get critters() { return critters; }, music, trader, openMap, get nights() { return nights; }, set nights(n) { nights = n; }, wardrobe, selfieCam, petBaby, openJobs, get inv() { return inv; }, addItem, RECIPES, craft, input, raycast,
-  get clock() { return clock; }, setTime(t) { clock = t; }, swing: () => swing(),
+  get clock() { return clock; }, setTime(t) { clock = t; }, swing: () => swing(), catchFirefly: () => catchFirefly(),
   net, others, get myNetId() { return myNetId; },
   get seat() { return seat; }, awardCrown: l => awardCrown(l), fireworks, get streak() { return streak; }, set streak(v) { streak = v; }, sit: (x, y, z) => sit(x, y, z), standUp: () => standUp(),
   // advance n frames by hand (useful when the page is in a background tab)

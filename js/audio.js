@@ -175,6 +175,18 @@ export class Sfx {
       this.tone('sine', f, f * 0.995, t + at, 1.1, 0.22); this.tone('sine', f * 2.76, f * 2.7, t + at, 0.5, 0.05); this.tone('triangle', f / 2, f / 2, t + at, 0.7, 0.06);
     }
   }
+  // a springy boing off a bouncy pad (k: how hard you bounced)
+  boing(k = 1) {
+    if (!this.ready) return;
+    const t = this.ctx.currentTime + 0.01, f = 180 + 60 * k;
+    this.voice('sine', f, f * 2.6, t, 0.32, 0.3, 1800, 18, 22);
+  }
+  // a tinkly sparkle: catching a firefly, a shooting star, a wish
+  twinkle(vol = 0.18) {
+    if (!this.ready) return;
+    const t = this.ctx.currentTime + 0.01;
+    [1568, 2093, 2637, 3136].forEach((f, i) => this.tone('sine', f, f, t + i * 0.07, 0.35, vol * (1 - i * 0.15)));
+  }
   // a rocket going up
   rocket(vol = 0.12) { if (this.ready) { const t = this.ctx.currentTime + 0.01; this.tone('sawtooth', 300, 1400, t, 0.9, vol * 0.25); this.noise(t, 0.9, vol, 1800); } }
   // a firework bursting, quieter further away
