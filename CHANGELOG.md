@@ -2,6 +2,12 @@
 
 The same list is in the game: tap the version number on the front screen, or open **What’s new**.
 
+## 40. Longer goals, bigger builds (10 Nov 2026)
+- Many goals now ask for more: dig 10 blocks, tame 3 babies, chop 4 logs, pick 6 flowers, hatch 5 babies, fill a feeder 3 times, pick wheat 3 times, bonk 3 raiders, keep the nursery safe 2 nights, grow up 2 babies, pick up 10 gifts, catch 5 things fishing, open 2 chests, cook 3 things, make 2 swaps with Pip, bounce 10 times, catch 3 fireflies, find 2 hiding babies and swim 60 blocks.
+- Some things cost more to make: a house kit is 32 wood, 4 glass and 2 lamps; a bed is 4 wood and 4 wool; a party cake is 4 wheat, 2 milk and 3 eggs; a fishing rod is 4 sticks and 2 wool; ladders take 8 sticks; fences come 3 at a time; a bouncy pad makes 1.
+- The scarecrow, dinner bell and music box need a bit more too, a snowman takes 5 snow and a sandcastle 6 sand.
+- Pip asks 9 logs and 3 fish for a house kit, and 8 eggs for a party cake.
+
 ## 39. Fairer goals (10 Nov 2026)
 - The bouncy pad, snowman and swim ring goals no longer wait on a lucky recipe page. The goal that teaches each one now also teaches the coloured wool it needs (pink, orange or red) and gives you enough to make it straight away.
 - Pip now asks 6 logs and 2 fish for a house kit (it was 12 logs), closer to what making one yourself costs.

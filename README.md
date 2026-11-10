@@ -86,13 +86,13 @@ Tap a grown-up (hen, cow, pig, sheep or wolf) to pet it and open **Teach a job**
 | 4 Sticks | 2 Wood |
 | Crafting table | 4 Wood |
 | Sword * | 2 Wood + 1 Stick |
-| 3 Ladders * | 7 Sticks |
-| Fishing rod * | 3 Sticks, 1 Wool |
+| 3 Ladders * | 8 Sticks |
+| Fishing rod * | 4 Sticks, 2 Wool |
 | 2 Red / Yellow wool | 2 Wool, 1 red / yellow flower |
 | 2 Orange wool | 2 Wool, 1 red flower, 1 yellow flower |
 | 2 Pink wool | 2 Wool, 1 red flower, 1 white flower |
 | 2 Green wool | 2 Wool, 1 clover |
-| 4 Fence * | 2 Wood + 2 Sticks |
+| 3 Fence * | 2 Wood + 2 Sticks |
 | 1 Gate * | 2 Wood + 4 Sticks |
 | Feeder * | 3 Wood |
 | Hay | 4 Wheat |
@@ -104,14 +104,14 @@ Tap a grown-up (hen, cow, pig, sheep or wolf) to pet it and open **Teach a job**
 | Lamp * | 1 Glass + 1 Stick + 1 Apple |
 | Planter * | 3 Wood + 2 Dirt |
 | Door * | 3 Wood + 1 Stick |
-| House kit * | 20 Wood + 2 Glass + 1 Lamp |
-| Bed * | 3 Wood + 3 Wool |
+| House kit * | 32 Wood + 4 Glass + 2 Lamps |
+| Bed * | 4 Wood + 4 Wool |
 | 2 Signs * | 2 Wood + 1 Stick |
 | Campfire | 2 Logs + 3 Cobble |
 | Bread † | 2 Wheat |
 | Grilled fish † | 1 Fish |
 | Apple pie † | 3 Apples + 1 Wheat + 1 Egg |
-| Party cake † | 3 Wheat + 1 Milk + 2 Eggs |
+| Party cake † | 4 Wheat + 2 Milk + 3 Eggs |
 | Water | 2 Snow |
 | 2 Mud | 2 Dirt + 1 Water |
 
@@ -129,7 +129,7 @@ Tap a grown-up (hen, cow, pig, sheep or wolf) to pet it and open **Teach a job**
 
 ## Fishing
 
-- The **fishing rod** is a tool (never used up): 3 sticks and 1 wool at a crafting table, once you've learned it (recipe page, or finishing the sewing goal).
+- The **fishing rod** is a tool (never used up): 4 sticks and 2 wool at a crafting table, once you've learned it (recipe page, or finishing the sewing goal).
 - Hold it and tap (or click) to cast: the line lands on the first water you're looking at, up to about 17 blocks away. After 4–13 seconds (sooner in rain or at night) the float bobs under with a splash. Tap within about 1.3 seconds to catch something. Tap too soon and the line comes back empty. Switch item or walk more than 22 blocks away and it reels itself in.
 - A catch is a fish (75%, sometimes two), a treat or sticks, or a recipe page (10%, if there's anything left to learn).
 - **Fish** pay for teaching a grown-up a job when you've none of its favourite treat. Code: the fishing section of `js/main.js`, the float is `bobberModel()` in `js/models.js`.
@@ -218,7 +218,7 @@ The front screen shows the version number. Tap it, or open **What’s new**, for
 - **Bread** (2 wheat; learned from the gate goal): eat it for **zoomies**, running 1.5× faster for 60 seconds.
 - **Grilled fish** (1 fish; learned from the fishing goal): eat it to be **springy**, jumping about 2.6 blocks instead of 1.5, for 60 seconds.
 - **Apple pie** (3 apples, 1 wheat, 1 egg; learned from the sign goal): both, for 90 seconds.
-- **Party cake** (3 wheat, 1 milk, 2 eggs; learned from the sleep goal): use it near your animals to throw a party. Every tame animal within 14 blocks hops for joy with hearts, and babies grow a good bit (60% of a drink of milk). `party()` in `js/animals.js`; a guest's party asks the host (`'party'`).
+- **Party cake** (4 wheat, 2 milk, 3 eggs; learned from the sleep goal): use it near your animals to throw a party. Every tame animal within 14 blocks hops for joy with hearts, and babies grow a good bit (60% of a drink of milk). `party()` in `js/animals.js`; a guest's party asks the host (`'party'`).
 - Hold the food and tap to eat it. A pill by the nursery counters shows the food and the seconds left. Two new goals: cook something, and throw a party.
 
 ## Theme song
@@ -230,7 +230,7 @@ The front screen shows the version number. Tap it, or open **What’s new**, for
 
 ## Beds and signs
 
-- **Beds** (3 wood and 3 wool at a table; you learn the recipe by finishing the hat goal, or from a recipe page). Put one down: the headboard turns to sit against a wall. You can walk through it. Tap it when it's dark to sleep: the screen fades out and you wake at sunrise. Sunrise ends the night as usual: the snake goes home, and if no baby was spooked it counts for the night goal. Tap it by day and it tells you to come back at bedtime. Playing together, anyone can sleep: a guest's bed asks the host, and the host moves the clock on for everyone (`'sleep'` to the host, `'slept'` back to the guests).
+- **Beds** (4 wood and 4 wool at a table; you learn the recipe by finishing the hat goal, or from a recipe page). Put one down: the headboard turns to sit against a wall. You can walk through it. Tap it when it's dark to sleep: the screen fades out and you wake at sunrise. Sunrise ends the night as usual: the snake goes home, and if no baby was spooked it counts for the night goal. Tap it by day and it tells you to come back at bedtime. Playing together, anyone can sleep: a guest's bed asks the host, and the host moves the clock on for everyone (`'sleep'` to the host, `'slept'` back to the guests).
 - **Signs** (2 wood and 1 stick make 2, at a table; learned by finishing the treasure chest goal, or from a page). Put one down and a box opens to write on it (up to 40 letters). Tap a sign to change its words; leave the box blank to rub them out. The words float over the sign for the nearest 6 signs within 12 blocks. They're saved with the world as `signs` (`"x,y,z": text`), and the host shares them with friends who visit (in the welcome message, then `'sign'` messages). Digging a sign rubs its words out.
 
 ## Doors and houses
@@ -277,32 +277,32 @@ A full day lasts 10 minutes: about 6 minutes of daylight, a pink dusk, roughly 3
 
 ## Scarecrows, the dinner bell and fireworks
 
-- **Scarecrow** (Farm tab, at a crafting table: 2 hay, 2 sticks, 1 wool): block snakes within 7 blocks of one creep along at under half speed, giving you time to reach them with the sword. Learned from the cooking goal.
-- **Dinner bell** (Farm tab, at a crafting table: 3 wood, 2 sticks, 1 lamp): tap it and every tame animal within 70 blocks runs to stand round it. Grown wolves then guard from there. Its bell glows at night. Learned by swapping with Pip.
+- **Scarecrow** (Farm tab, at a crafting table: 3 hay, 3 sticks, 1 wool): block snakes within 7 blocks of one creep along at under half speed, giving you time to reach them with the sword. Learned from the cooking goal.
+- **Dinner bell** (Farm tab, at a crafting table: 4 wood, 3 sticks, 1 lamp): tap it and every tame animal within 70 blocks runs to stand round it. Grown wolves then guard from there. Its bell glows at night. Learned by swapping with Pip.
 - **Fireworks** (Wood & tools tab, at a crafting table: 1 stick, 1 sand, 1 red and 1 yellow flower makes 3): hold one and tap to launch it. It whooshes up, trailing sparks, and bursts into a ball or ring of glowing colour. Animals nearby hop about. Learned by throwing a party. Everyone playing together sees the same firework.
 - The **🌙 badge** next to your crown counts perfect nights in a row, and how many the next crown needs.
 - New goals: make a scarecrow, ring the bell, launch a firework, and keep every baby safe 3 nights in a row.
 
 ## Bouncy pads, firefly jars and shooting stars
 
-- **Bouncy pad** (Building tab, at a crafting table: 2 pink wool, 2 wood, 1 hay makes 2): land on it and you spring back up. Let go and the bounces die down. Hold jump as you land and each bounce goes higher, up to about 8 blocks. Jumping off one goes higher too. Learned from the scarecrow goal.
+- **Bouncy pad** (Building tab, at a crafting table: 2 pink wool, 2 wood, 1 hay): land on it and you spring back up. Let go and the bounces die down. Hold jump as you land and each bounce goes higher, up to about 8 blocks. Jumping off one goes higher too. Learned from the scarecrow goal.
 - **Firefly jar**: at night, hold glass and tap a firefly to catch it. You get a jar with a firefly inside that glows like a lamp when you put it down.
 - **Shooting stars**: on clear nights one streaks across the sky every minute or so. Look right at it before it fades to make a wish and get a small present (fireworks, milk, eggs, a pie, a cake, lamps, apples or pink wool). Each device sees its own stars.
-- New goals: bounce on a bouncy pad 5 times, catch a firefly, and wish on a shooting star.
+- New goals: bounce on a bouncy pad 10 times, catch 3 fireflies, and wish on a shooting star.
 
 ## The music box, messages in bottles and snowmen
 
-- **Music box** (Building tab, at a crafting table: 3 wood, 1 lamp, 1 stick): tap it to play a short tune, made up fresh each time. Tame animals within 14 blocks hop and wag on the beat, and music notes float up. Everyone playing together hears the same tune. Learned from the firework goal.
+- **Music box** (Building tab, at a crafting table: 4 wood, 1 lamp, 2 sticks, 1 yellow flower): tap it to play a short tune, made up fresh each time. Tame animals within 14 blocks hop and wag on the beat, and music notes float up. Everyone playing together hears the same tune. Learned from the firework goal.
 - **Message in a bottle**: about one catch in 14 (likelier after a few catches if you've never had one). The note leads to the nearest shut chest more than 30 blocks away (or more than 12 if there isn't one), and the Treasure tag keeps pointing to it, however far, until it's opened. With no chest about, the bottle holds a small present instead.
-- **Snowman** (Building tab: 3 snow, 2 sticks, 1 orange wool): a decoration with a carrot nose, coal eyes and buttons, a red scarf and stick arms. Learned from the firefly goal.
+- **Snowman** (Building tab: 5 snow, 2 sticks, 1 orange wool): a decoration with a carrot nose, coal eyes and buttons, a red scarf and stick arms. Learned from the firefly goal.
 - New goals: play the music box, fish up a bottle, and build a snowman.
 
 ## Hide and seek, the swim ring and sandcastles
 
 - **Hide and seek**: by day, every 6 to 11 minutes, a tame baby within 30 blocks runs 12 to 24 blocks off to the most tucked-away spot it can find (next to walls or trunks, under leaves). Once there it keeps still (`a.hiding` in `js/animals.js`) and giggles every 6 seconds, louder as you get nearer. Walk within about 3 blocks to find it: you get a small reward (apples, clover, milk or eggs) and it runs back home. After 3 minutes, or at dusk, it gives up and comes home. The host runs it when playing together.
 - **Swim ring** (Wood & tools tab, at a crafting table: 2 red wool, 2 wool): while it's the item you're holding, you float at the surface and swim about 2.3 times as fast as without it. Jump to hop out. Learned from the bottle goal.
-- **Sandcastle** (Building tab: 4 sand, 1 stick, 1 red flower): a decoration with four towers and a red flag. Learned from the snowman goal.
-- New goals: find a hiding baby, swim 30 blocks with the ring, and build a sandcastle.
+- **Sandcastle** (Building tab: 6 sand, 1 stick, 1 red flower): a decoration with four towers and a red flag. Learned from the snowman goal.
+- New goals: find 2 hiding babies, swim 60 blocks with the ring, and build a sandcastle.
 
 ## Play together
 
