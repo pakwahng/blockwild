@@ -6,7 +6,7 @@ import { Weather } from './weather.js';
 import { Critters, BUTTERFLY_KINDS } from './critters.js';
 import { GOALS, newStats, bump } from './goals.js';
 import { drops, RECIPES, TABS, TOOLS, STARTER, OLD_SAVE_BAG, TABLE_REACH, FEEDER_FILL } from './crafting.js';
-import { STARTER_RECIPES, SEW, patternKey, GOAL_TEACH, PAGE_CHANCE, unlearned, pickPage, oldWorldRecipes } from './recipes.js';
+import { STARTER_RECIPES, SEW, patternKey, GOAL_TEACH, goalRecipes, PAGE_CHANCE, unlearned, pickPage, oldWorldRecipes } from './recipes.js';
 import { skyAt, CYCLE } from './sky.js';
 import { buildTextures, blockIcon } from './textures.js';
 import * as M from './models.js';
@@ -179,6 +179,7 @@ function learn(u, how) {
 function teachFromGoal(goal) {
   const t = GOAL_TEACH[goal];
   if (t === undefined) return '';
+  if (Array.isArray(t)) return t.map(out => learn({ kind: 'r', out }, 'goal')).filter(Boolean).join(' and ');
   if (typeof t === 'number') return learn({ kind: 'r', out: t }, 'goal');
   const [slot, v] = t.split(':').map(Number);
   return learn({ kind: 's', key: t, slot, v }, 'goal');
@@ -396,7 +397,7 @@ function startWorld(save) {
     // recipes have to be learned since v26; a world from before keeps what it has already made or found
     if (!Array.isArray(stats.known)) stats.known = old ? oldWorldRecipes(save.stats, save.inv, goalsDone) : [...STARTER_RECIPES];
     // and anything a finished goal teaches (goals can learn to teach new things in later versions)
-    for (const g of goalsDone) if (typeof GOAL_TEACH[g] === 'number' && !stats.known.includes(GOAL_TEACH[g])) stats.known.push(GOAL_TEACH[g]);
+    for (const g of goalsDone) for (const t of goalRecipes(g)) if (!stats.known.includes(t)) stats.known.push(t);
     if (save?.inv) inv = { ...save.inv };
     else if (old) {
       // a world from before you had to collect things: a generous bag, plus a stack of what was on the hotbar
@@ -2163,7 +2164,7 @@ const TRADES = [
   [[[ITEM_MILK, 2]], [[ITEM_EGG, 4]], 2],
   [[[ITEM_SEEDS, 12]], [[ITEM_CLOVER, 4]], 2],
   [[[B.COBBLE, 16]], [[B.GLASS, 4]], 2],
-  [[[B.LOG, 12], [ITEM_FISH, 2]], [[ITEM_HOUSE, 1]], 1],
+  [[[B.LOG, 6], [ITEM_FISH, 2]], [[ITEM_HOUSE, 1]], 1],
   [[[ITEM_BONE, 4]], [[ITEM_BREAD, 2]], 2],
   [[[ITEM_BREAD, 2]], [[B.WOOL, 4]], 2],
   [[[B.SAND, 10]], [[B.CLAY, 6]], 2],
@@ -2520,7 +2521,7 @@ function startSeek() {
   const a = kids[Math.random() * kids.length | 0], spot = hidingSpot(a.p);
   if (!spot) return false;
   seek = { a, home: [...(a.home || a.p)], t: SEEK_TIME, hint: 25 };
-  a.callTo = spot; a.called = 60; a.sleep = false; a.spot = null; a.enjoy = 0;
+  a.callTo = spot; a.called = 60; a.hiding = true; a.sleep = false; a.spot = null; a.enjoy = 0;
   toast(`🙈 ${callName(a.name, a.sp, 'Your', a.nick)} wants to play hide and seek! Count to ten… then go and find it. Listen for giggles!`, 6000, true);
   return true;
 }
@@ -2534,10 +2535,10 @@ function seekStep(dt) {
     return;
   }
   const a = seek.a, who = callName(a.name, a.sp, 'Your', a.nick);
-  if (!flock.animals.includes(a) || !a.tame) { seek = null; return; }
+  if (!flock.animals.includes(a) || !a.tame) { a.hiding = false; seek = null; return; }
   seek.t -= dt;
   const d = Math.hypot(a.p[0] - player.pos[0], a.p[2] - player.pos[2]);
-  const runHome = () => { a.callTo = seek.home; a.called = 40; a.wag = 1; seek = null; };
+  const runHome = () => { a.hiding = false; a.callTo = seek.home; a.called = 40; a.wag = 1; seek = null; };
   if (seek.t < SEEK_TIME - 6 && d < 2.8 && Math.abs(a.p[1] - player.pos[1]) < 3) {
     const got = [[[ITEM_APPLE, 3], [ITEM_CLOVER, 3], [ITEM_MILK, 1], [ITEM_EGG, 2]][Math.random() * 4 | 0]];
     for (const [item, n] of got) addItem(item, n, true);
@@ -3152,7 +3153,7 @@ requestAnimationFrame(loop);
 
 // handy for debugging from the console
 window.blockwild = { fishTap, get fishing() { return fishing; }, selectSlot, get hotbar() { return hotbar; }, get known() { return knownList(); }, learn, unlearned: () => unlearned(knownList(), settings.patterns || []), get settings() { return settings; }, get world() { return world; }, get player() { return player; }, get target() { return target; }, get flock() { return flock; }, get nursery() { return flock; }, get snakes() { return snakes; }, get raiders() { return raiders; }, get weather() { return weather; }, get critters() { return critters; }, music, trader, openMap, get nights() { return nights; }, set nights(n) { nights = n; }, wardrobe, selfieCam, petBaby, openJobs, get inv() { return inv; }, addItem, RECIPES, craft, input, raycast,
-  get clock() { return clock; }, setTime(t) { clock = t; }, swing: () => swing(), catchFirefly: () => catchFirefly(), fishBottle: () => fishBottle(), startSeek: () => startSeek(), get seek() { return seek; }, playBox: t => playBox(t), get mapChest() { return mapChest; }, get boxes() { return boxes; },
+  get clock() { return clock; }, setTime(t) { clock = t; }, swing: () => swing(), catchFirefly: () => catchFirefly(), fishBottle: () => fishBottle(), startSeek: () => startSeek(), get seek() { return seek; }, playBox: t => playBox(t), get mapChest() { return mapChest; }, get boxes() { return boxes; }, get stats() { return stats; }, get goalsDone() { return goalsDone; }, checkGoals: () => checkGoals(),
   net, others, get myNetId() { return myNetId; },
   get seat() { return seat; }, awardCrown: l => awardCrown(l), fireworks, get streak() { return streak; }, set streak(v) { streak = v; }, sit: (x, y, z) => sit(x, y, z), standUp: () => standUp(),
   // advance n frames by hand (useful when the page is in a background tab)

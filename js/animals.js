@@ -536,7 +536,7 @@ export class Nursery {
         // the dinner bell rang: run to it, then a happy hop on arrival
         a.called -= dt;
         if (dist2(a.p, a.callTo) > 0.6 * 0.6) { goal = a.callTo; speed = S.run; }
-        else { a.called = 0; a.home = [...a.callTo]; a.wag = 1; if (a.onGround) a.v[1] = 4; this.events.push({ type: 'party', sp: a.sp, p: [...a.p] }); }
+        else { a.called = 0; a.home = [...a.callTo]; a.wag = 1; if (!a.hiding) { if (a.onGround) a.v[1] = 4; this.events.push({ type: 'party', sp: a.sp, p: [...a.p] }); } }
       } else if (treat) {
         goal = treat.p; speed = S.run;
         if (dist2(a.p, treat.p) < (S.half + 0.3) ** 2 && Math.abs(a.p[1] - treat.p[1]) < 0.8) {
@@ -614,6 +614,8 @@ export class Nursery {
         a.speed = 0; a.mode = 'work';
       } else if (heeling) {
         a.speed = 0; a.mode = 'heel';
+      } else if (a.hiding) {
+        a.speed = 0; a.mode = 'enjoy'; // playing hide and seek: keep still and quiet
       } else if (night && a.enjoy === 0) {
         // night time: curl up and doze
         a.speed = 0; a.mode = 'sleep'; a.sleep = true; a.spot = null;

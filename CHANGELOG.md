@@ -2,6 +2,12 @@
 
 The same list is in the game: tap the version number on the front screen, or open **What’s new**.
 
+## 39. Fairer goals (10 Nov 2026)
+- The bouncy pad, snowman and swim ring goals no longer wait on a lucky recipe page. The goal that teaches each one now also teaches the coloured wool it needs (pink, orange or red) and gives you enough to make it straight away.
+- Pip now asks 6 logs and 2 fish for a house kit (it was 12 logs), closer to what making one yourself costs.
+- A baby playing hide and seek now keeps still and quiet once it has hidden, instead of wandering about and hopping.
+- The snowman and sandcastle goals give new rewards to match.
+
 ## 38. Hide and seek, a swim ring and sandcastles (10 Nov 2026)
 - Hide and seek! Now and then by day a baby from your nursery runs off to hide by a tree, a wall or under some leaves. Listen for its giggles, louder as you get close, and walk right up to it to find it and get a little reward.
 - New swim ring (Wood & tools tab, at a crafting table: 2 red wool, 2 wool): hold it in the water and you float on top and swim over twice as fast. Jump to hop out onto the bank. You learn it from the bottle goal.

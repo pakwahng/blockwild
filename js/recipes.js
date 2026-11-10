@@ -37,8 +37,12 @@ export const GOAL_TEACH = {
   fence: B.GATE, pen: B.FEEDER, flowers: '4:4', hatch: B.PLANTER, feeder: B.LADDER, wheat: B.DOOR,
   bonk: B.GLASS, ladder: B.LAMP, house: B.BRICK, night: B.ROOF, grow: '4:2', gifts: ITEM_HOUSE, job: '0:4', sew: ITEM_ROD,
   chest: B.SIGN, hat: B.BED, log: B.CAMPFIRE, gate: ITEM_BREAD, fish: ITEM_GRILLED, sign: ITEM_PIE, sleep: ITEM_CAKE,
-  cook: B.SCARECROW, party: ITEM_FIREWORK, trade: B.BELL, scare: B.BOUNCE, firework: B.MUSICBOX, jar: B.SNOWMAN, bottle: ITEM_RING, snowman: B.SANDCASTLE,
+  cook: B.SCARECROW, party: ITEM_FIREWORK, trade: B.BELL, firework: B.MUSICBOX, snowman: B.SANDCASTLE,
+  // these also teach the dyed wool the new thing needs, so a goal never waits on a lucky recipe page
+  scare: [B.BOUNCE, B.WOOL_PINK], jar: [B.SNOWMAN, B.WOOL_ORANGE], bottle: [ITEM_RING, B.WOOL_RED],
 };
+// The recipes (not patterns) a goal teaches, as a list.
+export const goalRecipes = g => [].concat(GOAL_TEACH[g] ?? []).filter(t => typeof t === 'number');
 
 // How often digging a block turns up a recipe page.
 export const PAGE_CHANCE = {
@@ -72,7 +76,7 @@ export function pickPage(known, patterns, found) {
 export function oldWorldRecipes(stats, inv, goalsDone) {
   const known = new Set(STARTER_RECIPES);
   for (const r of RECIPES) if (stats?.made?.[r.out] || stats?.got?.[r.out] || stats?.placed?.[r.out] || inv?.[r.out]) known.add(r.out);
-  for (const g of goalsDone || []) if (typeof GOAL_TEACH[g] === 'number') known.add(GOAL_TEACH[g]);
+  for (const g of goalsDone || []) for (const t of goalRecipes(g)) known.add(t);
   known.add(ITEM_SWORD); // everyone already has the toy sword
   return [...known];
 }
