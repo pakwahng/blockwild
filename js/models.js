@@ -580,6 +580,23 @@ export function treatIcon(kind, px = 64) {
       rr(g, 24, 18, 16, 28, 2, '#e8d08a'); rr(g, 29, 46, 6, 12, 3, '#8f6a3a');          // keep and door
       rr(g, 31, 2, 2, 17, 1, '#7e5230');                                                 // flagpole
       g.fillStyle = '#e2443a'; g.beginPath(); g.moveTo(33, 3); g.lineTo(46, 7); g.lineTo(33, 11); g.fill(); // flag
+    } else if (kind === 'bench') {
+      rr(g, 4, 30, 56, 9, 3, '#c98a4e');                                                 // seat
+      rr(g, 4, 10, 56, 7, 3, '#c98a4e'); rr(g, 4, 20, 56, 6, 3, '#b5763a');              // backrest slats
+      for (const x of [8, 50]) { rr(g, x, 8, 6, 52, 2, '#7e5230'); }                    // back legs
+      for (const x of [12, 46]) rr(g, x, 38, 6, 20, 2, '#8f5f34');                      // front legs
+    } else if (kind === 'pot plant') {
+      g.fillStyle = '#d9774a'; g.beginPath(); g.moveTo(16, 36); g.lineTo(48, 36); g.lineTo(43, 60); g.lineTo(21, 60); g.fill(); // pot
+      rr(g, 12, 32, 40, 8, 3, '#ea9466');                                                // lip
+      rr(g, 30, 12, 4, 22, 2, '#5aa84c'); rr(g, 34, 22, 10, 4, 2, '#7ccc6a'); rr(g, 20, 18, 10, 4, 2, '#7ccc6a'); // stem and leaves
+      g.fillStyle = '#e2443a'; for (const [x, y] of [[32, 4], [24, 10], [40, 10], [32, 16]]) { g.beginPath(); g.arc(x, y, 6, 0, Math.PI * 2); g.fill(); }
+      g.fillStyle = '#ffd23c'; g.beginPath(); g.arc(32, 10, 4, 0, Math.PI * 2); g.fill();
+    } else if (kind === 'lamp post') {
+      g.fillStyle = 'rgba(255,240,150,0.35)'; g.beginPath(); g.arc(32, 16, 17, 0, Math.PI * 2); g.fill(); // glow
+      rr(g, 20, 54, 24, 8, 3, '#a9b1ba');                                                // stone foot
+      rr(g, 29, 24, 6, 32, 2, '#7e5230');                                                // post
+      rr(g, 22, 8, 20, 18, 4, '#fff1a8'); rr(g, 25, 11, 14, 12, 3, '#ffd23c');           // lantern
+      rr(g, 19, 4, 26, 6, 3, '#5a3a20'); rr(g, 20, 24, 24, 4, 2, '#5a3a20');             // roof and base
     } else if (kind === 'music box') {
       rr(g, 8, 26, 48, 30, 5, '#b5763a'); rr(g, 6, 22, 52, 8, 3, '#ffcf3a'); rr(g, 8, 40, 48, 4, 2, '#ffcf3a'); // box, lid, band
       rr(g, 56, 36, 6, 4, 2, '#7e5230'); rr(g, 58, 30, 4, 10, 2, '#7e5230');                                   // crank

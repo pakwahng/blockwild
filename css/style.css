@@ -539,3 +539,35 @@ body.in-wardrobe #tags, body.in-wardrobe #loading { display: none; }
 .tr-item em { font-style: normal; }
 .tr-arrow { font-size: 20px; color: var(--ink-dim); }
 .trade button { flex: 0 0 auto; padding: 8px 12px; min-width: 76px; }
+
+/* ---------- keyboard and mouse hints (hidden on touch screens) ---------- */
+.hud-btn { position: relative; }
+kbd.key {
+  position: absolute; right: -4px; bottom: -6px; min-width: 16px; padding: 1px 4px; border-radius: 5px;
+  font: 700 10px/14px system-ui, sans-serif; color: #1b2430; background: #f4efe3; box-shadow: 0 2px 0 #9aa2ac;
+  pointer-events: none;
+}
+kbd.key.in { position: static; display: inline-block; margin-left: 4px; vertical-align: 1px; }
+.slot { position: relative; }
+kbd.slot-key {
+  position: absolute; left: 3px; top: 1px; font: 700 10px/1 system-ui, sans-serif; color: rgba(255, 255, 255, 0.75);
+  text-shadow: 0 1px 2px #000; pointer-events: none;
+}
+body.touch kbd.key, body.touch kbd.slot-key, body.touch #desk-hint { display: none; }
+#desk-hint {
+  position: absolute; left: 50%; bottom: calc(var(--slot) + 28px + var(--safe-b)); transform: translateX(-50%);
+  padding: 6px 14px; border-radius: 99px; background: rgba(10, 14, 20, 0.6); font-size: 13px; color: #dfe6ee;
+  white-space: nowrap; max-width: calc(100vw - 40px); overflow: hidden; text-overflow: ellipsis;
+  transition: opacity .8s; pointer-events: none;
+}
+#desk-hint b { color: #fff; }
+#desk-hint.gone { opacity: 0; }
+#act-hint {
+  position: absolute; left: 50%; top: calc(50% + 30px); transform: translateX(-50%);
+  padding: 4px 10px; border-radius: 99px; background: rgba(10, 14, 20, 0.62); color: #fff;
+  font-size: 13px; font-weight: 600; white-space: nowrap; pointer-events: none;
+}
+#act-hint[hidden] { display: none; }
+/* recipe cards: how to learn one you don't know yet */
+.card-learn small { display: block; margin-top: 2px; font-size: 11px; color: var(--ink-dim); font-weight: 400; }
+.card-table.free { opacity: 0.65; }

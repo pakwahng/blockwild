@@ -35,8 +35,8 @@ export const patternKey = (slot, v) => slot + ':' + v;
 // Each one is what you'll want for the goals that come after it.
 export const GOAL_TEACH = {
   fence: B.GATE, pen: B.FEEDER, flowers: '4:4', hatch: B.PLANTER, feeder: B.LADDER, wheat: B.DOOR,
-  bonk: B.GLASS, ladder: B.LAMP, house: B.BRICK, night: B.ROOF, grow: '4:2', gifts: ITEM_HOUSE, job: '0:4', sew: ITEM_ROD,
-  chest: B.SIGN, hat: B.BED, log: B.CAMPFIRE, gate: ITEM_BREAD, fish: ITEM_GRILLED, sign: ITEM_PIE, sleep: ITEM_CAKE,
+  bonk: [B.GLASS, B.STONEBRICK], ladder: B.LAMP, house: [B.BRICK, B.WINDOW], night: [B.ROOF, B.LAMPPOST], grow: '4:2', gifts: ITEM_HOUSE, job: '0:4', sew: ITEM_ROD,
+  chest: [B.SIGN, B.FLOWERPOT], hat: B.BED, log: B.CAMPFIRE, gate: ITEM_BREAD, fish: ITEM_GRILLED, sign: [ITEM_PIE, B.BENCH], sleep: ITEM_CAKE,
   cook: B.SCARECROW, party: ITEM_FIREWORK, trade: B.BELL, firework: B.MUSICBOX, snowman: B.SANDCASTLE,
   // these also teach the dyed wool the new thing needs, so a goal never waits on a lucky recipe page
   scare: [B.BOUNCE, B.WOOL_PINK], jar: [B.SNOWMAN, B.WOOL_ORANGE], bottle: [ITEM_RING, B.WOOL_RED],

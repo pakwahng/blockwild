@@ -6,8 +6,9 @@ export const T = {
   SNOW_SIDE: 14, BEDROCK: 15, LAMP: 16, CLAY: 17, HAY_SIDE: 18, HAY_TOP: 19, ROOF: 20, CREAM: 21, MUD: 22, THRONE_TOP: 23, THRONE_SIDE: 24, WOOL: 25,
   CHEST_SIDE: 26, CHEST_TOP: 27, CHEST_OPEN: 28,
   WOOL_RED: 29, WOOL_ORANGE: 30, WOOL_YELLOW: 31, WOOL_PINK: 32, WOOL_GREEN: 33,
+  STONEBRICK: 34, WINDOW: 35, POT: 36,
 };
-export const TILE_COUNT = 34;
+export const TILE_COUNT = 37;
 
 export const B = {
   AIR: 0, GRASS: 1, DIRT: 2, STONE: 3, SAND: 4, LOG: 5, LEAVES: 6, PLANKS: 7,
@@ -20,6 +21,7 @@ export const B = {
   CHEST: 44, CHEST_OPEN: 45,
   WOOL_RED: 46, WOOL_ORANGE: 47, WOOL_YELLOW: 48, WOOL_PINK: 49, WOOL_GREEN: 50,
   BED: 51, SIGN: 52, CAMPFIRE: 53, SCARECROW: 54, BELL: 55, BOUNCE: 56, JAR: 57, MUSICBOX: 58, SNOWMAN: 59, SANDCASTLE: 60,
+  STONEBRICK: 61, WINDOW: 62, BENCH: 63, FLOWERPOT: 64, LAMPPOST: 65,
 };
 
 // kind: 'opaque' | 'cutout' (alpha-tested, e.g. leaves) | 'liquid' (translucent pass)
@@ -105,6 +107,12 @@ const defs = [
   { id: B.SNOWMAN, name: 'Snowman', kind: 'cutout', all: T.SNOW, nose: T.WOOL_ORANGE, coal: T.COBBLE, arm: T.LOG_SIDE, scarf: T.WOOL_RED, hard: 0.3, shape: 'snowman' },
   // a sandcastle with four little towers and a red flag
   { id: B.SANDCASTLE, name: 'Sandcastle', kind: 'cutout', all: T.SAND, flag: T.WOOL_RED, pole: T.LOG_SIDE, hard: 0.2, shape: 'sandcastle' },
+  // more to build with: smart stone bricks, framed windows, and a bench, flower pot and lamp post for the garden
+  { id: B.STONEBRICK, name: 'Stone bricks', kind: 'opaque', all: T.STONEBRICK, hard: 0.9 },
+  { id: B.WINDOW, name: 'Window', kind: 'cutout', all: T.WINDOW, hard: 0.25, round: 0.04 },
+  { id: B.BENCH, name: 'Bench', kind: 'cutout', all: T.PLANKS, leg: T.LOG_SIDE, hard: 0.45, shape: 'bench' },
+  { id: B.FLOWERPOT, name: 'Flower pot', kind: 'cutout', all: T.POT, soil: T.DIRT, stalk: T.LEAVES, petal: T.THRONE_TOP, middle: T.SAND, hard: 0.3, shape: 'flowerpot' },
+  { id: B.LAMPPOST, name: 'Lamp post', kind: 'cutout', all: T.LOG_SIDE, base: T.COBBLE, light: T.LAMP, hard: 0.5, shape: 'lamppost' },
 ];
 
 export const BLOCKS = [];
@@ -125,7 +133,7 @@ for (const b of BLOCKS) {
   KIND[b.id] = { air: 0, opaque: 1, cutout: 2, liquid: 3 }[b.kind];
 }
 
-export const PLACEABLE = [B.FENCE, B.GATE, B.DOOR, B.BED, B.SIGN, B.PLANTER, B.TABLE, B.CAMPFIRE, B.SCARECROW, B.BELL, B.BOUNCE, B.JAR, B.MUSICBOX, B.SNOWMAN, B.SANDCASTLE, B.LADDER, B.FEEDER, B.FLOWER_RED, B.FLOWER_YELLOW, B.FLOWER_WHITE, B.GRASS, B.DIRT, B.PLANKS, B.WOOL, B.WOOL_RED, B.WOOL_ORANGE, B.WOOL_YELLOW, B.WOOL_PINK, B.WOOL_GREEN, B.LOG, B.HAY, B.MUD, B.ROOF, B.CREAM, B.BRICK,
+export const PLACEABLE = [B.FENCE, B.GATE, B.DOOR, B.BED, B.SIGN, B.PLANTER, B.TABLE, B.CAMPFIRE, B.SCARECROW, B.BELL, B.BOUNCE, B.JAR, B.MUSICBOX, B.SNOWMAN, B.SANDCASTLE, B.BENCH, B.FLOWERPOT, B.LAMPPOST, B.LADDER, B.FEEDER, B.FLOWER_RED, B.FLOWER_YELLOW, B.FLOWER_WHITE, B.GRASS, B.DIRT, B.PLANKS, B.WOOL, B.WOOL_RED, B.WOOL_ORANGE, B.WOOL_YELLOW, B.WOOL_PINK, B.WOOL_GREEN, B.LOG, B.HAY, B.MUD, B.ROOF, B.CREAM, B.BRICK, B.STONEBRICK, B.WINDOW,
   B.STONE, B.COBBLE, B.GLASS, B.LEAVES, B.SAND, B.SNOW, B.CLAY, B.LAMP, B.WATER];
 // Non-block items (animal treats) share the hotbar with blocks; their ids sit above the block range.
 export const ITEM_SEEDS = 200, ITEM_WHEAT = 201, ITEM_APPLE = 202, ITEM_CLOVER = 203, ITEM_BONE = 204;

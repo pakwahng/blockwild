@@ -307,6 +307,39 @@ const painters = {
   [T.WOOL_YELLOW]: rnd => woolPainter(rnd, '#fbd94e', '#e0b832'),
   [T.WOOL_PINK]: rnd => woolPainter(rnd, '#f7a8c4', '#e084a6'),
   [T.WOOL_GREEN]: rnd => woolPainter(rnd, '#7ccc6a', '#5aa84c'),
+  // smart grey stone bricks: two big blocks a row, offset like a castle wall
+  [T.STONEBRICK]: rnd => {
+    const stone = hex('#b9c0c8'), dark = hex('#9aa2ac'), mortar = hex('#6f7780');
+    const spots = blobs(rnd, 5, 0.06, 0.12);
+    return (u, v) => {
+      const row = Math.floor(v * 2), off = row % 2 ? 0.5 : 0;
+      const fu = (u + off) % 1, fv = (v * 2) % 1;
+      const d = Math.min(fu, 1 - fu, fv * 0.5, (1 - fv) * 0.5);
+      const t = sstep(0.02, 0.06, d);
+      const face = mix(stone, dark, spots(u, v)[0] * 0.5 + 0.25 * fv);
+      return scale(mix(mortar, face, t), rim(u, v, 0.06, 0.1));
+    };
+  },
+  // a wooden window frame with four clear panes
+  [T.WINDOW]: () => {
+    const frame = hex('#b5763a'), dark = hex('#8f5f34');
+    return (u, v) => {
+      const d = Math.min(u, 1 - u, v, 1 - v), bar = Math.min(Math.abs(u - 0.5), Math.abs(v - 0.5));
+      if (d < 0.1) return [...scale(frame, d < 0.04 ? 0.85 : 1), 255];
+      if (bar < 0.04) return [...dark, 255];
+      const streak = Math.abs((u % 0.5) - (v % 0.5) - 0.12) < 0.03;
+      return streak ? [255, 255, 255, 150] : [200, 235, 250, 45];
+    };
+  },
+  // terracotta for flower pots
+  [T.POT]: () => {
+    const base = hex('#d9774a'), light = hex('#ea9466'), band = hex('#b85c34');
+    return (u, v) => {
+      if (v < 0.16) return scale(light, rim(u, v, 0.06, 0.08));
+      if (v < 0.22) return band;
+      return scale(mix(base, light, 0.2 * Math.sin(u * 9)), rim(u, v, 0.06, 0.1));
+    };
+  },
 };
 
 function makeTile(i) {

@@ -25,6 +25,7 @@
         <path d="M20 13v14M13 20h14" class="cross"/>
       </svg>
     </div>
+    <div id="act-hint" hidden></div>
     <div id="nursery" aria-label="Your nursery"></div>
     <button id="goal" hidden aria-label="Your next goal. Tap to see all goals."><span></span></button>
     <div id="info"></div>
@@ -36,19 +37,21 @@
 
     <div id="top-buttons">
       <div id="room-pill" hidden></div>
-      <button id="btn-photo" class="hud-btn" aria-label="Take a photo">
+      <button id="btn-photo" class="hud-btn" aria-label="Take a photo"><kbd class="key">P</kbd>
         <svg viewBox="0 0 24 24"><path d="M8.5 5l1.5-2h4l1.5 2H20a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zM12 17.5a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0-2.2a2.8 2.8 0 1 1 0-5.6 2.8 2.8 0 0 1 0 5.6z"/></svg>
       </button>
-      <button id="btn-map" class="hud-btn" aria-label="Open the map">
+      <button id="btn-map" class="hud-btn" aria-label="Open the map"><kbd class="key">M</kbd>
         <svg viewBox="0 0 24 24"><path d="M3 6.5l5.5-2.5 7 2.5L21 4v13.5l-5.5 2.5-7-2.5L3 20zm6-0.3v11l6 2.1v-11z"/></svg>
       </button>
-      <button id="btn-blocks" class="hud-btn" aria-label="Open your bag">
+      <button id="btn-blocks" class="hud-btn" aria-label="Open your bag"><kbd class="key">E</kbd>
         <svg viewBox="0 0 24 24"><path d="M9 6V5a3 3 0 0 1 6 0v1h3.5l1.5 15H4L5.5 6zm2 0h2V5a1 1 0 0 0-2 0z"/></svg>
       </button>
-      <button id="btn-menu" class="hud-btn" aria-label="Pause menu">
+      <button id="btn-menu" class="hud-btn" aria-label="Pause menu"><kbd class="key">Esc</kbd>
         <svg viewBox="0 0 24 24"><path d="M8 5h3v14H8zM13 5h3v14h-3z"/></svg>
       </button>
     </div>
+
+    <div id="desk-hint"><b>WASD</b> move · <b>Space</b> jump · <b>Left click</b> dig · <b>Right click</b> place or use · <b>E</b> bag · <b>M</b> map · <b>Esc</b> pause</div>
 
     <div id="touch-ui">
       <div id="stick"><div id="knob"></div></div>
@@ -64,7 +67,7 @@
 
   <div id="picker" hidden>
     <div class="panel">
-      <div class="panel-head"><h2>Bag</h2><button id="picker-close" class="text-btn">Done</button></div>
+      <div class="panel-head"><h2>Bag</h2><button id="picker-close" class="text-btn">Done <kbd class="key in">E</kbd></button></div>
       <div id="bag-body">
         <div id="craft-tabs" role="tablist" aria-label="Your things, and things to make"></div>
         <p class="bag-tip" id="bag-tip">Tap something to hold it. Dig blocks to collect them, and make new things in the other tabs.</p>
@@ -228,10 +231,11 @@
             <p><b>Bouncy pads, fireflies and wishes:</b> land on a bouncy pad to spring up, and hold jump as you land to go higher. At night, hold glass and tap a firefly to catch it in a glowing jar. If you see a shooting star, look right at it to make a wish!</p>
             <p><b>Music, bottles and snowmen:</b> tap a music box and your animals dance along. Fishing sometimes brings up a message in a bottle: follow the Treasure tag to the chest it describes. Build a snowman from snow, sticks and orange wool.</p>
             <p><b>Hide and seek, swimming and sandcastles:</b> when a baby runs off to hide, follow its giggles and walk up to it to find it. Hold a swim ring in the water to float and swim fast. Build sandcastles from sand, a stick and a red flower.</p>
+            <p><b>More to build:</b> stone bricks from cobble, framed windows, lamp posts that glow at night, flower pots, and benches you can sit on (tap one). You learn them from goals: bonking a raider, building a house, keeping the nursery safe at night, finding a chest and writing on a sign. When you look at something you can use, a label under the middle of the screen says what tapping it does.</p>
             <p><b>Chicken king:</b> keep every baby safe for 3 nights in a row with at least 8 animals in your nursery (or raise 100 chicks) to earn the gold crown and a hay bale throne. Keep the run going for the ruby crown (5 nights, 20 animals) and the diamond crown (8 nights, 40 animals). One spooked baby starts the run again, and nights you sleep through don't count. Place the throne, then tap it to sit: your babies gather round to cheer. Walk or jump to stand up.</p>
             <p><b>Play together:</b> open Play together and tap Host my world to get a four-letter room code. Friends type the code and tap Join to come into your world as Lachie or Charli (pick in Settings). Everyone shares the same nursery, treats and night snakes. Your friends’ own worlds stay safe on their devices.</p>
             <p><b>Phone:</b> drag on the left side to walk (push far to sprint), drag on the right side to look. Tap to place the selected block or open a gate, press and hold to dig. Use the arrow button to jump.</p>
-            <p><b>Keyboard:</b> WASD to move, mouse to look, left click to break, right click to place, Space to jump, Ctrl to sprint, Shift to climb down a ladder, 1–9 or the wheel to pick from the hotbar, E for your bag.</p>
+            <p><b>Keyboard:</b> WASD to move, mouse to look, left click to break, right click to place, Space to jump, Ctrl to sprint, Shift to climb down a ladder, 1–9 or the wheel to pick from the hotbar, E for your bag (E or Esc closes it), M for the map, P for a photo, Esc to pause. In the bag, point at something and press 1–9 to put it on that hotbar slot. A label under the crosshair tells you what right clicking will do.</p>
           </div>
         </details>
         <p class="footnote" id="footnote">Your world saves on this device automatically.</p>

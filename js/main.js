@@ -116,7 +116,7 @@ let myNetId = 0, netTimer = 0, poseTimer = 0, shownOthers = -1, pendingEdits = {
 const netEdits = [], netEvents = [];
 
 const icons = {};
-const SHAPE_ICON = { [B.FENCE]: 'fence', [B.GATE]: 'gate', [B.DOOR]: 'door', [B.BED]: 'bed', [B.SIGN]: 'sign', [B.CAMPFIRE]: 'campfire', [B.SCARECROW]: 'scarecrow', [B.BELL]: 'dinner bell', [B.JAR]: 'firefly jar', [B.MUSICBOX]: 'music box', [B.SNOWMAN]: 'snowman', [B.SANDCASTLE]: 'sandcastle', [B.PLANTER]: 'planter', [B.TABLE]: 'table', [B.LADDER]: 'ladder', [B.FEEDER]: 'feeder',
+const SHAPE_ICON = { [B.FENCE]: 'fence', [B.GATE]: 'gate', [B.DOOR]: 'door', [B.BED]: 'bed', [B.SIGN]: 'sign', [B.CAMPFIRE]: 'campfire', [B.SCARECROW]: 'scarecrow', [B.BELL]: 'dinner bell', [B.JAR]: 'firefly jar', [B.MUSICBOX]: 'music box', [B.SNOWMAN]: 'snowman', [B.SANDCASTLE]: 'sandcastle', [B.BENCH]: 'bench', [B.FLOWERPOT]: 'pot plant', [B.LAMPPOST]: 'lamp post', [B.PLANTER]: 'planter', [B.TABLE]: 'table', [B.LADDER]: 'ladder', [B.FEEDER]: 'feeder',
   [B.FLOWER_RED]: 'flower-red', [B.FLOWER_YELLOW]: 'flower-yellow', [B.FLOWER_WHITE]: 'flower-white' };
 if (textures) for (const id of [...PLACEABLE, B.THRONE]) {
   icons[id] = SHAPED[id] ? M.treatIcon(SHAPE_ICON[id], 64).toDataURL() : blockIcon(BLOCKS[id], textures.tiles, 64).toDataURL();
@@ -634,7 +634,15 @@ function sit(x, y, z) {
   toast(n ? `Chicken king! ${n} ${n === 1 ? 'baby gathers' : 'babies gather'} round your hay throne. Walk or jump to stand up.`
     : 'You sit on your hay throne. Walk or jump to stand up.');
 }
-function standUp() { seat = null; flock.endGather(); if (net.isGuest) net.toHost({ t: 'stand' }); }
+function sitBench(t) {
+  seat = { x: t.x, y: t.y, z: t.z, id: B.BENCH, h: 0.45 };
+  player.flying = false;
+  player.pos = [t.x + 0.5, t.y + 0.45, t.z + 0.5]; player.vel = [0, 0, 0];
+  bump(stats, 'benched'); sfx.place(); buzz(8);
+  if (!firsts.includes('bench')) { firsts.push('bench'); toast('Ahh, a nice sit down. Walk or jump to stand up.', 3000); }
+}
+function standUp() { if (seat?.id === B.BENCH) player.pos[1] = seat.y + 1;
+  seat = null; flock.endGather(); if (net.isGuest) net.toHost({ t: 'stand' }); }
 
 // The first time each new kind of snake turns up.
 const SNAKE_TIPS = [
@@ -1050,6 +1058,7 @@ function placeBlock() {
   const id = hotbar[selected];
   if (aimingAtTrader()) { openTrade(); return; }
   if (target && target.id === B.THRONE && !seat) { sit(target.x, target.y, target.z); return; }
+  if (target && target.id === B.BENCH && !seat) { sitBench(target); return; }
   if (target && (target.id === B.GATE || target.id === B.GATE_OPEN)) {
     // tap a gate to swing it open or shut
     const open = target.id === B.GATE;
@@ -1360,7 +1369,7 @@ function buildHotbar() {
   hotbar.forEach((id, i) => {
     const b = document.createElement('button');
     b.className = 'slot' + (i === selected ? ' sel' : '');
-    b.innerHTML = id ? `<img alt="" src="${icons[id]}"><span class="n"></span>` : '';
+    b.innerHTML = `<kbd class="slot-key">${i + 1}</kbd>` + (id ? `<img alt="" src="${icons[id]}"><span class="n"></span>` : '');
     b.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); selectSlot(i); });
     bar.appendChild(b);
   });
@@ -1397,6 +1406,8 @@ function openPicker() {
   if (!running) return;
   running = false; input.enabled = false;
   if (document.pointerLockElement) { pickerOpenFromLock = true; document.exitPointerLock(); }
+  $('#bag-tip').textContent = input.usingTouch ? 'Tap something to hold it. Dig blocks to collect them, and make new things in the other tabs.'
+    : 'Click something to hold it, or point at it and press 1–9 to put it on that hotbar slot. Make new things in the other tabs. Press E to close.';
   buildBag();
   $('#picker').hidden = false;
 }
@@ -1410,6 +1421,8 @@ function buildOwned() {
     const n = have(id);
     b.className = 'pick' + (hotbar[selected] === id ? ' cur' : '');
     b.innerHTML = `<img alt="" src="${icons[id]}"><span>${itemName(id)}</span>${TOOLS.has(id) ? '' : `<span class="n">${n}</span>`}`;
+    b.addEventListener('pointerenter', () => { bagHover = id; });
+    b.addEventListener('pointerleave', () => { if (bagHover === id) bagHover = null; });
     b.addEventListener('click', () => {
       // put it in the chosen slot (swapping if it's already elsewhere on the hotbar)
       const was = hotbar.indexOf(id);
@@ -1459,13 +1472,17 @@ function buildMake() {
     list.appendChild(note);
   }
   // the ones you know first, then the ones still to learn
-  for (const r of [...here.filter(knows), ...here.filter(q => !knows(q))]) {
+  // the ones you can make right now first, then the rest you know, then the ones still to learn
+  const known = here.filter(knows);
+  for (const r of [...known.filter(canMake), ...known.filter(q => !canMake(q)), ...here.filter(q => !knows(q))]) {
     if (!knows(r)) {
+      const g = GOALS.find(q => !goalsDone.includes(q[0]) && goalRecipes(q[0]).includes(r.out));
+      const how = g ? `Finish the goal “${g[1].split(':')[0]}”, or find a recipe page` : 'Find a recipe page: dig leaves, grass, stone or sand, open chests, or swap with Pip';
       const c = document.createElement('div');
       c.className = 'card unknown';
       c.innerHTML = `<div class="card-out"><img alt="" src="${icons[r.out]}"></div><div class="card-name">${itemName(r.out)}</div>` +
-        `<div class="card-learn">📜 Not learned yet</div>`;
-      c.setAttribute('aria-label', `${itemName(r.out)}: not learned yet. Find a recipe page to learn it.`);
+        `<div class="card-learn">📜 Not learned yet<small>${how}</small></div>`;
+      c.setAttribute('aria-label', `${itemName(r.out)}: not learned yet. ${how}.`);
       list.appendChild(c);
       continue;
     }
@@ -1475,7 +1492,7 @@ function buildMake() {
       `<div class="card-name">${itemName(r.out)}</div>` +
       `<div class="card-needs">${r.needs.map(([id, k]) => `<span data-id="${id}" data-k="${k}"><img alt="" src="${icons[id]}"><em></em></span>`).join('')}</div>` +
       (r.table === 'fire' ? `<div class="card-table"><img alt="" src="${icons[B.CAMPFIRE]}">Needs a campfire</div>`
-        : `<div class="card-table"><img alt="" src="${icons[B.TABLE]}">Needs a table</div>`) +
+        : r.table ? `<div class="card-table"><img alt="" src="${icons[B.TABLE]}">Needs a table</div>` : `<div class="card-table free">Make it anywhere</div>`) +
       `<div class="card-go"><button class="make">Make</button><button class="all"></button></div>`;
     c.querySelector('.make').setAttribute('aria-label', `Make ${r.n} ${itemName(r.out)} from ${r.needs.map(([id, k]) => k + ' ' + stickName(id, k)).join(' and ')}`);
     holdToRepeat(c.querySelector('.make'), () => makeIt(r, 1));
@@ -2040,7 +2057,7 @@ const MAP_COL = {
   [B.LAMP]: '#ffe08a', [B.CLAY]: '#b9a39a', [B.HAY]: '#e3c25a', [B.ROOF]: '#c94a3a', [B.CREAM]: '#f1e3c4', [B.MUD]: '#6b4a2e',
   [B.THRONE]: '#ffcf3a', [B.WOOL]: '#f4efe3', [B.WOOL_RED]: '#d8443a', [B.WOOL_ORANGE]: '#f08a2a', [B.WOOL_YELLOW]: '#f2cf3a',
   [B.WOOL_PINK]: '#f29ab8', [B.WOOL_GREEN]: '#5cbf4a', [B.CHEST]: '#ffcf3a', [B.CHEST_OPEN]: '#b58a3a', [B.BED]: '#e2443a',
-  [B.CAMPFIRE]: '#ff8a2a', [B.SCARECROW]: '#e3c25a', [B.BELL]: '#ffcf3a', [B.JAR]: '#fff6a0', [B.BOUNCE]: '#f7a8c4', [B.MUSICBOX]: '#c98a3a', [B.SNOWMAN]: '#ffffff', [B.SANDCASTLE]: '#e8d08a', [B.SIGN]: '#d8924e', [B.PLANTER_RIPE]: '#f2c35a',
+  [B.CAMPFIRE]: '#ff8a2a', [B.SCARECROW]: '#e3c25a', [B.BELL]: '#ffcf3a', [B.JAR]: '#fff6a0', [B.BOUNCE]: '#f7a8c4', [B.MUSICBOX]: '#c98a3a', [B.SNOWMAN]: '#ffffff', [B.SANDCASTLE]: '#e8d08a', [B.STONEBRICK]: '#a9b1ba', [B.WINDOW]: '#c8ebfa', [B.BENCH]: '#c98a4e', [B.FLOWERPOT]: '#d9774a', [B.LAMPPOST]: '#ffe08a', [B.SIGN]: '#d8924e', [B.PLANTER_RIPE]: '#f2c35a',
 };
 const mapView = { size: 128, open: false };
 const SEE_THROUGH = id => id === B.AIR || (SHAPED[id] && !IS_FEEDER(id) && id !== B.TABLE && id !== B.BED && id !== B.CAMPFIRE && id !== B.SIGN && !(id >= B.PLANTER && id <= B.PLANTER_RIPE));
@@ -2144,6 +2161,28 @@ document.addEventListener('keydown', e => {
   if (e.code !== 'KeyM' || e.repeat || e.target.tagName === 'INPUT') return;
   if (mapView.open) closeMap(); else if (running) openMap();
 });
+// Keyboard for the panels: E or Esc shuts the bag, Esc shuts the others, P takes a photo,
+// and in the bag pointing at something and pressing 1–9 puts it on that hotbar slot.
+let bagHover = null;
+document.addEventListener('keydown', e => {
+  if (e.repeat || /^(INPUT|TEXTAREA)$/.test(e.target.tagName)) return;
+  const esc = e.code === 'Escape';
+  if (!$('#picker').hidden) {
+    const d = /^Digit[1-9]$/.test(e.code) ? +e.code.slice(5) - 1 : -1;
+    if (d >= 0 && d < hotbar.length && bagHover) {
+      const was = hotbar.indexOf(bagHover);
+      if (was >= 0 && was !== d) hotbar[was] = hotbar[d];
+      hotbar[d] = bagHover; selected = d; buildHotbar(); buildOwned();
+      e.stopPropagation(); return;
+    }
+    if (esc || e.code === 'KeyE') { e.stopPropagation(); closePicker(); }
+    return;
+  }
+  if (!esc) { if (e.code === 'KeyP' && running) $('#btn-photo').click(); return; }
+  if (mapView.open) closeMap();
+  else if (!$('#tradecard').hidden) closeTrade();
+  else if (!$('#jobcard').hidden) closeJobs();
+});
 
 // ---------- the travelling trader ----------
 // Pip the goose pulls her market cart up near your nursery every other day, from morning till early afternoon.
@@ -2234,6 +2273,32 @@ function traderGroup(time) {
   return { model: 'trader', data: d, count: 1 };
 }
 // Tapping Pip (or her cart)?
+// A little label under the crosshair saying what tapping (or right clicking) the thing you're looking at does.
+const ACT = {
+  [B.BENCH]: 'Sit down', [B.GATE]: 'Open the gate', [B.GATE_OPEN]: 'Shut the gate', [B.CHEST]: 'Open the chest',
+  [B.BED]: 'Sleep till morning', [B.BELL]: 'Ring the bell', [B.MUSICBOX]: 'Play a tune', [B.SIGN]: 'Write on the sign',
+  [B.PLANTER_RIPE]: 'Pick the wheat', [B.DOOR]: 'Open the door', [B.DOOR_TOP]: 'Open the door', [B.DOOR_OPEN]: 'Shut the door', [B.DOOR_OPEN_TOP]: 'Shut the door',
+};
+let actShown = '';
+function actionHint() {
+  let what = '', bag = false;
+  if (running && !seat) {
+    const id = target?.id, held = hotbar[selected];
+    if (aimingAtTrader()) what = 'Swap with Pip';
+    else if (id === B.THRONE) what = 'Sit on the throne';
+    else if (ACT[id]) what = ACT[id];
+    else if (id === B.PLANTER && held === ITEM_SEEDS && have(held)) what = 'Plant seeds';
+    else if (IS_FEEDER(id) && FEEDER_OF[held] && FEEDER_TREAT[id] !== held) what = 'Fill the feeder';
+    else if (id === B.TABLE) { what = 'make things here'; bag = true; }
+    else if (id === B.CAMPFIRE) { what = 'cook here'; bag = true; }
+  }
+  const text = !what ? '' : bag ? (input.usingTouch ? `Open your bag to ${what}` : `Press E to ${what}`)
+    : (input.usingTouch ? 'Tap: ' : 'Right click: ') + what;
+  if (text === actShown) return;
+  actShown = text;
+  const el = $('#act-hint');
+  el.textContent = text; el.hidden = !text;
+}
 function aimingAtTrader() {
   if (!trader.here) return false;
   const eye = player.eye(), fwd = player.forward();
@@ -2586,7 +2651,7 @@ function sleepFade() {
     setTimeout(() => { el.hidden = true; sleeping = false; }, 800);
   }, 1800);
 }
-function hideHintLater() { setTimeout(() => $('#touch-hint').classList.add('gone'), 7000); }
+function hideHintLater() { setTimeout(() => $('#touch-hint').classList.add('gone'), 7000); setTimeout(() => $('#desk-hint').classList.add('gone'), 20000); }
 
 // settings
 const sView = $('#set-view'), sSens = $('#set-sens'), sAuto = $('#set-autojump'), sFps = $('#set-fps'), sSound = $('#set-sound');
@@ -3025,8 +3090,8 @@ function frame(now, photo = false) {
     if (seat) {
       // sitting on the throne: walking or jumping stands you up again
       const st = input.state;
-      if (Math.abs(st.moveX) > 0.2 || Math.abs(st.moveZ) > 0.2 || st.jump || world.getBlock(seat.x, seat.y, seat.z) !== B.THRONE) standUp();
-      else { player.pos = [seat.x + 0.5, seat.y + 1, seat.z + 0.5]; player.vel = [0, 0, 0]; }
+      if (Math.abs(st.moveX) > 0.2 || Math.abs(st.moveZ) > 0.2 || st.jump || world.getBlock(seat.x, seat.y, seat.z) !== (seat.id ?? B.THRONE)) standUp();
+      else { player.pos = [seat.x + 0.5, seat.y + (seat.h ?? 1), seat.z + 0.5]; player.vel = [0, 0, 0]; }
     }
     // poison goo makes your feet sticky and slow
     const gooey = !player.flying && snakes.inGoo(player.pos);
@@ -3098,6 +3163,7 @@ function frame(now, photo = false) {
   const eye = cam ? cam.eye : player.eye(), fwd = cam ? cam.fwd : player.forward();
   target = running && !cam ? raycast(world, eye, fwd, REACH) : null;
   if (running) updateBreaking(dt);
+  actionHint();
 
   const underwater = world.getBlock(Math.floor(eye[0]), Math.floor(eye[1]), Math.floor(eye[2])) === B.WATER;
   const far = settings.view * CS - 6;
@@ -3153,7 +3219,7 @@ requestAnimationFrame(loop);
 
 // handy for debugging from the console
 window.blockwild = { fishTap, get fishing() { return fishing; }, selectSlot, get hotbar() { return hotbar; }, get known() { return knownList(); }, learn, unlearned: () => unlearned(knownList(), settings.patterns || []), get settings() { return settings; }, get world() { return world; }, get player() { return player; }, get target() { return target; }, get flock() { return flock; }, get nursery() { return flock; }, get snakes() { return snakes; }, get raiders() { return raiders; }, get weather() { return weather; }, get critters() { return critters; }, music, trader, openMap, get nights() { return nights; }, set nights(n) { nights = n; }, wardrobe, selfieCam, petBaby, openJobs, get inv() { return inv; }, addItem, RECIPES, craft, input, raycast,
-  get clock() { return clock; }, setTime(t) { clock = t; }, swing: () => swing(), catchFirefly: () => catchFirefly(), fishBottle: () => fishBottle(), startSeek: () => startSeek(), get seek() { return seek; }, playBox: t => playBox(t), get mapChest() { return mapChest; }, get boxes() { return boxes; }, get stats() { return stats; }, get goalsDone() { return goalsDone; }, checkGoals: () => checkGoals(),
+  get clock() { return clock; }, setTime(t) { clock = t; }, swing: () => swing(), catchFirefly: () => catchFirefly(), fishBottle: () => fishBottle(), startSeek: () => startSeek(), get seek() { return seek; }, playBox: t => playBox(t), get mapChest() { return mapChest; }, get boxes() { return boxes; }, get stats() { return stats; }, get goalsDone() { return goalsDone; }, checkGoals: () => checkGoals(), place: () => placeBlock(),
   net, others, get myNetId() { return myNetId; },
   get seat() { return seat; }, awardCrown: l => awardCrown(l), fireworks, get streak() { return streak; }, set streak(v) { streak = v; }, sit: (x, y, z) => sit(x, y, z), standUp: () => standUp(),
   // advance n frames by hand (useful when the page is in a background tab)

@@ -2,6 +2,13 @@
 
 The same list is in the game: tap the version number on the front screen, or open **What’s new**.
 
+## 41. More to build, and easier controls (10 Nov 2026)
+- Five new things to build (Building tab): stone bricks from cobble, framed windows, lamp posts that glow at night, flower pots, and benches you can sit on. You learn them from the bonk, house, night, treasure chest and sign goals.
+- Five new goals: build with 20 stone bricks, put in 4 windows, put up 3 lamp posts, put out 4 flower pots and sit on a bench.
+- When you look at something you can use, a label under the middle of the screen says what tapping (or right clicking) does: open, sit, sleep, ring, pick, plant, fill and more.
+- Keyboard and mouse: the top buttons show their keys (P photo, M map, E bag, Esc pause), the hotbar shows 1–9, and the main controls show along the bottom when you start. E or Esc closes the bag, and Esc closes the map and Pip’s cart. In the bag, point at something and press 1–9 to put it on that slot.
+- In the bag, things you can make right now come first, cards say when no table is needed, and recipes you haven’t learned say which goal teaches them.
+
 ## 40. Longer goals, bigger builds (10 Nov 2026)
 - Many goals now ask for more: dig 10 blocks, tame 3 babies, chop 4 logs, pick 6 flowers, hatch 5 babies, fill a feeder 3 times, pick wheat 3 times, bonk 3 raiders, keep the nursery safe 2 nights, grow up 2 babies, pick up 10 gifts, catch 5 things fishing, open 2 chests, cook 3 things, make 2 swaps with Pip, bounce 10 times, catch 3 fireflies, find 2 hiding babies and swim 60 blocks.
 - Some things cost more to make: a house kit is 32 wood, 4 glass and 2 lamps; a bed is 4 wood and 4 wool; a party cake is 4 wheat, 2 milk and 3 eggs; a fishing rod is 4 sticks and 2 wool; ladders take 8 sticks; fences come 3 at a time; a bouncy pad makes 1.

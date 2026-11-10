@@ -114,6 +114,11 @@ Tap a grown-up (hen, cow, pig, sheep or wolf) to pet it and open **Teach a job**
 | Party cake † | 4 Wheat + 2 Milk + 3 Eggs |
 | Water | 2 Snow |
 | 2 Mud | 2 Dirt + 1 Water |
+| 4 Stone bricks | 4 Cobble |
+| 2 Windows * | 2 Glass + 1 Wood |
+| Bench * | 4 Wood + 2 Sticks |
+| Flower pot | 2 Clay + 1 Dirt + 1 Red flower |
+| Lamp post * | 1 Lamp + 1 Log + 1 Cobble |
 
 - **Fences** join up with each other, gates and solid blocks. **Gates** turn to line up with the fence; tap one to open or shut it. Animals and foxes can't get past either.
 - **Ladders** lean on the wall beside them. Walk into one (or press jump) to climb; let go to slide down slowly.
@@ -303,6 +308,18 @@ A full day lasts 10 minutes: about 6 minutes of daylight, a pink dusk, roughly 3
 - **Swim ring** (Wood & tools tab, at a crafting table: 2 red wool, 2 wool): while it's the item you're holding, you float at the surface and swim about 2.3 times as fast as without it. Jump to hop out. Learned from the bottle goal.
 - **Sandcastle** (Building tab: 6 sand, 1 stick, 1 red flower): a decoration with four towers and a red flag. Learned from the snowman goal.
 - New goals: find 2 hiding babies, swim 60 blocks with the ring, and build a sandcastle.
+
+## More to build, and clearer controls
+
+- **Stone bricks** (Building tab: 4 cobble make 4): smart grey castle-wall blocks. Learned from the bonk goal.
+- **Windows** (Building tab, at a table: 2 glass and 1 wood make 2): glass in a wooden frame with four panes. Learned from the house goal.
+- **Lamp post** (Building tab, at a table: 1 lamp, 1 log, 1 cobble): a post on a stone foot with a lantern that glows at night. Learned from the night goal.
+- **Flower pot** (Building tab: 2 clay, 1 dirt, 1 red flower): a terracotta pot with a red flower. Learned from the treasure chest goal. Clay is at the bottom of deep water.
+- **Bench** (Building tab, at a table: 4 wood, 2 sticks): tap it to sit down (`sitBench`, a lower `seat` than the throne); walk or jump to stand up. A bench next to another along z turns to line up with it.
+- Five new goals: place 20 stone bricks, put in 4 windows, put up 3 lamp posts, put out 4 flower pots and sit on a bench.
+- **Prompts:** a label under the crosshair says what tapping (or right clicking) does to the thing you're looking at: open a gate, door or chest, sit, sleep, ring, play, write, pick wheat, plant seeds, fill a feeder, swap with Pip. At a crafting table or campfire it tells you to open the bag (press E).
+- **Keyboard and mouse:** the top buttons show their keys (P photo, M map, E bag, Esc pause), hotbar slots show 1–9, and a strip of the main controls shows for the first 20 seconds. E or Esc closes the bag; Esc closes the map, Pip's cart and the job card. In the bag, point at something and press 1–9 to put it on that slot. None of this shows on touch screens.
+- **Recipe cards:** things you can make right now come first. A card says "Make it anywhere" when no table is needed, and a recipe you haven't learned says which goal teaches it (or to find a recipe page).
 
 ## Play together
 

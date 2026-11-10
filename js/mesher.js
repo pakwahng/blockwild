@@ -399,6 +399,40 @@ function shapeMesh(buf, id, p, wx, wy, wz) {
     pb(flag, 0.52, 0.8, 0.49, 0.74, 0.94, 0.51);                                       // red flag
     return;
   }
+  if (BLOCKS[id].shape === 'bench') {
+    // a garden bench along x, or along z if it's next to another bench that way
+    const { leg } = BLOCKS[id], along = padded[p + PX] === B.BENCH || padded[p - PX] === B.BENCH;
+    const bb = (l, ...a) => shapeBox(buf, wx, wy, wz, l, ...a, along);
+    bb(layer, 0, 0.4, 0.2, 1, 0.5, 0.8);                                             // seat
+    bb(layer, 0, 0.62, 0.74, 1, 0.74, 0.84); bb(layer, 0, 0.82, 0.74, 1, 0.94, 0.84); // backrest slats
+    for (const x of [0.06, 0.82]) {
+      bb(leg, x, 0, 0.24, x + 0.12, 0.4, 0.36); bb(leg, x, 0, 0.64, x + 0.12, 0.4, 0.76); // legs
+      bb(leg, x, 0.5, 0.76, x + 0.12, 0.96, 0.84);                                    // back posts
+    }
+    return;
+  }
+  if (BLOCKS[id].shape === 'flowerpot') {
+    const { soil, stalk, petal, middle } = BLOCKS[id];
+    const pb = (l, ...a) => shapeBox(buf, wx, wy, wz, l, ...a, false);
+    box(0.3, 0, 0.3, 0.7, 0.34, 0.7); box(0.26, 0.3, 0.26, 0.74, 0.4, 0.74);       // pot and its lip
+    pb(soil, 0.31, 0.38, 0.31, 0.69, 0.41, 0.69);                                    // soil
+    pb(stalk, 0.47, 0.4, 0.47, 0.53, 0.82, 0.53);                                    // stem
+    pb(stalk, 0.53, 0.52, 0.47, 0.68, 0.58, 0.53); pb(stalk, 0.32, 0.6, 0.47, 0.47, 0.66, 0.53); // leaves
+    pb(petal, 0.32, 0.8, 0.42, 0.46, 0.92, 0.58); pb(petal, 0.54, 0.8, 0.42, 0.68, 0.92, 0.58);
+    pb(petal, 0.42, 0.8, 0.32, 0.58, 0.92, 0.46); pb(petal, 0.42, 0.8, 0.54, 0.58, 0.92, 0.68);
+    pb(middle, 0.43, 0.82, 0.43, 0.57, 0.95, 0.57);
+    return;
+  }
+  if (BLOCKS[id].shape === 'lamppost') {
+    const { base, light } = BLOCKS[id];
+    const pb = (l, ...a) => shapeBox(buf, wx, wy, wz, l, ...a, false);
+    pb(base, 0.3, 0, 0.3, 0.7, 0.14, 0.7);                                           // stone foot
+    box(0.44, 0.14, 0.44, 0.56, 0.74, 0.56);                                         // post
+    box(0.36, 0.72, 0.36, 0.64, 0.76, 0.64);                                         // lantern base
+    pb(light, 0.38, 0.76, 0.38, 0.62, 0.94, 0.62);                                   // glowing lantern
+    box(0.34, 0.94, 0.34, 0.66, 0.98, 0.66); box(0.44, 0.98, 0.44, 0.56, 1.0, 0.56); // little roof
+    return;
+  }
   if (BLOCKS[id].shape === 'jar') {
     const { lid, light } = BLOCKS[id];
     const pb = (l, ...a) => shapeBox(buf, wx, wy, wz, l, ...a, false);
