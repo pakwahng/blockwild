@@ -45,6 +45,9 @@ export const GOALS = [
   ['bounce', 'Make a bouncy pad and bounce on it 5 times (hold jump as you land to go higher)', 5, s => s.bounced || 0, [[B.WOOL_PINK, 2], [ITEM_APPLE, 3]]],
   ['jar', 'Catch a firefly at night: hold glass and tap a firefly to put it in a jar', 1, s => s.jars || 0, [[B.GLASS, 2], [ITEM_CLOVER, 3]]],
   ['wish', 'Spot a shooting star at night and make a wish: look right at it before it goes', 1, s => s.wishes || 0, [[ITEM_FIREWORK, 2], [ITEM_MILK, 1]]],
+  ['tune', 'Make a music box and play it near your animals to see them dance', 1, s => s.tunes || 0, [[ITEM_APPLE, 3], [B.LAMP, 1]]],
+  ['bottle', 'Fish up a message in a bottle: it might lead you to treasure', 1, s => s.bottles || 0, [[ITEM_FISH, 2], [B.GLASS, 2]]],
+  ['snowman', 'Build a snowman (you’ll find snow up on the mountains)', 1, s => n(s.placed, B.SNOWMAN), [[ITEM_MILK, 1], [B.WOOL_RED, 2]]],
   ['chicks', 'Grow your nursery to 37 chickens', 37, s => s.chicks || 0, [[B.HAY, 4], [ITEM_APPLE, 5]]],
 ];
 export const GOAL_IDS = GOALS.map(g => g[0]);

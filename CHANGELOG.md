@@ -2,6 +2,13 @@
 
 The same list is in the game: tap the version number on the front screen, or open **What’s new**.
 
+## 37. A music box, messages in bottles and snowmen (10 Nov 2026)
+- New music box (Building tab, at a crafting table: 3 wood, 1 lamp, 1 stick): tap it and it plays a little tune, a different one every time. Your animals close by hop and wag along to the beat. You learn it from the firework goal.
+- Messages in bottles: now and then your fishing line brings one up. Most are treasure maps to a chest further away than you could see, and the gold Treasure tag points the way until you open it.
+- New snowman (Building tab: 3 snow, 2 sticks, 1 orange wool), with a carrot nose, a red scarf and stick arms. Snow is up on the mountains. You learn it from the firefly goal.
+- Important messages, like a bottle’s note or a wish, now stay on screen long enough to read.
+- Three new goals: play the music box, fish up a bottle and build a snowman.
+
 ## 36. Bouncy pads, firefly jars and shooting stars (9 Nov 2026)
 - New bouncy pad (Building tab, at a crafting table: 2 pink wool, 2 wood and 1 hay makes 2): land on one and you spring back up. Hold jump as you land to bounce higher and higher. You learn it from the scarecrow goal.
 - Firefly jars: at night, hold glass and tap a firefly to catch it in a jar. Put the jar down and it glows like a little lamp.

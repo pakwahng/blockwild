@@ -37,7 +37,7 @@ export const GOAL_TEACH = {
   fence: B.GATE, pen: B.FEEDER, flowers: '4:4', hatch: B.PLANTER, feeder: B.LADDER, wheat: B.DOOR,
   bonk: B.GLASS, ladder: B.LAMP, house: B.BRICK, night: B.ROOF, grow: '4:2', gifts: ITEM_HOUSE, job: '0:4', sew: ITEM_ROD,
   chest: B.SIGN, hat: B.BED, log: B.CAMPFIRE, gate: ITEM_BREAD, fish: ITEM_GRILLED, sign: ITEM_PIE, sleep: ITEM_CAKE,
-  cook: B.SCARECROW, party: ITEM_FIREWORK, trade: B.BELL, scare: B.BOUNCE,
+  cook: B.SCARECROW, party: ITEM_FIREWORK, trade: B.BELL, scare: B.BOUNCE, firework: B.MUSICBOX, jar: B.SNOWMAN,
 };
 
 // How often digging a block turns up a recipe page.

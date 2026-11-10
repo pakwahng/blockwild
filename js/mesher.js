@@ -362,6 +362,29 @@ function shapeMesh(buf, id, p, wx, wy, wz) {
     pb(hat, 0.28, 0.9, 0.3, 0.72, 0.94, 0.7); pb(hat, 0.38, 0.94, 0.4, 0.62, 1.0, 0.6); // hay hat
     return;
   }
+  if (BLOCKS[id].shape === 'musicbox') {
+    const { trim, crank } = BLOCKS[id];
+    const pb = (l, ...a) => shapeBox(buf, wx, wy, wz, l, ...a, false);
+    box(0.14, 0, 0.2, 0.86, 0.46, 0.8);                                               // wooden box
+    pb(trim, 0.12, 0.46, 0.18, 0.88, 0.52, 0.82);                                     // gold lid
+    pb(trim, 0.12, 0.2, 0.18, 0.88, 0.25, 0.82);                                      // gold band
+    pb(crank, 0.86, 0.22, 0.46, 0.96, 0.3, 0.54); pb(crank, 0.92, 0.3, 0.46, 0.98, 0.44, 0.54); // crank handle
+    pb(trim, 0.44, 0.52, 0.44, 0.56, 0.62, 0.56); pb(trim, 0.4, 0.62, 0.4, 0.6, 0.66, 0.6);     // little dancer on top
+    return;
+  }
+  if (BLOCKS[id].shape === 'snowman') {
+    const { nose, coal, arm, scarf } = BLOCKS[id];
+    const pb = (l, ...a) => shapeBox(buf, wx, wy, wz, l, ...a, false);
+    box(0.18, 0, 0.18, 0.82, 0.44, 0.82);                                              // big snowball
+    box(0.26, 0.42, 0.26, 0.74, 0.74, 0.74);                                           // middle
+    pb(scarf, 0.3, 0.7, 0.3, 0.7, 0.76, 0.7); pb(scarf, 0.56, 0.5, 0.7, 0.66, 0.72, 0.76); // scarf and its tail
+    box(0.33, 0.76, 0.33, 0.67, 1.0, 0.67);                                            // head
+    pb(nose, 0.46, 0.84, 0.67, 0.54, 0.9, 0.82);                                       // carrot nose
+    pb(coal, 0.38, 0.91, 0.66, 0.44, 0.96, 0.69); pb(coal, 0.56, 0.91, 0.66, 0.62, 0.96, 0.69); // eyes
+    pb(coal, 0.47, 0.6, 0.73, 0.53, 0.66, 0.76); pb(coal, 0.47, 0.5, 0.73, 0.53, 0.56, 0.76);   // buttons
+    pb(arm, 0.02, 0.6, 0.46, 0.26, 0.66, 0.54); pb(arm, 0.74, 0.6, 0.46, 0.98, 0.66, 0.54);     // stick arms
+    return;
+  }
   if (BLOCKS[id].shape === 'jar') {
     const { lid, light } = BLOCKS[id];
     const pb = (l, ...a) => shapeBox(buf, wx, wy, wz, l, ...a, false);

@@ -19,7 +19,7 @@ export const B = {
   PLANTER: 40, PLANTER_SEEDED: 41, PLANTER_GROWING: 42, PLANTER_RIPE: 43,
   CHEST: 44, CHEST_OPEN: 45,
   WOOL_RED: 46, WOOL_ORANGE: 47, WOOL_YELLOW: 48, WOOL_PINK: 49, WOOL_GREEN: 50,
-  BED: 51, SIGN: 52, CAMPFIRE: 53, SCARECROW: 54, BELL: 55, BOUNCE: 56, JAR: 57,
+  BED: 51, SIGN: 52, CAMPFIRE: 53, SCARECROW: 54, BELL: 55, BOUNCE: 56, JAR: 57, MUSICBOX: 58, SNOWMAN: 59,
 };
 
 // kind: 'opaque' | 'cutout' (alpha-tested, e.g. leaves) | 'liquid' (translucent pass)
@@ -99,6 +99,10 @@ const defs = [
   { id: B.BOUNCE, name: 'Bouncy pad', kind: 'opaque', top: T.WOOL_PINK, side: T.PLANKS, bottom: T.PLANKS, hard: 0.3, round: 0.24 },
   // a firefly in a jar: catch a firefly at night by tapping it while you hold glass. It glows like a little lamp
   { id: B.JAR, name: 'Firefly jar', kind: 'cutout', all: T.GLASS, lid: T.PLANKS, light: T.LAMP, hard: 0.2, shape: 'jar' },
+  // a music box: tap it and it plays a little tune, and your animals nearby dance along
+  { id: B.MUSICBOX, name: 'Music box', kind: 'cutout', all: T.PLANKS, trim: T.LAMP, crank: T.LOG_SIDE, hard: 0.4, shape: 'musicbox' },
+  // a snowman with a carrot nose and stick arms
+  { id: B.SNOWMAN, name: 'Snowman', kind: 'cutout', all: T.SNOW, nose: T.WOOL_ORANGE, coal: T.COBBLE, arm: T.LOG_SIDE, scarf: T.WOOL_RED, hard: 0.3, shape: 'snowman' },
 ];
 
 export const BLOCKS = [];
@@ -119,7 +123,7 @@ for (const b of BLOCKS) {
   KIND[b.id] = { air: 0, opaque: 1, cutout: 2, liquid: 3 }[b.kind];
 }
 
-export const PLACEABLE = [B.FENCE, B.GATE, B.DOOR, B.BED, B.SIGN, B.PLANTER, B.TABLE, B.CAMPFIRE, B.SCARECROW, B.BELL, B.BOUNCE, B.JAR, B.LADDER, B.FEEDER, B.FLOWER_RED, B.FLOWER_YELLOW, B.FLOWER_WHITE, B.GRASS, B.DIRT, B.PLANKS, B.WOOL, B.WOOL_RED, B.WOOL_ORANGE, B.WOOL_YELLOW, B.WOOL_PINK, B.WOOL_GREEN, B.LOG, B.HAY, B.MUD, B.ROOF, B.CREAM, B.BRICK,
+export const PLACEABLE = [B.FENCE, B.GATE, B.DOOR, B.BED, B.SIGN, B.PLANTER, B.TABLE, B.CAMPFIRE, B.SCARECROW, B.BELL, B.BOUNCE, B.JAR, B.MUSICBOX, B.SNOWMAN, B.LADDER, B.FEEDER, B.FLOWER_RED, B.FLOWER_YELLOW, B.FLOWER_WHITE, B.GRASS, B.DIRT, B.PLANKS, B.WOOL, B.WOOL_RED, B.WOOL_ORANGE, B.WOOL_YELLOW, B.WOOL_PINK, B.WOOL_GREEN, B.LOG, B.HAY, B.MUD, B.ROOF, B.CREAM, B.BRICK,
   B.STONE, B.COBBLE, B.GLASS, B.LEAVES, B.SAND, B.SNOW, B.CLAY, B.LAMP, B.WATER];
 // Non-block items (animal treats) share the hotbar with blocks; their ids sit above the block range.
 export const ITEM_SEEDS = 200, ITEM_WHEAT = 201, ITEM_APPLE = 202, ITEM_CLOVER = 203, ITEM_BONE = 204;

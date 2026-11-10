@@ -50,6 +50,8 @@ export const RECIPES = [
   R(B.SCARECROW, 1, [[B.HAY, 2], [ITEM_STICK, 2], [B.WOOL, 1]], 'farm', true),
   R(B.BELL, 1, [[B.PLANKS, 3], [ITEM_STICK, 2], [B.LAMP, 1]], 'farm', true),
   R(B.BOUNCE, 2, [[B.WOOL_PINK, 2], [B.PLANKS, 2], [B.HAY, 1]], 'build', true),
+  R(B.MUSICBOX, 1, [[B.PLANKS, 3], [B.LAMP, 1], [ITEM_STICK, 1]], 'build', true),
+  R(B.SNOWMAN, 1, [[B.SNOW, 3], [ITEM_STICK, 2], [B.WOOL_ORANGE, 1]], 'build'),
   R(B.GLASS, 1, [[B.SAND, 2]], 'build'),
   R(B.BRICK, 1, [[B.CLAY, 2]], 'build'),
   R(B.CREAM, 2, [[B.SAND, 1], [B.CLAY, 1]], 'build'),

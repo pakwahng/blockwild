@@ -116,7 +116,7 @@ let myNetId = 0, netTimer = 0, poseTimer = 0, shownOthers = -1, pendingEdits = {
 const netEdits = [], netEvents = [];
 
 const icons = {};
-const SHAPE_ICON = { [B.FENCE]: 'fence', [B.GATE]: 'gate', [B.DOOR]: 'door', [B.BED]: 'bed', [B.SIGN]: 'sign', [B.CAMPFIRE]: 'campfire', [B.SCARECROW]: 'scarecrow', [B.BELL]: 'dinner bell', [B.JAR]: 'firefly jar', [B.PLANTER]: 'planter', [B.TABLE]: 'table', [B.LADDER]: 'ladder', [B.FEEDER]: 'feeder',
+const SHAPE_ICON = { [B.FENCE]: 'fence', [B.GATE]: 'gate', [B.DOOR]: 'door', [B.BED]: 'bed', [B.SIGN]: 'sign', [B.CAMPFIRE]: 'campfire', [B.SCARECROW]: 'scarecrow', [B.BELL]: 'dinner bell', [B.JAR]: 'firefly jar', [B.MUSICBOX]: 'music box', [B.SNOWMAN]: 'snowman', [B.PLANTER]: 'planter', [B.TABLE]: 'table', [B.LADDER]: 'ladder', [B.FEEDER]: 'feeder',
   [B.FLOWER_RED]: 'flower-red', [B.FLOWER_YELLOW]: 'flower-yellow', [B.FLOWER_WHITE]: 'flower-white' };
 if (textures) for (const id of [...PLACEABLE, B.THRONE]) {
   icons[id] = SHAPED[id] ? M.treatIcon(SHAPE_ICON[id], 64).toDataURL() : blockIcon(BLOCKS[id], textures.tiles, 64).toDataURL();
@@ -428,7 +428,7 @@ function startWorld(save) {
   loadSigns(save?.signs);
   snackT = 0; boostEl.hidden = true;
   trader.here = false; trader.day = -1; trader.look = 0;
-  fireworks.rockets.length = 0; fireworks.sparks.length = 0; fireworks.stars.length = 0; starT = 20; wishStar = null;
+  fireworks.rockets.length = 0; fireworks.sparks.length = 0; fireworks.stars.length = 0; starT = 20; wishStar = null; mapChest = null; boxes = [];
   seat = null;
   showCrown();
   // a few wild babies of each kind close by, so there's someone to feed straight away
@@ -660,12 +660,21 @@ function editBlock(x, y, z, id) {
 }
 
 let toastTimer = 0;
-function toast(text, ms = 4200) {
+// keep: an important message (a bottle's note, a wish) stays up for its full time, and anything said
+// meanwhile waits its turn instead of covering it.
+let toastHold = 0, toastQueue = [];
+function toast(text, ms = 4200, keep = false) {
+  if (!keep && performance.now() < toastHold) { if (toastQueue.length < 3) toastQueue.push([text, ms]); return; }
   const t = $('#toast');
   t.textContent = text;
   t.classList.add('show');
+  if (keep) toastHold = performance.now() + ms;
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('show'), ms);
+  toastTimer = setTimeout(() => {
+    t.classList.remove('show');
+    const next = toastQueue.shift();
+    if (next) toastTimer = setTimeout(() => toast(...next), 350);
+  }, ms);
 }
 // "Nugget the lamb", or "Your lamb" / "a lamb" for a baby with no name.
 function callName(n, sp, fallback, nick) {
@@ -691,7 +700,7 @@ function floatFx(p, kind) {
   const [sx, sy] = at;
   const el = document.createElement('div');
   el.className = 'fx ' + kind;
-  el.textContent = kind === 'hatch' ? '+1' : kind === 'bonk' ? 'BONK!' : kind === 'grown' ? 'All grown up!' : '';
+  el.textContent = kind === 'hatch' ? '+1' : kind === 'bonk' ? 'BONK!' : kind === 'grown' ? 'All grown up!' : kind === 'note' ? (Math.random() < 0.5 ? '♪' : '♫') : '';
   el.style.left = sx + 'px'; el.style.top = sy + 'px';
   $('#fx').appendChild(el);
   setTimeout(() => el.remove(), kind === 'grown' ? 1800 : 1300);
@@ -902,6 +911,12 @@ function openChest(t) {
 }
 // The nearest chest still shut, within 30 blocks: [x, y, z] or null.
 function nearestChest(eye) {
+  // a chest from a message in a bottle stays pointed out, however far, till it's opened
+  if (mapChest) {
+    const [x, y, z] = mapChest;
+    if (!world.getChunk(Math.floor(x / CS), Math.floor(z / CS)) || world.getBlock(x, y, z) === B.CHEST) return mapChest;
+    mapChest = null;
+  }
   const pcx = Math.floor(eye[0] / CS), pcz = Math.floor(eye[2] / CS);
   let best = null, bd = 30 * 30;
   for (let dz = -2; dz <= 2; dz++) for (let dx = -2; dx <= 2; dx++) {
@@ -948,6 +963,8 @@ function fishTap() {
 const biteWait = () => (4 + Math.random() * 9) * (weather.amount > 0.3 ? 0.6 : 1) * (skyAt(clock).night > 0.6 ? 0.8 : 1);
 // What's on the hook: mostly fish, sometimes a treat, now and then a soggy recipe page.
 function catchFish() {
+  // a message in a bottle: rare, but likelier once you've fished a while and never had one
+  if (Math.random() < (stats.bottles ? 0.07 : (stats.fished || 0) >= 4 ? 0.3 : 0.05)) { fishBottle(); return; }
   let got;
   const r = Math.random(), page = r < 0.1 ? pickPage(knownList(), settings.patterns || [], foundEver) : null;
   if (page) { learn(page, 'page'); got = []; }
@@ -1043,6 +1060,7 @@ function placeBlock() {
   if (target && target.id === B.CHEST) { openChest(target); return; }
   if (target && target.id === B.BED) { sleepInBed(); return; }
   if (target && target.id === B.BELL) { ringBell(target); return; }
+  if (target && target.id === B.MUSICBOX) { playBox(target); return; }
   if (target && target.id === B.SIGN) { openSign(target.x, target.y, target.z); return; }
   if (target && IS_DOOR(target.id)) {
     // tap either half of a door to open or shut the whole thing
@@ -2020,7 +2038,7 @@ const MAP_COL = {
   [B.LAMP]: '#ffe08a', [B.CLAY]: '#b9a39a', [B.HAY]: '#e3c25a', [B.ROOF]: '#c94a3a', [B.CREAM]: '#f1e3c4', [B.MUD]: '#6b4a2e',
   [B.THRONE]: '#ffcf3a', [B.WOOL]: '#f4efe3', [B.WOOL_RED]: '#d8443a', [B.WOOL_ORANGE]: '#f08a2a', [B.WOOL_YELLOW]: '#f2cf3a',
   [B.WOOL_PINK]: '#f29ab8', [B.WOOL_GREEN]: '#5cbf4a', [B.CHEST]: '#ffcf3a', [B.CHEST_OPEN]: '#b58a3a', [B.BED]: '#e2443a',
-  [B.CAMPFIRE]: '#ff8a2a', [B.SCARECROW]: '#e3c25a', [B.BELL]: '#ffcf3a', [B.JAR]: '#fff6a0', [B.BOUNCE]: '#f7a8c4', [B.SIGN]: '#d8924e', [B.PLANTER_RIPE]: '#f2c35a',
+  [B.CAMPFIRE]: '#ff8a2a', [B.SCARECROW]: '#e3c25a', [B.BELL]: '#ffcf3a', [B.JAR]: '#fff6a0', [B.BOUNCE]: '#f7a8c4', [B.MUSICBOX]: '#c98a3a', [B.SNOWMAN]: '#ffffff', [B.SIGN]: '#d8924e', [B.PLANTER_RIPE]: '#f2c35a',
 };
 const mapView = { size: 128, open: false };
 const SEE_THROUGH = id => id === B.AIR || (SHAPED[id] && !IS_FEEDER(id) && id !== B.TABLE && id !== B.BED && id !== B.CAMPFIRE && id !== B.SIGN && !(id >= B.PLANTER && id <= B.PLANTER_RIPE));
@@ -2404,7 +2422,68 @@ function starStep(dt, eye, fwd, far) {
     wishStar.big = 7; wishStar = null;
     const [item, k, what] = WISHES[Math.random() * WISHES.length | 0];
     addItem(item, k, true); bump(stats, 'wishes'); sfx.twinkle(0.3); buzz(15);
-    toast(`✨ You made a wish on a shooting star… and got ${what}!`, 4000);
+    toast(`✨ You made a wish on a shooting star… and got ${what}!`, 4000, true);
+  }
+}
+
+// ---------- the music box ----------
+// Tap it and it plays a little tune; tame animals close by hop and wag along to the beat.
+let boxes = []; // tunes playing: { p, t: time left, beat }
+function playBox(t) {
+  const p = [t.x, t.y, t.z];
+  if (boxes.some(b => b.p[0] === p[0] && b.p[1] === p[1] && b.p[2] === p[2])) return; // already playing
+  const seed = Math.random() * 1e9 | 0;
+  bump(stats, 'tunes'); buzz(10);
+  if (net.isGuest) net.toHost({ t: 'tune', p, seed }); else if (net.isHost) net.broadcast({ t: 'tune', p, seed });
+  tuneAt(p, seed);
+  if (!firsts.includes('tune')) { firsts.push('tune'); toast('♪ Your animals love a tune! Any that are close by dance along. Every play is a different song.', 3500); }
+}
+function tuneAt(p, seed) {
+  const e = player.eye(), d = Math.hypot(p[0] + 0.5 - e[0], p[1] + 0.5 - e[1], p[2] + 0.5 - e[2]);
+  const len = d < 40 ? sfx.tune(seed, 0.16 * (1 - d / 40)) : 6;
+  boxes.push({ p, t: len, beat: 0 });
+}
+function boxStep(dt) {
+  for (const b of boxes) {
+    b.t -= dt; b.beat -= dt;
+    if (b.beat <= 0 && b.t > 0.8) {
+      b.beat = 0.52;
+      const c = [b.p[0] + 0.5, b.p[1] + 0.5, b.p[2] + 0.5];
+      if (!net.isGuest) flock.cheer(c, 14);
+      floatFx([c[0] + (Math.random() - 0.5) * 0.6, c[1], c[2] + (Math.random() - 0.5) * 0.6], 'note');
+    }
+  }
+  boxes = boxes.filter(b => b.t > 0 && world.getBlock(b.p[0], b.p[1], b.p[2]) === B.MUSICBOX);
+}
+
+// ---------- messages in bottles ----------
+// Now and then your fishing line brings up a bottle with a note inside. Most lead to a treasure chest
+// further off than the Treasure tag usually shows; the tag then points the way till you open it.
+let mapChest = null;
+const BOTTLE_NOTES = ['“X marks the spot! My treasure is', '“Ahoy! I hid a chest', '“To whoever finds this: there’s treasure'];
+function fishBottle() {
+  bump(stats, 'bottles'); bump(stats, 'fished');
+  sfx.splash(); sfx.twinkle(); buzz(15);
+  const e = player.eye(), pcx = Math.floor(e[0] / CS), pcz = Math.floor(e[2] / CS);
+  // the nearest shut chest beyond the Treasure tag's usual 30 blocks, or failing that, beyond 12
+  let best = null, bd = Infinity, near = null, nd = Infinity;
+  for (let dz = -8; dz <= 8; dz++) for (let dx = -8; dx <= 8; dx++) {
+    const c = world.getChunk(pcx + dx, pcz + dz)?.chest;
+    if (!c || world.getBlock(c[0], c[1], c[2]) !== B.CHEST) continue;
+    const d = Math.hypot(c[0] + 0.5 - e[0], c[2] + 0.5 - e[2]);
+    if (d > 30 && d < bd) { bd = d; best = c; }
+    else if (d > 12 && d < nd) { nd = d; near = c; }
+  }
+  if (!best && near) { best = near; bd = nd; }
+  if (best) {
+    mapChest = best;
+    const note = BOTTLE_NOTES[Math.random() * BOTTLE_NOTES.length | 0];
+    toast(`📜 A message in a bottle! ${note} about ${Math.round(bd)} steps from here.” Follow the gold Treasure tag!`, 6000, true);
+  } else {
+    const got = [[B.GLASS, 1], [ITEM_APPLE, 3]];
+    for (const [item, n] of got) addItem(item, n);
+    toast('📜 A message in a bottle! “Hello from far away! Here’s a little present.” (Explore further to find treasure maps.)', 5000, true);
+    pickupPop({ x: Math.floor(fishing.p[0]), y: Math.floor(fishing.p[1]), z: Math.floor(fishing.p[2]) }, got);
   }
 }
 
@@ -2716,6 +2795,7 @@ function hostMessage(from, msg) {
     case 'sleep': if (o) sleepInBed(o); break;
     case 'bell': if (o && okP(msg.p)) bellAt(msg.p, o, from); break;
     case 'fw': if (okP(msg.p) && Number.isFinite(msg.seed)) { fireworks.launch(msg.p, msg.seed | 0); net.broadcast(msg, from); } break;
+    case 'tune': if (okP(msg.p) && Number.isFinite(msg.seed)) { tuneAt(msg.p, msg.seed | 0); net.broadcast(msg, from); } break;
     case 'party': if (o && Array.isArray(msg.p) && msg.p.length === 3 && msg.p.every(Number.isFinite)) partyAt(msg.p, o); break;
     case 'sit': flock.gatherAt(msg.seat, msg.front); break;
     case 'stand': flock.endGather(); break;
@@ -2737,6 +2817,7 @@ function guestMessage(msg) {
     case 'slept': sleepFade(); break;
     case 'ding': sfx.ding(); break;
     case 'fw': if (okP(msg.p) && Number.isFinite(msg.seed)) fireworks.launch(msg.p, msg.seed | 0); break;
+    case 'tune': if (okP(msg.p) && Number.isFinite(msg.seed)) tuneAt(msg.p, msg.seed | 0); break;
     case 's': {
       if (Math.abs(msg.clock - clock) > 0.002 && Math.abs(msg.clock - clock) < 0.998) clock = msg.clock;
       nights = msg.nights;
@@ -2961,6 +3042,7 @@ function frame(now, photo = false) {
   if (trader.here) s.groups.push(traderGroup(now / 1000));
   fireworkStep(dt, eye);
   starStep(dt, eye, fwd, far);
+  boxStep(dt);
   s.groups.push(...fireworks.instances(eye, far + 8));
   sfx.rain(running && !underwater && !weather.snowing ? weather.amount : 0);
   music.day = skyAt(clock).night < 0.3;
@@ -2997,7 +3079,7 @@ requestAnimationFrame(loop);
 
 // handy for debugging from the console
 window.blockwild = { fishTap, get fishing() { return fishing; }, selectSlot, get hotbar() { return hotbar; }, get known() { return knownList(); }, learn, unlearned: () => unlearned(knownList(), settings.patterns || []), get settings() { return settings; }, get world() { return world; }, get player() { return player; }, get target() { return target; }, get flock() { return flock; }, get nursery() { return flock; }, get snakes() { return snakes; }, get raiders() { return raiders; }, get weather() { return weather; }, get critters() { return critters; }, music, trader, openMap, get nights() { return nights; }, set nights(n) { nights = n; }, wardrobe, selfieCam, petBaby, openJobs, get inv() { return inv; }, addItem, RECIPES, craft, input, raycast,
-  get clock() { return clock; }, setTime(t) { clock = t; }, swing: () => swing(), catchFirefly: () => catchFirefly(),
+  get clock() { return clock; }, setTime(t) { clock = t; }, swing: () => swing(), catchFirefly: () => catchFirefly(), fishBottle: () => fishBottle(), playBox: t => playBox(t), get mapChest() { return mapChest; }, get boxes() { return boxes; },
   net, others, get myNetId() { return myNetId; },
   get seat() { return seat; }, awardCrown: l => awardCrown(l), fireworks, get streak() { return streak; }, set streak(v) { streak = v; }, sit: (x, y, z) => sit(x, y, z), standUp: () => standUp(),
   // advance n frames by hand (useful when the page is in a background tab)

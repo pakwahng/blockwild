@@ -181,6 +181,27 @@ export class Sfx {
     const t = this.ctx.currentTime + 0.01, f = 180 + 60 * k;
     this.voice('sine', f, f * 2.6, t, 0.32, 0.3, 1800, 18, 22);
   }
+  // A music box tune: a little melody on a pentatonic scale with a soft bass, picked by seed
+  // so everyone playing together hears the same one. Returns how long it lasts (seconds).
+  tune(seed, vol = 0.16) {
+    let s = (seed >>> 0) || 1;
+    const r = () => ((s = Math.imul(s ^ (s >>> 15), 0x2c1b3c6d) + 0x6d2b79f5 >>> 0) / 4294967296);
+    const SCALE = [0, 2, 4, 7, 9, 12, 14, 16], root = [523, 587, 659][r() * 3 | 0], beat = 0.26;
+    const phrase = [];
+    let k = r() * 4 | 0;
+    for (let i = 0; i < 8; i++) { k = Math.max(0, Math.min(7, k + [-2, -1, 1, 2, 0][r() * 5 | 0])); phrase.push(k); }
+    const notes = [...phrase, ...phrase.slice(0, 6), 0, 0]; // play it, then again, ending on home
+    if (this.ready) {
+      const t = this.ctx.currentTime + 0.05;
+      notes.forEach((n, i) => {
+        const f = root * 2 ** (SCALE[n] / 12), at = t + i * beat, last = i === notes.length - 1;
+        this.tone('sine', f, f, at, last ? 1.2 : 0.5, vol); this.tone('triangle', f * 2, f * 2, at, 0.2, vol * 0.25);
+        const bass = root / 2 * (i % 8 < 4 ? 1 : 1.5);
+        if (i % 2 === 0) this.tone('triangle', bass, bass, at, 0.45, vol * 0.5);
+      });
+    }
+    return notes.length * beat + 0.8;
+  }
   // a tinkly sparkle: catching a firefly, a shooting star, a wish
   twinkle(vol = 0.18) {
     if (!this.ready) return;

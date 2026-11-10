@@ -290,6 +290,13 @@ A full day lasts 10 minutes: about 6 minutes of daylight, a pink dusk, roughly 3
 - **Shooting stars**: on clear nights one streaks across the sky every minute or so. Look right at it before it fades to make a wish and get a small present (fireworks, milk, eggs, a pie, a cake, lamps, apples or pink wool). Each device sees its own stars.
 - New goals: bounce on a bouncy pad 5 times, catch a firefly, and wish on a shooting star.
 
+## The music box, messages in bottles and snowmen
+
+- **Music box** (Building tab, at a crafting table: 3 wood, 1 lamp, 1 stick): tap it to play a short tune, made up fresh each time. Tame animals within 14 blocks hop and wag on the beat, and music notes float up. Everyone playing together hears the same tune. Learned from the firework goal.
+- **Message in a bottle**: about one catch in 14 (likelier after a few catches if you've never had one). The note leads to the nearest shut chest more than 30 blocks away (or more than 12 if there isn't one), and the Treasure tag keeps pointing to it, however far, until it's opened. With no chest about, the bottle holds a small present instead.
+- **Snowman** (Building tab: 3 snow, 2 sticks, 1 orange wool): a decoration with a carrot nose, coal eyes and buttons, a red scarf and stick arms. Learned from the firefly goal.
+- New goals: play the music box, fish up a bottle, and build a snowman.
+
 ## Play together
 
 - Pick **Lachie** or **Charli**, your name and your clothes in the **Wardrobe** (front screen or pause menu). That's how other players see you.

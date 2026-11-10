@@ -567,6 +567,16 @@ export function treatIcon(kind, px = 64) {
       g.fillStyle = '#ffcf3a'; g.beginPath(); g.moveTo(32, 14); g.quadraticCurveTo(18, 16, 18, 36); g.lineTo(13, 46); g.lineTo(51, 46); g.lineTo(46, 36); g.quadraticCurveTo(46, 16, 32, 14); g.fill();
       rr(g, 22, 18, 5, 18, 2.5, '#fff1a8');                                            // shine
       g.fillStyle = '#c98a00'; g.beginPath(); g.arc(32, 49, 4.5, 0, Math.PI * 2); g.fill(); // clapper
+    } else if (kind === 'music box') {
+      rr(g, 8, 26, 48, 30, 5, '#b5763a'); rr(g, 6, 22, 52, 8, 3, '#ffcf3a'); rr(g, 8, 40, 48, 4, 2, '#ffcf3a'); // box, lid, band
+      rr(g, 56, 36, 6, 4, 2, '#7e5230'); rr(g, 58, 30, 4, 10, 2, '#7e5230');                                   // crank
+      g.fillStyle = '#2a2a3a'; g.font = 'bold 22px sans-serif'; g.fillText('♪', 14, 18); g.fillText('♫', 36, 16);   // notes
+    } else if (kind === 'snowman') {
+      g.fillStyle = '#ffffff'; for (const [x, y, r] of [[32, 47, 15], [32, 27, 11], [32, 11, 8]]) { g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill(); }
+      rr(g, 22, 18, 20, 5, 2, '#e2443a');                                                                    // scarf
+      g.fillStyle = '#f08a2a'; g.beginPath(); g.moveTo(32, 10); g.lineTo(44, 13); g.lineTo(32, 15); g.fill();  // carrot
+      g.fillStyle = '#2a2a3a'; for (const [x, y] of [[29, 8], [35, 8], [32, 28], [32, 35]]) { g.beginPath(); g.arc(x, y, 1.8, 0, Math.PI * 2); g.fill(); }
+      g.strokeStyle = '#7e5230'; g.lineWidth = 3; g.beginPath(); g.moveTo(21, 27); g.lineTo(5, 18); g.moveTo(43, 27); g.lineTo(59, 18); g.stroke();
     } else if (kind === 'firefly jar') {
       g.fillStyle = 'rgba(255,240,150,0.35)'; g.beginPath(); g.arc(32, 38, 27, 0, Math.PI * 2); g.fill();      // soft glow
       rr(g, 14, 18, 36, 42, 9, 'rgba(200,235,255,0.55)'); rr(g, 18, 22, 6, 30, 3, 'rgba(255,255,255,0.7)'); // glass jar and shine
