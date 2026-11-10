@@ -297,6 +297,13 @@ A full day lasts 10 minutes: about 6 minutes of daylight, a pink dusk, roughly 3
 - **Snowman** (Building tab: 3 snow, 2 sticks, 1 orange wool): a decoration with a carrot nose, coal eyes and buttons, a red scarf and stick arms. Learned from the firefly goal.
 - New goals: play the music box, fish up a bottle, and build a snowman.
 
+## Hide and seek, the swim ring and sandcastles
+
+- **Hide and seek**: by day, every 6 to 11 minutes, a tame baby within 30 blocks runs 12 to 24 blocks off to the most tucked-away spot it can find (next to walls or trunks, under leaves). It giggles every 6 seconds, louder as you get nearer. Walk within about 3 blocks to find it: you get a small reward (apples, clover, milk or eggs) and it runs back home. After 3 minutes, or at dusk, it gives up and comes home. The host runs it when playing together.
+- **Swim ring** (Wood & tools tab, at a crafting table: 2 red wool, 2 wool): while it's the item you're holding, you float at the surface and swim about 2.3 times as fast as without it. Jump to hop out. Learned from the bottle goal.
+- **Sandcastle** (Building tab: 4 sand, 1 stick, 1 red flower): a decoration with four towers and a red flag. Learned from the snowman goal.
+- New goals: find a hiding baby, swim 30 blocks with the ring, and build a sandcastle.
+
 ## Play together
 
 - Pick **Lachie** or **Charli**, your name and your clothes in the **Wardrobe** (front screen or pause menu). That's how other players see you.

@@ -19,7 +19,7 @@ export const B = {
   PLANTER: 40, PLANTER_SEEDED: 41, PLANTER_GROWING: 42, PLANTER_RIPE: 43,
   CHEST: 44, CHEST_OPEN: 45,
   WOOL_RED: 46, WOOL_ORANGE: 47, WOOL_YELLOW: 48, WOOL_PINK: 49, WOOL_GREEN: 50,
-  BED: 51, SIGN: 52, CAMPFIRE: 53, SCARECROW: 54, BELL: 55, BOUNCE: 56, JAR: 57, MUSICBOX: 58, SNOWMAN: 59,
+  BED: 51, SIGN: 52, CAMPFIRE: 53, SCARECROW: 54, BELL: 55, BOUNCE: 56, JAR: 57, MUSICBOX: 58, SNOWMAN: 59, SANDCASTLE: 60,
 };
 
 // kind: 'opaque' | 'cutout' (alpha-tested, e.g. leaves) | 'liquid' (translucent pass)
@@ -103,6 +103,8 @@ const defs = [
   { id: B.MUSICBOX, name: 'Music box', kind: 'cutout', all: T.PLANKS, trim: T.LAMP, crank: T.LOG_SIDE, hard: 0.4, shape: 'musicbox' },
   // a snowman with a carrot nose and stick arms
   { id: B.SNOWMAN, name: 'Snowman', kind: 'cutout', all: T.SNOW, nose: T.WOOL_ORANGE, coal: T.COBBLE, arm: T.LOG_SIDE, scarf: T.WOOL_RED, hard: 0.3, shape: 'snowman' },
+  // a sandcastle with four little towers and a red flag
+  { id: B.SANDCASTLE, name: 'Sandcastle', kind: 'cutout', all: T.SAND, flag: T.WOOL_RED, pole: T.LOG_SIDE, hard: 0.2, shape: 'sandcastle' },
 ];
 
 export const BLOCKS = [];
@@ -123,7 +125,7 @@ for (const b of BLOCKS) {
   KIND[b.id] = { air: 0, opaque: 1, cutout: 2, liquid: 3 }[b.kind];
 }
 
-export const PLACEABLE = [B.FENCE, B.GATE, B.DOOR, B.BED, B.SIGN, B.PLANTER, B.TABLE, B.CAMPFIRE, B.SCARECROW, B.BELL, B.BOUNCE, B.JAR, B.MUSICBOX, B.SNOWMAN, B.LADDER, B.FEEDER, B.FLOWER_RED, B.FLOWER_YELLOW, B.FLOWER_WHITE, B.GRASS, B.DIRT, B.PLANKS, B.WOOL, B.WOOL_RED, B.WOOL_ORANGE, B.WOOL_YELLOW, B.WOOL_PINK, B.WOOL_GREEN, B.LOG, B.HAY, B.MUD, B.ROOF, B.CREAM, B.BRICK,
+export const PLACEABLE = [B.FENCE, B.GATE, B.DOOR, B.BED, B.SIGN, B.PLANTER, B.TABLE, B.CAMPFIRE, B.SCARECROW, B.BELL, B.BOUNCE, B.JAR, B.MUSICBOX, B.SNOWMAN, B.SANDCASTLE, B.LADDER, B.FEEDER, B.FLOWER_RED, B.FLOWER_YELLOW, B.FLOWER_WHITE, B.GRASS, B.DIRT, B.PLANKS, B.WOOL, B.WOOL_RED, B.WOOL_ORANGE, B.WOOL_YELLOW, B.WOOL_PINK, B.WOOL_GREEN, B.LOG, B.HAY, B.MUD, B.ROOF, B.CREAM, B.BRICK,
   B.STONE, B.COBBLE, B.GLASS, B.LEAVES, B.SAND, B.SNOW, B.CLAY, B.LAMP, B.WATER];
 // Non-block items (animal treats) share the hotbar with blocks; their ids sit above the block range.
 export const ITEM_SEEDS = 200, ITEM_WHEAT = 201, ITEM_APPLE = 202, ITEM_CLOVER = 203, ITEM_BONE = 204;
@@ -162,3 +164,6 @@ export const FOODS = [ITEM_BREAD, ITEM_GRILLED, ITEM_PIE, ITEM_CAKE];
 // Fireworks: launch one and it whooshes up and bursts into colours (your babies love them).
 export const ITEM_FIREWORK = 216;
 ITEM_NAMES[ITEM_FIREWORK] = 'Firework';
+// A swim ring: hold it in the water and you float on top and swim fast.
+export const ITEM_RING = 217;
+ITEM_NAMES[ITEM_RING] = 'Swim ring';

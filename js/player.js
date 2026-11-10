@@ -38,7 +38,7 @@ export class Player {
     const len = Math.hypot(mx, mz);
     if (len > 1) { mx /= len; mz /= len; }
     let speed = this.flying ? (input.sprint ? 16 : 9) : input.sprint ? 5.8 : 4.4;
-    if (this.inWater && !this.flying) speed *= 0.55;
+    if (this.inWater && !this.flying) speed *= this.ring ? 1.25 : 0.55;   // a swim ring: float and paddle fast
     speed *= (this.slow ?? 1) * (this.boost || 1);   // stuck in poison goo; full of bread or pie
     const wx = (-sy * mz + cy * mx) * speed, wz = (-cy * mz - sy * mx) * speed;
     const accel = this.onGround || this.flying ? 14 : this.inWater ? 6 : 3.5;
@@ -56,9 +56,16 @@ export class Player {
       const vy = ((input.jump ? 1 : 0) - (input.down ? 1 : 0)) * (input.sprint ? 12 : 7);
       v[1] += (vy - v[1]) * (1 - Math.exp(-10 * dt));
     } else if (this.inWater) {
-      v[1] -= GRAVITY * 0.3 * dt;
-      v[1] *= Math.exp(-2.5 * dt);
-      if (input.jump) v[1] = Math.min(v[1] + 30 * dt, 3.8);
+      if (this.ring) {
+        // bob at the surface: float up while your middle is under water, sink gently when it isn't
+        const mid = world.getBlock(Math.floor(p[0]), Math.floor(p[1] + 0.75), Math.floor(p[2])) === B.WATER;
+        v[1] += ((mid ? 2.2 : -0.6) - v[1]) * Math.min(1, 6 * dt);
+        if (input.jump && !mid) v[1] = 5;
+      } else {
+        v[1] -= GRAVITY * 0.3 * dt;
+        v[1] *= Math.exp(-2.5 * dt);
+        if (input.jump) v[1] = Math.min(v[1] + 30 * dt, 3.8);
+      }
     } else {
       v[1] = Math.max(v[1] - GRAVITY * dt, -55);
       if (input.jump && this.onGround) v[1] = JUMP_V * (this.spring || 1) * (this.onPad ? 1.45 : 1); // spring: a snack of grilled fish or pie

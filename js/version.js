@@ -1,11 +1,17 @@
 // The game's version and what changed in each one. Shown on the front screen ("What's new")
 // and in CHANGELOG.md. When you release: bump VERSION, add an entry at the top of CHANGES,
 // and set the same number in sw.js (CACHE = 'blockwild-v<VERSION>') so phones pick it up.
-export const VERSION = 37;
+export const VERSION = 38;
 export const RELEASED = '10 Nov 2026';
 
 // [version, date, headline, [details]]
 export const CHANGES = [
+  [38, '10 Nov 2026', 'Hide and seek, a swim ring and sandcastles', [
+    'Hide and seek! Now and then by day a baby from your nursery runs off to hide by a tree, a wall or under some leaves. Listen for its giggles, louder as you get close, and walk right up to it to find it and get a little reward.',
+    'New swim ring (Wood & tools tab, at a crafting table: 2 red wool, 2 wool): hold it in the water and you float on top and swim over twice as fast. Jump to hop out onto the bank. You learn it from the bottle goal.',
+    'New sandcastle (Building tab: 4 sand, 1 stick, 1 red flower) with four towers and a red flag. You learn it from the snowman goal.',
+    'Three new goals: find a baby playing hide and seek, swim 30 blocks with the ring and build a sandcastle.',
+  ]],
   [37, '10 Nov 2026', 'A music box, messages in bottles and snowmen', [
     'New music box (Building tab, at a crafting table: 3 wood, 1 lamp, 1 stick): tap it and it plays a little tune, a different one every time. Your animals close by hop and wag along to the beat. You learn it from the firework goal.',
     'Messages in bottles: now and then your fishing line brings one up. Most are treasure maps to a chest further away than you could see, and the gold Treasure tag points the way until you open it.',

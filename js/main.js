@@ -1,5 +1,5 @@
 // Baby Chicken Empire: bootstrap, game loop, streaming, interaction, UI and saving.
-import { B, T, BLOCKS, SOLID, PLACEABLE, TILE_COUNT, ITEM_SEEDS, ITEM_WHEAT, ITEM_SWORD, ITEM_BONE, ITEM_APPLE, ITEM_CLOVER, ITEM_STICK, ITEM_EGG, ITEM_MILK, ITEM_HOUSE, ITEM_ROD, ITEM_FISH, ITEM_BREAD, ITEM_GRILLED, ITEM_PIE, ITEM_CAKE, ITEM_FIREWORK, FOODS, IS_DOOR, DOOR_TOPS, TREATS, ITEM_NAMES, SHAPED, FEEDER_OF, FEEDER_TREAT, IS_FEEDER } from './blocks.js';
+import { B, T, BLOCKS, SOLID, PLACEABLE, TILE_COUNT, ITEM_SEEDS, ITEM_WHEAT, ITEM_SWORD, ITEM_BONE, ITEM_APPLE, ITEM_CLOVER, ITEM_STICK, ITEM_EGG, ITEM_MILK, ITEM_HOUSE, ITEM_ROD, ITEM_FISH, ITEM_BREAD, ITEM_GRILLED, ITEM_PIE, ITEM_CAKE, ITEM_FIREWORK, ITEM_RING, FOODS, IS_DOOR, DOOR_TOPS, TREATS, ITEM_NAMES, SHAPED, FEEDER_OF, FEEDER_TREAT, IS_FEEDER } from './blocks.js';
 import { Snakes, SNAKE_KINDS, K_POISON, K_FLYING, K_DIGGER, K_BOOM } from './snakes.js';
 import { Raiders } from './raiders.js';
 import { Weather } from './weather.js';
@@ -116,17 +116,17 @@ let myNetId = 0, netTimer = 0, poseTimer = 0, shownOthers = -1, pendingEdits = {
 const netEdits = [], netEvents = [];
 
 const icons = {};
-const SHAPE_ICON = { [B.FENCE]: 'fence', [B.GATE]: 'gate', [B.DOOR]: 'door', [B.BED]: 'bed', [B.SIGN]: 'sign', [B.CAMPFIRE]: 'campfire', [B.SCARECROW]: 'scarecrow', [B.BELL]: 'dinner bell', [B.JAR]: 'firefly jar', [B.MUSICBOX]: 'music box', [B.SNOWMAN]: 'snowman', [B.PLANTER]: 'planter', [B.TABLE]: 'table', [B.LADDER]: 'ladder', [B.FEEDER]: 'feeder',
+const SHAPE_ICON = { [B.FENCE]: 'fence', [B.GATE]: 'gate', [B.DOOR]: 'door', [B.BED]: 'bed', [B.SIGN]: 'sign', [B.CAMPFIRE]: 'campfire', [B.SCARECROW]: 'scarecrow', [B.BELL]: 'dinner bell', [B.JAR]: 'firefly jar', [B.MUSICBOX]: 'music box', [B.SNOWMAN]: 'snowman', [B.SANDCASTLE]: 'sandcastle', [B.PLANTER]: 'planter', [B.TABLE]: 'table', [B.LADDER]: 'ladder', [B.FEEDER]: 'feeder',
   [B.FLOWER_RED]: 'flower-red', [B.FLOWER_YELLOW]: 'flower-yellow', [B.FLOWER_WHITE]: 'flower-white' };
 if (textures) for (const id of [...PLACEABLE, B.THRONE]) {
   icons[id] = SHAPED[id] ? M.treatIcon(SHAPE_ICON[id], 64).toDataURL() : blockIcon(BLOCKS[id], textures.tiles, 64).toDataURL();
 }
-for (const id of [...TREATS, ITEM_SWORD, ITEM_STICK, ITEM_EGG, ITEM_MILK, ITEM_HOUSE, ITEM_ROD, ITEM_FISH, ITEM_FIREWORK, ...FOODS]) icons[id] = M.treatIcon(ITEM_NAMES[id].toLowerCase(), 64).toDataURL();
+for (const id of [...TREATS, ITEM_SWORD, ITEM_STICK, ITEM_EGG, ITEM_MILK, ITEM_HOUSE, ITEM_ROD, ITEM_FISH, ITEM_FIREWORK, ITEM_RING, ...FOODS]) icons[id] = M.treatIcon(ITEM_NAMES[id].toLowerCase(), 64).toDataURL();
 $('#held').src = icons[ITEM_SWORD] || '';
 const itemName = id => ITEM_NAMES[id] || BLOCKS[id]?.name || '';
 const isItem = id => !!icons[id];
 // the order things are listed in your bag
-const BAG_ORDER = [...TREATS, ITEM_FISH, ITEM_EGG, ITEM_MILK, ITEM_SWORD, ITEM_ROD, ITEM_STICK, ITEM_HOUSE, ITEM_FIREWORK, B.THRONE, ...PLACEABLE];
+const BAG_ORDER = [...TREATS, ITEM_FISH, ITEM_EGG, ITEM_MILK, ITEM_SWORD, ITEM_ROD, ITEM_STICK, ITEM_HOUSE, ITEM_FIREWORK, ITEM_RING, B.THRONE, ...PLACEABLE];
 
 // ---------- your bag: collecting and using things up ----------
 const have = id => inv[id] || 0;
@@ -428,7 +428,7 @@ function startWorld(save) {
   loadSigns(save?.signs);
   snackT = 0; boostEl.hidden = true;
   trader.here = false; trader.day = -1; trader.look = 0;
-  fireworks.rockets.length = 0; fireworks.sparks.length = 0; fireworks.stars.length = 0; starT = 20; wishStar = null; mapChest = null; boxes = [];
+  fireworks.rockets.length = 0; fireworks.sparks.length = 0; fireworks.stars.length = 0; starT = 20; wishStar = null; mapChest = null; boxes = []; seek = null; seekT = 150 + Math.random() * 150;
   seat = null;
   showCrown();
   // a few wild babies of each kind close by, so there's someone to feed straight away
@@ -1112,6 +1112,7 @@ function placeBlock() {
   if (id === ITEM_CAKE) { party(); return; }
   if (SNACK[id]) { eat(id); return; }
   if (id === ITEM_FIREWORK) { launchFirework(); return; }
+  if (id === ITEM_RING) { toast(player.inWater ? 'Paddle away! Keep holding the ring to float and swim fast.' : 'Hold the swim ring and jump in the water: you float on top and swim fast.', 3000); return; }
   if (isTreat(id)) {
     if (throwCool > 0) return;
     throwCool = id === ITEM_SEEDS ? 0.2 : 0.3;
@@ -2038,7 +2039,7 @@ const MAP_COL = {
   [B.LAMP]: '#ffe08a', [B.CLAY]: '#b9a39a', [B.HAY]: '#e3c25a', [B.ROOF]: '#c94a3a', [B.CREAM]: '#f1e3c4', [B.MUD]: '#6b4a2e',
   [B.THRONE]: '#ffcf3a', [B.WOOL]: '#f4efe3', [B.WOOL_RED]: '#d8443a', [B.WOOL_ORANGE]: '#f08a2a', [B.WOOL_YELLOW]: '#f2cf3a',
   [B.WOOL_PINK]: '#f29ab8', [B.WOOL_GREEN]: '#5cbf4a', [B.CHEST]: '#ffcf3a', [B.CHEST_OPEN]: '#b58a3a', [B.BED]: '#e2443a',
-  [B.CAMPFIRE]: '#ff8a2a', [B.SCARECROW]: '#e3c25a', [B.BELL]: '#ffcf3a', [B.JAR]: '#fff6a0', [B.BOUNCE]: '#f7a8c4', [B.MUSICBOX]: '#c98a3a', [B.SNOWMAN]: '#ffffff', [B.SIGN]: '#d8924e', [B.PLANTER_RIPE]: '#f2c35a',
+  [B.CAMPFIRE]: '#ff8a2a', [B.SCARECROW]: '#e3c25a', [B.BELL]: '#ffcf3a', [B.JAR]: '#fff6a0', [B.BOUNCE]: '#f7a8c4', [B.MUSICBOX]: '#c98a3a', [B.SNOWMAN]: '#ffffff', [B.SANDCASTLE]: '#e8d08a', [B.SIGN]: '#d8924e', [B.PLANTER_RIPE]: '#f2c35a',
 };
 const mapView = { size: 128, open: false };
 const SEE_THROUGH = id => id === B.AIR || (SHAPED[id] && !IS_FEEDER(id) && id !== B.TABLE && id !== B.BED && id !== B.CAMPFIRE && id !== B.SIGN && !(id >= B.PLANTER && id <= B.PLANTER_RIPE));
@@ -2485,6 +2486,72 @@ function fishBottle() {
     toast('📜 A message in a bottle! “Hello from far away! Here’s a little present.” (Explore further to find treasure maps.)', 5000, true);
     pickupPop({ x: Math.floor(fishing.p[0]), y: Math.floor(fishing.p[1]), z: Math.floor(fishing.p[2]) }, got);
   }
+}
+
+// ---------- hide and seek ----------
+// Now and then by day a baby from your nursery asks to play: it runs off to hide somewhere tucked away
+// (by a tree, a wall or a bush). Go and find it! It giggles every few seconds, louder as you get close.
+// Not found in three minutes (or by dark), it gives up and runs home. The host runs it for everyone's animals.
+let seek = null, seekT = 150 + Math.random() * 150;
+const SEEK_TIME = 180;
+function hidingSpot(from) {
+  let best = null, bs = -1;
+  for (let k = 0; k < 50; k++) {
+    const ang = Math.random() * Math.PI * 2, d = 12 + Math.random() * 12;
+    const x = Math.floor(from[0] + Math.cos(ang) * d), z = Math.floor(from[2] + Math.sin(ang) * d);
+    if (!world.getChunk(Math.floor(x / CS), Math.floor(z / CS))) continue;
+    for (let y = Math.floor(from[1]) + 6; y > from[1] - 8; y--) {
+      const below = world.getBlock(x, y - 1, z);
+      if (world.getBlock(x, y, z) || world.getBlock(x, y + 1, z) || !SOLID[below]) continue;
+      if (below === B.WATER) break;
+      // how tucked away it is: walls and trunks beside it, leaves overhead
+      let s = 0;
+      for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) if (SOLID[world.getBlock(x + dx, y, z + dz)]) s += 2;
+      for (let h = 2; h < 6; h++) if (world.getBlock(x, y + h, z) === B.LEAVES) { s += 2; break; }
+      if (s > bs) { bs = s; best = [x + 0.5, y, z + 0.5]; }
+      break;
+    }
+  }
+  return best;
+}
+function startSeek() {
+  const kids = flock.animals.filter(a => a.tame && (a.grow || 0) < 1 && !a.called && Math.hypot(a.p[0] - player.pos[0], a.p[2] - player.pos[2]) < 30);
+  if (!kids.length) return false;
+  const a = kids[Math.random() * kids.length | 0], spot = hidingSpot(a.p);
+  if (!spot) return false;
+  seek = { a, home: [...(a.home || a.p)], t: SEEK_TIME, hint: 25 };
+  a.callTo = spot; a.called = 60; a.sleep = false; a.spot = null; a.enjoy = 0;
+  toast(`🙈 ${callName(a.name, a.sp, 'Your', a.nick)} wants to play hide and seek! Count to ten… then go and find it. Listen for giggles!`, 6000, true);
+  return true;
+}
+function seekStep(dt) {
+  if (net.isGuest || !running || sleeping) return;
+  const night = skyAt(clock).night;
+  if (!seek) {
+    if (night > 0.3) return;
+    seekT -= dt;
+    if (seekT <= 0) seekT = startSeek() ? 360 + Math.random() * 300 : 60;
+    return;
+  }
+  const a = seek.a, who = callName(a.name, a.sp, 'Your', a.nick);
+  if (!flock.animals.includes(a) || !a.tame) { seek = null; return; }
+  seek.t -= dt;
+  const d = Math.hypot(a.p[0] - player.pos[0], a.p[2] - player.pos[2]);
+  const runHome = () => { a.callTo = seek.home; a.called = 40; a.wag = 1; seek = null; };
+  if (seek.t < SEEK_TIME - 6 && d < 2.8 && Math.abs(a.p[1] - player.pos[1]) < 3) {
+    const got = [[[ITEM_APPLE, 3], [ITEM_CLOVER, 3], [ITEM_MILK, 1], [ITEM_EGG, 2]][Math.random() * 4 | 0]];
+    for (const [item, n] of got) addItem(item, n, true);
+    bump(stats, 'found');
+    if (a.onGround) a.v[1] = 4.5;
+    floatFx([a.p[0], a.p[1] + 0.4, a.p[2]], 'heart'); sfx.happy(); buzz(20);
+    pickupPop({ x: Math.floor(a.p[0]), y: Math.floor(a.p[1]), z: Math.floor(a.p[2]) }, got);
+    toast(`👀 Found you! ${who} giggles and runs back to the nursery. (Found in ${Math.round(SEEK_TIME - seek.t)} seconds.)`, 4500, true);
+    runHome();
+    return;
+  }
+  seek.hint -= dt;
+  if (seek.hint <= 0) { seek.hint = 6; sfx.cheep(0.4 * Math.max(0.12, 1 - d / 45), 1.35); setTimeout(() => sfx.cheep(0.3 * Math.max(0.12, 1 - d / 45), 1.5), 160); }
+  if (seek.t <= 0 || night > 0.5) { toast(`${who} got tired of hiding and ran home. Better luck next time!`, 3500); runHome(); }
 }
 
 // ---------- sleeping ----------
@@ -2964,7 +3031,12 @@ function frame(now, photo = false) {
     const gooey = !player.flying && snakes.inGoo(player.pos);
     player.slow = gooey ? 0.4 : 1;
     if (gooey && !firsts.includes('goo')) { firsts.push('goo'); toast('Yuck, poison goo! It makes you slow. Step out of it, it dries up soon.'); }
+    player.ring = hotbar[selected] === ITEM_RING && have(ITEM_RING) > 0;
     if (!seat && world.getChunk(Math.floor(player.pos[0] / CS), Math.floor(player.pos[2] / CS))) player.update(dt, input.state, world);
+    if (player.ring && player.inWater) {
+      stats.swum = (stats.swum || 0) + Math.hypot(player.vel[0], player.vel[2]) * dt;
+      if (!firsts.includes('ring')) { firsts.push('ring'); toast('Wheee! With the swim ring you float on top and paddle fast. Jump to hop out onto the bank.'); }
+    }
     if (player.pos[1] < -20) { player.pos[1] = CH; player.vel[1] = 0; }
     if (player.bounced) {
       sfx.boing(Math.min(1.4, player.vel[1] / 14)); bump(stats, 'bounced', undefined, player.bounced); player.bounced = 0;
@@ -3043,6 +3115,7 @@ function frame(now, photo = false) {
   fireworkStep(dt, eye);
   starStep(dt, eye, fwd, far);
   boxStep(dt);
+  seekStep(dt);
   s.groups.push(...fireworks.instances(eye, far + 8));
   sfx.rain(running && !underwater && !weather.snowing ? weather.amount : 0);
   music.day = skyAt(clock).night < 0.3;
@@ -3079,7 +3152,7 @@ requestAnimationFrame(loop);
 
 // handy for debugging from the console
 window.blockwild = { fishTap, get fishing() { return fishing; }, selectSlot, get hotbar() { return hotbar; }, get known() { return knownList(); }, learn, unlearned: () => unlearned(knownList(), settings.patterns || []), get settings() { return settings; }, get world() { return world; }, get player() { return player; }, get target() { return target; }, get flock() { return flock; }, get nursery() { return flock; }, get snakes() { return snakes; }, get raiders() { return raiders; }, get weather() { return weather; }, get critters() { return critters; }, music, trader, openMap, get nights() { return nights; }, set nights(n) { nights = n; }, wardrobe, selfieCam, petBaby, openJobs, get inv() { return inv; }, addItem, RECIPES, craft, input, raycast,
-  get clock() { return clock; }, setTime(t) { clock = t; }, swing: () => swing(), catchFirefly: () => catchFirefly(), fishBottle: () => fishBottle(), playBox: t => playBox(t), get mapChest() { return mapChest; }, get boxes() { return boxes; },
+  get clock() { return clock; }, setTime(t) { clock = t; }, swing: () => swing(), catchFirefly: () => catchFirefly(), fishBottle: () => fishBottle(), startSeek: () => startSeek(), get seek() { return seek; }, playBox: t => playBox(t), get mapChest() { return mapChest; }, get boxes() { return boxes; },
   net, others, get myNetId() { return myNetId; },
   get seat() { return seat; }, awardCrown: l => awardCrown(l), fireworks, get streak() { return streak; }, set streak(v) { streak = v; }, sit: (x, y, z) => sit(x, y, z), standUp: () => standUp(),
   // advance n frames by hand (useful when the page is in a background tab)

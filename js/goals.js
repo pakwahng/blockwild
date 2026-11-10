@@ -1,6 +1,6 @@
 // Goals: a short list of things to try, in order, each with a little reward.
 // They lead a new player from digging their first block to building a pen and surviving the night.
-import { B, ITEM_SEEDS, ITEM_WHEAT, ITEM_APPLE, ITEM_CLOVER, ITEM_BONE, ITEM_STICK, ITEM_EGG, ITEM_MILK, ITEM_HOUSE, ITEM_FISH, FOODS, ITEM_FIREWORK } from './blocks.js';
+import { B, ITEM_SEEDS, ITEM_WHEAT, ITEM_APPLE, ITEM_CLOVER, ITEM_BONE, ITEM_STICK, ITEM_EGG, ITEM_MILK, ITEM_HOUSE, ITEM_FISH, FOODS, ITEM_FIREWORK, ITEM_RING } from './blocks.js';
 
 // stats: { dug: {id: n}, got: {id: n}, made: {id: n}, placed: {id: n}, tamed, hatched, bonked, filled, nights, climbed, chicks, grown, gifts: {id: n} }
 const n = (map, id) => (map && map[id]) || 0;
@@ -48,6 +48,9 @@ export const GOALS = [
   ['tune', 'Make a music box and play it near your animals to see them dance', 1, s => s.tunes || 0, [[ITEM_APPLE, 3], [B.LAMP, 1]]],
   ['bottle', 'Fish up a message in a bottle: it might lead you to treasure', 1, s => s.bottles || 0, [[ITEM_FISH, 2], [B.GLASS, 2]]],
   ['snowman', 'Build a snowman (you’ll find snow up on the mountains)', 1, s => n(s.placed, B.SNOWMAN), [[ITEM_MILK, 1], [B.WOOL_RED, 2]]],
+  ['seek', 'Play hide and seek: when a baby runs off to hide, go and find it (listen for giggles)', 1, s => s.found || 0, [[ITEM_APPLE, 3], [ITEM_CLOVER, 3]]],
+  ['ring', 'Make a swim ring, hold it and swim 30 blocks', 30, s => Math.floor(s.swum || 0), [[ITEM_FISH, 2], [B.WOOL, 2]]],
+  ['castle', 'Build a sandcastle on the beach', 1, s => n(s.placed, B.SANDCASTLE), [[B.SAND, 4], [B.FLOWER_RED, 2]]],
   ['chicks', 'Grow your nursery to 37 chickens', 37, s => s.chicks || 0, [[B.HAY, 4], [ITEM_APPLE, 5]]],
 ];
 export const GOAL_IDS = GOALS.map(g => g[0]);

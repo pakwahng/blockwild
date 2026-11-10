@@ -567,6 +567,19 @@ export function treatIcon(kind, px = 64) {
       g.fillStyle = '#ffcf3a'; g.beginPath(); g.moveTo(32, 14); g.quadraticCurveTo(18, 16, 18, 36); g.lineTo(13, 46); g.lineTo(51, 46); g.lineTo(46, 36); g.quadraticCurveTo(46, 16, 32, 14); g.fill();
       rr(g, 22, 18, 5, 18, 2.5, '#fff1a8');                                            // shine
       g.fillStyle = '#c98a00'; g.beginPath(); g.arc(32, 49, 4.5, 0, Math.PI * 2); g.fill(); // clapper
+    } else if (kind === 'swim ring') {
+      g.lineWidth = 13;
+      for (let k = 0; k < 8; k++) {                                                      // red and white stripes
+        g.strokeStyle = k % 2 ? '#ffffff' : '#e8443a';
+        g.beginPath(); g.arc(32, 34, 19, k * Math.PI / 4, (k + 1) * Math.PI / 4 + 0.02); g.stroke();
+      }
+      g.lineWidth = 2; g.strokeStyle = 'rgba(255,255,255,0.8)'; g.beginPath(); g.arc(30, 31, 22, 3.6, 4.6); g.stroke(); // shine
+    } else if (kind === 'sandcastle') {
+      rr(g, 6, 40, 52, 18, 3, '#e8d08a');                                                // base
+      for (const x of [6, 44]) { rr(g, x, 24, 14, 22, 2, '#dcc076'); rr(g, x, 20, 4, 5, 1, '#dcc076'); rr(g, x + 10, 20, 4, 5, 1, '#dcc076'); } // towers
+      rr(g, 24, 18, 16, 28, 2, '#e8d08a'); rr(g, 29, 46, 6, 12, 3, '#8f6a3a');          // keep and door
+      rr(g, 31, 2, 2, 17, 1, '#7e5230');                                                 // flagpole
+      g.fillStyle = '#e2443a'; g.beginPath(); g.moveTo(33, 3); g.lineTo(46, 7); g.lineTo(33, 11); g.fill(); // flag
     } else if (kind === 'music box') {
       rr(g, 8, 26, 48, 30, 5, '#b5763a'); rr(g, 6, 22, 52, 8, 3, '#ffcf3a'); rr(g, 8, 40, 48, 4, 2, '#ffcf3a'); // box, lid, band
       rr(g, 56, 36, 6, 4, 2, '#7e5230'); rr(g, 58, 30, 4, 10, 2, '#7e5230');                                   // crank
