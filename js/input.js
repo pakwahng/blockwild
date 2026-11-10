@@ -96,7 +96,8 @@ export class Input {
 
     // stop iOS pinch-zoom / double-tap zoom gestures
     for (const ev of ['gesturestart', 'gesturechange', 'dblclick']) document.addEventListener(ev, e => e.preventDefault(), { passive: false });
-    document.addEventListener('touchmove', e => { if (e.target.closest('#bag-body, .menu-scroll, .ward-body, .job-panel')) return; e.preventDefault(); }, { passive: false });
+    // block the page from rubber-banding, but let any panel that has more to show (map, Pip's cart, bag, menu...) scroll
+    document.addEventListener('touchmove', e => { if (scrollsInside(e.target)) return; e.preventDefault(); }, { passive: false });
   }
 
   bindDesktop() {
@@ -143,4 +144,15 @@ export class Input {
     st.down = k.has('ShiftLeft') || k.has('ShiftRight');
     st.sprint = k.has('ControlLeft') || k.has('ControlRight');
   }
+}
+
+// Is this element (or one it sits inside) a panel that can scroll right now?
+function scrollsInside(el) {
+  for (; el && el !== document.body; el = el.parentElement) {
+    if (!(el instanceof Element)) continue;
+    const s = getComputedStyle(el);
+    if (/(auto|scroll)/.test(s.overflowY) && el.scrollHeight > el.clientHeight + 1) return true;
+    if (/(auto|scroll)/.test(s.overflowX) && el.scrollWidth > el.clientWidth + 1) return true;
+  }
+  return false;
 }

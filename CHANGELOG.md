@@ -2,6 +2,12 @@
 
 The same list is in the game: tap the version number on the front screen, or open **What’s new**.
 
+## 42. Scrolling on phones turned sideways (10 Nov 2026)
+- The map, Pip’s cart, the sign and job cards now scroll with your finger when they’re taller than the screen. Before, only the bag, menu and wardrobe would.
+- The map shrinks to fit a short screen, so you can see all of it and the key below.
+- On a short screen the bag’s tabs stay on one row (swipe it sideways if they don’t all fit) and the panels are a little tighter, leaving more room for your things.
+- The “Generating world…” label no longer sits on top of the bag or map.
+
 ## 41. More to build, and easier controls (10 Nov 2026)
 - Five new things to build (Building tab): stone bricks from cobble, framed windows, lamp posts that glow at night, flower pots, and benches you can sit on. You learn them from the bonk, house, night, treasure chest and sign goals.
 - Five new goals: build with 20 stone bricks, put in 4 windows, put up 3 lamp posts, put out 4 flower pots and sit on a bench.

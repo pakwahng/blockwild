@@ -571,3 +571,17 @@ body.touch kbd.key, body.touch kbd.slot-key, body.touch #desk-hint { display: no
 /* recipe cards: how to learn one you don't know yet */
 .card-learn small { display: block; margin-top: 2px; font-size: 11px; color: var(--ink-dim); font-weight: 400; }
 .card-table.free { opacity: 0.65; }
+
+/* ---------- every panel scrolls when it's taller than the screen (phones on their side) ---------- */
+.panel { overflow-y: auto; touch-action: pan-y; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+#craft-tabs { flex-wrap: wrap; overflow-x: visible; }
+/* the map shrinks to fit a short screen instead of pushing the key off the bottom */
+#map-canvas { width: min(100%, calc(100vh - 150px)); width: min(100%, calc(100dvh - 150px)); min-width: 160px; }
+/* short screens (a phone on its side): one swipeable row of bag tabs and tighter panels */
+@media (max-height: 500px) {
+  #craft-tabs { flex-wrap: nowrap; overflow-x: auto; touch-action: pan-x; overscroll-behavior: contain; scrollbar-width: none; }
+  .tab { padding: 6px 12px; font-size: 13px; }
+  .panel { padding: 10px 12px; }
+  .panel-head { margin-bottom: 6px; }
+  .bag-tip { margin-bottom: 6px; }
+}

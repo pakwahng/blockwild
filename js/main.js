@@ -3157,7 +3157,7 @@ function frame(now, photo = false) {
   netStep(dt);
   const sky = weather.shade(skyAt(clock));
   const pending = stream(running ? 5 : 10);
-  $('#loading').hidden = pending === 0 || running;
+  $('#loading').hidden = pending === 0 || running || !!document.querySelector('#picker:not([hidden]), #mapcard:not([hidden]), #tradecard:not([hidden]), #jobcard:not([hidden]), #signcard:not([hidden])');
 
   const cam = wardrobe.open ? selfieCam(dt) : null;
   const eye = cam ? cam.eye : player.eye(), fwd = cam ? cam.fwd : player.forward();

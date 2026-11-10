@@ -319,6 +319,7 @@ A full day lasts 10 minutes: about 6 minutes of daylight, a pink dusk, roughly 3
 - Five new goals: place 20 stone bricks, put in 4 windows, put up 3 lamp posts, put out 4 flower pots and sit on a bench.
 - **Prompts:** a label under the crosshair says what tapping (or right clicking) does to the thing you're looking at: open a gate, door or chest, sit, sleep, ring, play, write, pick wheat, plant seeds, fill a feeder, swap with Pip. At a crafting table or campfire it tells you to open the bag (press E).
 - **Keyboard and mouse:** the top buttons show their keys (P photo, M map, E bag, Esc pause), hotbar slots show 1–9, and a strip of the main controls shows for the first 20 seconds. E or Esc closes the bag; Esc closes the map, Pip's cart and the job card. In the bag, point at something and press 1–9 to put it on that slot. None of this shows on touch screens.
+- **Scrolling on phones:** the page blocks touch scrolling (so the game doesn't rubber-band), except inside anything that has more to show (`scrollsInside` in `js/input.js` checks for an overflowing parent), so every panel scrolls on a phone turned sideways. On short screens (under 500px tall) the map shrinks to fit and the bag tabs stay on one swipeable row.
 - **Recipe cards:** things you can make right now come first. A card says "Make it anywhere" when no table is needed, and a recipe you haven't learned says which goal teaches it (or to find a recipe page).
 
 ## Play together

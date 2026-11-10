@@ -1,11 +1,17 @@
 // The game's version and what changed in each one. Shown on the front screen ("What's new")
 // and in CHANGELOG.md. When you release: bump VERSION, add an entry at the top of CHANGES,
 // and set the same number in sw.js (CACHE = 'blockwild-v<VERSION>') so phones pick it up.
-export const VERSION = 41;
+export const VERSION = 42;
 export const RELEASED = '10 Nov 2026';
 
 // [version, date, headline, [details]]
 export const CHANGES = [
+  [42, '10 Nov 2026', 'Scrolling on phones turned sideways', [
+    'The map, Pip’s cart, the sign and job cards now scroll with your finger when they’re taller than the screen. Before, only the bag, menu and wardrobe would.',
+    'The map shrinks to fit a short screen, so you can see all of it and the key below.',
+    'On a short screen the bag’s tabs stay on one row (swipe it sideways if they don’t all fit) and the panels are a little tighter, leaving more room for your things.',
+    'The “Generating world…” label no longer sits on top of the bag or map.',
+  ]],
   [41, '10 Nov 2026', 'More to build, and easier controls', [
     'Five new things to build (Building tab): stone bricks from cobble, framed windows, lamp posts that glow at night, flower pots, and benches you can sit on. You learn them from the bonk, house, night, treasure chest and sign goals.',
     'Five new goals: build with 20 stone bricks, put in 4 windows, put up 3 lamp posts, put out 4 flower pots and sit on a bench.',
