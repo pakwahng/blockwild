@@ -1,5 +1,5 @@
 // Baby Chicken Empire: bootstrap, game loop, streaming, interaction, UI and saving.
-import { B, T, BLOCKS, SOLID, PLACEABLE, TILE_COUNT, ITEM_SEEDS, ITEM_WHEAT, ITEM_SWORD, ITEM_BONE, ITEM_APPLE, ITEM_CLOVER, ITEM_STICK, ITEM_EGG, ITEM_MILK, ITEM_HOUSE, ITEM_ROD, ITEM_FISH, ITEM_BREAD, ITEM_GRILLED, ITEM_PIE, ITEM_CAKE, ITEM_FIREWORK, ITEM_RING, FOODS, IS_DOOR, DOOR_TOPS, TREATS, ITEM_NAMES, SHAPED, FEEDER_OF, FEEDER_TREAT, IS_FEEDER } from './blocks.js';
+import { B, T, BLOCKS, SOLID, PLACEABLE, TILE_COUNT, ITEM_SEEDS, ITEM_WHEAT, ITEM_SWORD, ITEM_BONE, ITEM_APPLE, ITEM_CLOVER, ITEM_STICK, ITEM_EGG, ITEM_MILK, ITEM_HOUSE, ITEM_ROD, ITEM_FISH, ITEM_BREAD, ITEM_GRILLED, ITEM_PIE, ITEM_CAKE, ITEM_FIREWORK, ITEM_RING, ITEM_SLING, ITEM_PEBBLE, ITEM_POPPER, FOODS, IS_DOOR, DOOR_TOPS, TREATS, ITEM_NAMES, SHAPED, FEEDER_OF, FEEDER_TREAT, IS_FEEDER } from './blocks.js';
 import { Snakes, SNAKE_KINDS, K_POISON, K_FLYING, K_DIGGER, K_BOOM } from './snakes.js';
 import { Raiders } from './raiders.js';
 import { Weather } from './weather.js';
@@ -99,6 +99,12 @@ let sleptNight = false;      // slept through tonight: it doesn't count towards 
 // hotbar: nine slots holding item ids (0 = empty); inv: how many of each item you're carrying
 const NEW_HOTBAR = [ITEM_SEEDS, ITEM_SWORD, 0, 0, 0, 0, 0, 0, 0];
 let hotbar = [...NEW_HOTBAR];
+// Two hotbars: one for building and farming, one for fighting. Q (or the button by the hotbar) swaps them.
+// hotbar is always the one showing; otherBar waits its turn.
+const FIGHT_HOTBAR = [ITEM_SWORD, ITEM_SLING, ITEM_PEBBLE, ITEM_POPPER, ITEM_BREAD, ITEM_GRILLED, ITEM_PIE, ITEM_FIREWORK, 0];
+let barMode = 'build', otherBar = [...FIGHT_HOTBAR], otherSel = 0;
+const buildBar = () => barMode === 'build' ? hotbar : otherBar, buildSel = () => barMode === 'build' ? selected : otherSel;
+const fightBar = () => barMode === 'fight' ? hotbar : otherBar, fightSel = () => barMode === 'fight' ? selected : otherSel;
 let inv = { ...STARTER };
 let stats = newStats(), goalsDone = [], goalTimer = 0, climbT = 0;
 let selected = 0;
@@ -121,12 +127,12 @@ const SHAPE_ICON = { [B.FENCE]: 'fence', [B.GATE]: 'gate', [B.DOOR]: 'door', [B.
 if (textures) for (const id of [...PLACEABLE, B.THRONE]) {
   icons[id] = SHAPED[id] ? M.treatIcon(SHAPE_ICON[id], 64).toDataURL() : blockIcon(BLOCKS[id], textures.tiles, 64).toDataURL();
 }
-for (const id of [...TREATS, ITEM_SWORD, ITEM_STICK, ITEM_EGG, ITEM_MILK, ITEM_HOUSE, ITEM_ROD, ITEM_FISH, ITEM_FIREWORK, ITEM_RING, ...FOODS]) icons[id] = M.treatIcon(ITEM_NAMES[id].toLowerCase(), 64).toDataURL();
+for (const id of [...TREATS, ITEM_SWORD, ITEM_STICK, ITEM_EGG, ITEM_MILK, ITEM_HOUSE, ITEM_ROD, ITEM_FISH, ITEM_FIREWORK, ITEM_RING, ITEM_SLING, ITEM_PEBBLE, ITEM_POPPER, ...FOODS]) icons[id] = M.treatIcon(ITEM_NAMES[id].toLowerCase(), 64).toDataURL();
 $('#held').src = icons[ITEM_SWORD] || '';
 const itemName = id => ITEM_NAMES[id] || BLOCKS[id]?.name || '';
 const isItem = id => !!icons[id];
 // the order things are listed in your bag
-const BAG_ORDER = [...TREATS, ITEM_FISH, ITEM_EGG, ITEM_MILK, ITEM_SWORD, ITEM_ROD, ITEM_STICK, ITEM_HOUSE, ITEM_FIREWORK, ITEM_RING, B.THRONE, ...PLACEABLE];
+const BAG_ORDER = [...TREATS, ITEM_FISH, ITEM_EGG, ITEM_MILK, ITEM_SWORD, ITEM_SLING, ITEM_PEBBLE, ITEM_POPPER, ITEM_ROD, ITEM_STICK, ITEM_HOUSE, ITEM_FIREWORK, ITEM_RING, B.THRONE, ...PLACEABLE];
 
 // ---------- your bag: collecting and using things up ----------
 const have = id => inv[id] || 0;
@@ -179,10 +185,12 @@ function learn(u, how) {
 function teachFromGoal(goal) {
   const t = GOAL_TEACH[goal];
   if (t === undefined) return '';
-  if (Array.isArray(t)) return t.map(out => learn({ kind: 'r', out }, 'goal')).filter(Boolean).join(' and ');
-  if (typeof t === 'number') return learn({ kind: 'r', out: t }, 'goal');
-  const [slot, v] = t.split(':').map(Number);
-  return learn({ kind: 's', key: t, slot, v }, 'goal');
+  const one = x => {
+    if (typeof x === 'number') return learn({ kind: 'r', out: x }, 'goal');
+    const [slot, v] = x.split(':').map(Number);
+    return learn({ kind: 's', key: x, slot, v }, 'goal');
+  };
+  return [].concat(t).map(one).filter(Boolean).join(' and ');
 }
 // Digging now and then turns up a recipe page for something you don't know yet.
 function maybePage(id) {
@@ -390,6 +398,9 @@ function startWorld(save) {
   if (!guest) {
     if (save?.hotbar?.length === 9) { hotbar = save.hotbar.map(id => isItem(id) ? id : 0); selected = save.selected || 0; }
     else { hotbar = [...NEW_HOTBAR]; selected = 0; }
+    barMode = 'build'; otherSel = save?.fightSel || 0;
+    otherBar = save?.fightbar?.length === 9 ? save.fightbar.map(id => isItem(id) ? id : 0) : [...FIGHT_HOTBAR];
+    if (save?.barMode === 'fight') { [hotbar, otherBar] = [otherBar, hotbar]; [selected, otherSel] = [otherSel, selected]; barMode = 'fight'; }
     const old = save?.edits !== undefined; // a real saved world, not just a seed for a new one
     if (old && !(save.v >= 2)) hotbar = [...TREATS, ...hotbar.filter(id => !isTreat(id))].slice(0, 9);
     if (old && !(save.v >= 3) && !hotbar.includes(ITEM_SWORD)) hotbar[5] = ITEM_SWORD; // the toy sword arrives
@@ -447,12 +458,12 @@ function saveGame() {
   if (net.isGuest) {
     // a guest's own world stays as it was while they visit; only the bag they carry is kept
     const own = store.get(SAVE_KEY);
-    if (own?.seed !== undefined) store.set(SAVE_KEY, { ...own, v: 4, inv, hotbar, selected, stats, goals: goalsDone });
+    if (own?.seed !== undefined) store.set(SAVE_KEY, { ...own, v: 4, inv, hotbar: buildBar(), selected: buildSel(), fightbar: fightBar(), fightSel: fightSel(), stats, goals: goalsDone });
     return;
   }
   store.set(SAVE_KEY, {
     v: 4, inv, stats, goals: goalsDone, seed: world.seed, clock: +clock.toFixed(4), nights, crown, streak, pos: player.pos.map(v => +v.toFixed(2)), yaw: player.yaw, pitch: player.pitch,
-    flying: player.flying, hotbar, selected, edits: world.serializeEdits(),
+    flying: player.flying, hotbar: buildBar(), selected: buildSel(), fightbar: fightBar(), fightSel: fightSel(), barMode, edits: world.serializeEdits(),
     animals: flock ? flock.serialize() : [], gifts: flock ? flock.serializeGifts() : [], milestone, firsts,
     signs: signsOut(),
   });
@@ -649,7 +660,7 @@ const SNAKE_TIPS = [
   '',
   'A poison snake! It leaves a trail of green goo. Babies run from it and it slows you down, but it dries up after 5 seconds.',
   'A flying snake! It flaps right over fences and walls, then swoops down on a baby. Bonk it when it comes low.',
-  'A digger snake in a hard hat! Walls won’t stop it: it chews straight through blocks. It takes three bonks.',
+  'A digger snake in a hard hat! Walls won’t stop it: it chews straight through blocks. It takes five bonks, so bring your slingshot.',
   'A boom snake! When it gets near a baby it fizzes, then goes BOOM and blasts the blocks around it. Bonk it while it fizzes to put the fuse out!',
 ];
 // Knocks a block out (a snake chewing or a blast). A door goes with its other half.
@@ -840,7 +851,7 @@ function handleChickEvents() {
       if (d < 60) toast('Your grown-up wolf nipped the snake into confetti! Good wolf.');
     } else if (ev.type === 'poof') {
       sfx.poof(); buzz(60); bump(stats, 'bonked');
-      if (!firsts.includes('poof')) { firsts.push('poof'); toast('Swung once, swung twice: bonk! The snake poofed into confetti cubes.'); }
+      if (!firsts.includes('poof')) { firsts.push('poof'); toast('Bonk, bonk, bonk! The snake poofed into confetti cubes. Snakes take a few hits now: a slingshot helps you hit them from further away.'); }
     }
   }
   snakes.events.length = 0;
@@ -937,6 +948,90 @@ function nearestChest(eye) {
   return best;
 }
 let chestEl = null;
+
+// ---------- slingshot and confetti poppers ----------
+// Hold the slingshot and tap to fling a pebble (one hit on a fox, crow or snake, from a long way off).
+// A confetti popper is thrown in a slower arc and bursts where it lands, hitting everything close by.
+// Your own shots are worked out on your device so they look right; the host decides the hits for everyone.
+const shots = []; // { p, v, kind, t, real, by }
+const SHOT = {
+  pebble: { speed: 28, lift: 1, grav: 8, model: 'stoneChunk', scale: 0.45 },
+  popper: { speed: 15, lift: 4, grav: 14, model: 'rocket', scale: 0.7 },
+};
+const POP_RANGE = 3;
+let slingCool = 0;
+function fling(kind) {
+  if (slingCool > 0) return;
+  const item = kind === 'pebble' ? ITEM_PEBBLE : ITEM_POPPER;
+  if (!have(item)) {
+    toast(kind === 'pebble' ? 'Out of pebbles! Make more from cobble (Wood & tools tab).' : 'No confetti poppers left.', 2400);
+    return;
+  }
+  slingCool = kind === 'pebble' ? 0.4 : 0.6;
+  useItem(item);
+  const e = player.eye(), f = player.forward();
+  spawnShot(kind, e, f, !net.isGuest, myNetId, true);
+  if (net.isGuest) net.toHost({ t: 'shoot', kind, eye: e, fwd: f });
+  sfx.toss(); buzz(10);
+  const held = $('#held');
+  held.classList.remove('swing'); void held.offsetWidth; held.classList.add('swing');
+}
+// mine: this player threw it (so its hits count for their goals)
+function spawnShot(kind, e, f, real, by, mine = false) {
+  const S = SHOT[kind];
+  if (!S) return;
+  shots.push({ p: [e[0] + f[0] * 0.5, e[1] + f[1] * 0.5 - 0.15, e[2] + f[2] * 0.5], v: [f[0] * S.speed, f[1] * S.speed + S.lift, f[2] * S.speed], kind, t: 0, real, by, mine });
+}
+function shotStep(dt) {
+  slingCool = Math.max(0, slingCool - dt);
+  for (const s of shots) {
+    const S = SHOT[s.kind];
+    s.t += dt;
+    for (let k = 0; k < 4 && !s.done; k++) {
+      const h = dt / 4;
+      s.v[1] -= S.grav * h;
+      for (let a = 0; a < 3; a++) s.p[a] += s.v[a] * h;
+      const sn = snakes.near(s.p, s.kind === 'pebble' ? 1.2 : 1.4), rd = raiders.near(s.p, s.kind === 'pebble' ? 0.9 : 1.1);
+      const wall = SOLID[world.getBlock(Math.floor(s.p[0]), Math.floor(s.p[1]), Math.floor(s.p[2]))];
+      if (s.kind === 'pebble' && (sn.length || rd.length)) {
+        if (s.real) { if (sn.length) snakes.hurt(sn[0], s.v, 'pebble'); else raiders.hurt(rd[0], s.v, s.by); }
+        if (s.mine) shotHit('slung');
+        s.done = true;
+      } else if (s.kind === 'popper' && (sn.length || rd.length || wall)) {
+        popBurst(s);
+        s.done = true;
+      } else if (wall) { s.done = true; sfx.place(); }
+    }
+    if (s.t > 5 || s.p[1] < -10) s.done = true;
+  }
+  for (let i = shots.length - 1; i >= 0; i--) if (shots[i].done) shots.splice(i, 1);
+}
+function popBurst(s) {
+  const p = s.p;
+  snakes.burst([p[0], p[1] - 1.5, p[2]], 40, [0, 1, 2, 3, 4], false);
+  sfx.boom(0.35); buzz([20, 30, 20]);
+  const sn = snakes.near(p, POP_RANGE), rd = raiders.near(p, POP_RANGE);
+  if (s.real) {
+    for (const q of sn) snakes.hurt(q, [q.p[0] - p[0], 0, q.p[2] - p[2]], 'popper');
+    for (const q of rd) raiders.hurt(q, [q.p[0] - p[0], 0, q.p[2] - p[2]], s.by);
+  }
+  if (s.mine && (sn.length || rd.length)) shotHit('popped');
+}
+function shotHit(stat) {
+  bump(stats, stat);
+  if (!firsts.includes(stat)) {
+    firsts.push(stat);
+    toast(stat === 'slung' ? 'Ping! Good shot. Pebbles hit from much further away than the sword.' : 'Pop! Everything close to the burst gets a bonk.', 3000);
+  }
+}
+function shotGroups() {
+  const by = {};
+  for (const s of shots) {
+    const S = SHOT[s.kind];
+    (by[S.model] || (by[S.model] = [])).push(s.p[0], s.p[1], s.p[2], s.t * 9, S.scale, 0, 0, 0, 0, 0, 0, 0);
+  }
+  return Object.entries(by).map(([model, v]) => ({ model, data: new Float32Array(v), count: v.length / 12 }));
+}
 
 // ---------- fishing ----------
 // Hold the rod and tap to cast into water. Wait for the float to bob under, then tap straight away to reel it in.
@@ -1083,6 +1178,8 @@ function placeBlock() {
     return;
   }
   if (id === ITEM_ROD && have(id)) { fishTap(); return; }
+  if (id === ITEM_SLING && have(id)) { fling('pebble'); return; }
+  if (id === ITEM_POPPER && have(id)) { fling('popper'); return; }
   if (id === B.GLASS && have(id) && catchFirefly()) return;
   if (!isTreat(id) && id !== ITEM_SWORD && petBaby(!id || id >= 200)) return;
   if (target && target.id === B.PLANTER_RIPE) {
@@ -1373,7 +1470,29 @@ function buildHotbar() {
     b.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); selectSlot(i); });
     bar.appendChild(b);
   });
+  // the swap button: shows which hotbar you'd switch to
+  const sw = document.createElement('button');
+  const fight = barMode === 'fight';
+  sw.className = 'bar-swap' + (fight ? ' fight' : '');
+  sw.innerHTML = `<img alt="" src="${icons[fight ? B.PLANKS : ITEM_SWORD]}"><span>${fight ? 'Build' : 'Fight'}</span><kbd class="key">Q</kbd>`;
+  sw.setAttribute('aria-label', fight ? 'Switch to the building hotbar' : 'Switch to the fighting hotbar');
+  sw.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); toggleBar(); });
+  bar.appendChild(sw);
+  bar.classList.toggle('fight', fight);
   updateCounts();
+}
+// Swaps between the building hotbar and the fighting hotbar.
+function toggleBar() {
+  [hotbar, otherBar] = [otherBar, hotbar];
+  [selected, otherSel] = [otherSel, selected];
+  barMode = barMode === 'build' ? 'fight' : 'build';
+  buildHotbar(); updateHeld();
+  sfx.pickup(); buzz(10);
+  if (!firsts.includes('bar-' + barMode)) {
+    firsts.push('bar-' + barMode);
+    toast(barMode === 'fight' ? '⚔️ Fighting hotbar: sword, slingshot, pebbles, poppers and snacks. Tap Build (or press Q) to swap back.'
+      : '🔨 Building hotbar again. Tap Fight (or press Q) for your sword and slingshot.', 3600);
+  }
 }
 // Shows how many of each hotbar item you have; run-out items go grey.
 function updateCounts() {
@@ -2178,7 +2297,7 @@ document.addEventListener('keydown', e => {
     if (esc || e.code === 'KeyE') { e.stopPropagation(); closePicker(); }
     return;
   }
-  if (!esc) { if (e.code === 'KeyP' && running) $('#btn-photo').click(); return; }
+  if (!esc) { if (e.code === 'KeyP' && running) $('#btn-photo').click(); if (e.code === 'KeyQ' && running) toggleBar(); return; }
   if (mapView.open) closeMap();
   else if (!$('#tradecard').hidden) closeTrade();
   else if (!$('#jobcard').hidden) closeJobs();
@@ -2920,6 +3039,7 @@ function hostMessage(from, msg) {
       break;
     case 'throw': if (isTreat(msg.item)) flock.throwTreat(msg.item, msg.eye, msg.fwd); break;
     case 'swing': if (!snakes.swing(msg.eye, msg.fwd)) raiders.swing(msg.eye, msg.fwd, from); break;
+    case 'shoot': if (Array.isArray(msg.eye) && Array.isArray(msg.fwd)) spawnShot(msg.kind, msg.eye, msg.fwd, true, from); break;
     case 'pet': if (typeof msg.id === 'number') flock.pet(msg.id); break;
     case 'train': if (typeof msg.id === 'number' && (msg.job === null || JOB_TEXT[msg.job])) flock.train(msg.id, msg.job, from); break;
     case 'nick': if (typeof msg.id === 'number') flock.setNick(msg.id, msg.nick); break;
@@ -3000,9 +3120,9 @@ function startGuestWorld(w) {
 
 function backToOwnWorld() {
   myNetId = 0;
-  const bag = { inv, hotbar, selected, stats, goalsDone }; // what you collected on the visit comes home with you
+  const bag = { inv, hotbar, selected, barMode, otherBar, otherSel, stats, goalsDone }; // what you collected on the visit comes home with you
   startWorld(store.get(SAVE_KEY));
-  inv = bag.inv; hotbar = bag.hotbar; selected = bag.selected; stats = bag.stats; goalsDone = bag.goalsDone;
+  inv = bag.inv; hotbar = bag.hotbar; selected = bag.selected; barMode = bag.barMode; otherBar = bag.otherBar; otherSel = bag.otherSel; stats = bag.stats; goalsDone = bag.goalsDone;
   buildHotbar();
   saveGame();
   updateRoomUi();
@@ -3177,6 +3297,8 @@ function frame(now, photo = false) {
   critters.update(dt, player.pos, skyAt(clock).night, weather.amount);
   s.groups.push(...critters.instances(eye, Math.min(far, 40), now / 1000));
   fishStep(dt);
+  if (running) shotStep(dt);
+  if (shots.length) s.groups.push(...shotGroups());
   if (fishing) s.groups.push(bobberGroup());
   if (trader.here) s.groups.push(traderGroup(now / 1000));
   fireworkStep(dt, eye);
@@ -3219,7 +3341,7 @@ requestAnimationFrame(loop);
 
 // handy for debugging from the console
 window.blockwild = { fishTap, get fishing() { return fishing; }, selectSlot, get hotbar() { return hotbar; }, get known() { return knownList(); }, learn, unlearned: () => unlearned(knownList(), settings.patterns || []), get settings() { return settings; }, get world() { return world; }, get player() { return player; }, get target() { return target; }, get flock() { return flock; }, get nursery() { return flock; }, get snakes() { return snakes; }, get raiders() { return raiders; }, get weather() { return weather; }, get critters() { return critters; }, music, trader, openMap, get nights() { return nights; }, set nights(n) { nights = n; }, wardrobe, selfieCam, petBaby, openJobs, get inv() { return inv; }, addItem, RECIPES, craft, input, raycast,
-  get clock() { return clock; }, setTime(t) { clock = t; }, swing: () => swing(), catchFirefly: () => catchFirefly(), fishBottle: () => fishBottle(), startSeek: () => startSeek(), get seek() { return seek; }, playBox: t => playBox(t), get mapChest() { return mapChest; }, get boxes() { return boxes; }, get stats() { return stats; }, get goalsDone() { return goalsDone; }, checkGoals: () => checkGoals(), place: () => placeBlock(),
+  get clock() { return clock; }, setTime(t) { clock = t; }, swing: () => swing(), catchFirefly: () => catchFirefly(), fishBottle: () => fishBottle(), startSeek: () => startSeek(), get seek() { return seek; }, playBox: t => playBox(t), get mapChest() { return mapChest; }, get boxes() { return boxes; }, get stats() { return stats; }, get goalsDone() { return goalsDone; }, checkGoals: () => checkGoals(), place: () => placeBlock(), get shots() { return shots; }, toggleBar: () => toggleBar(),
   net, others, get myNetId() { return myNetId; },
   get seat() { return seat; }, awardCrown: l => awardCrown(l), fireworks, get streak() { return streak; }, set streak(v) { streak = v; }, sit: (x, y, z) => sit(x, y, z), standUp: () => standUp(),
   // advance n frames by hand (useful when the page is in a background tab)

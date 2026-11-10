@@ -1,7 +1,7 @@
 // Learning recipes: you start out knowing how to make only a few things. The rest you learn from recipe pages
 // (found now and then when you dig) and from finishing goals. Clothes work the same way: you need the pattern
 // before you can sew them in the Wardrobe, and then the bits to make them.
-import { B, ITEM_SEEDS, ITEM_STICK, ITEM_EGG, ITEM_CLOVER, ITEM_SWORD, ITEM_HOUSE, ITEM_ROD, ITEM_BREAD, ITEM_GRILLED, ITEM_PIE, ITEM_CAKE, ITEM_FIREWORK, ITEM_RING } from './blocks.js';
+import { B, ITEM_SEEDS, ITEM_STICK, ITEM_EGG, ITEM_CLOVER, ITEM_SWORD, ITEM_HOUSE, ITEM_ROD, ITEM_BREAD, ITEM_GRILLED, ITEM_PIE, ITEM_CAKE, ITEM_FIREWORK, ITEM_RING, ITEM_SLING, ITEM_PEBBLE, ITEM_POPPER } from './blocks.js';
 import { RECIPES } from './crafting.js';
 
 // What a new world knows how to make straight away.
@@ -35,9 +35,9 @@ export const patternKey = (slot, v) => slot + ':' + v;
 // Each one is what you'll want for the goals that come after it.
 export const GOAL_TEACH = {
   fence: B.GATE, pen: B.FEEDER, flowers: '4:4', hatch: B.PLANTER, feeder: B.LADDER, wheat: B.DOOR,
-  bonk: [B.GLASS, B.STONEBRICK], ladder: B.LAMP, house: [B.BRICK, B.WINDOW], night: [B.ROOF, B.LAMPPOST], grow: '4:2', gifts: ITEM_HOUSE, job: '0:4', sew: ITEM_ROD,
+  bonk: [B.GLASS, B.STONEBRICK], ladder: B.LAMP, house: [B.BRICK, B.WINDOW], night: [B.ROOF, B.LAMPPOST], grow: ['4:2', ITEM_SLING, ITEM_PEBBLE], gifts: ITEM_HOUSE, job: '0:4', sew: ITEM_ROD,
   chest: [B.SIGN, B.FLOWERPOT], hat: B.BED, log: B.CAMPFIRE, gate: ITEM_BREAD, fish: ITEM_GRILLED, sign: [ITEM_PIE, B.BENCH], sleep: ITEM_CAKE,
-  cook: B.SCARECROW, party: ITEM_FIREWORK, trade: B.BELL, firework: B.MUSICBOX, snowman: B.SANDCASTLE,
+  cook: B.SCARECROW, party: ITEM_FIREWORK, trade: B.BELL, firework: [B.MUSICBOX, ITEM_POPPER], snowman: B.SANDCASTLE,
   // these also teach the dyed wool the new thing needs, so a goal never waits on a lucky recipe page
   scare: [B.BOUNCE, B.WOOL_PINK], jar: [B.SNOWMAN, B.WOOL_ORANGE], bottle: [ITEM_RING, B.WOOL_RED],
 };

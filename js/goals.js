@@ -1,6 +1,6 @@
 // Goals: a short list of things to try, in order, each with a little reward.
 // They lead a new player from digging their first block to building a pen and surviving the night.
-import { B, ITEM_SEEDS, ITEM_WHEAT, ITEM_APPLE, ITEM_CLOVER, ITEM_BONE, ITEM_STICK, ITEM_EGG, ITEM_MILK, ITEM_HOUSE, ITEM_FISH, FOODS, ITEM_FIREWORK, ITEM_RING } from './blocks.js';
+import { B, ITEM_SEEDS, ITEM_WHEAT, ITEM_APPLE, ITEM_CLOVER, ITEM_BONE, ITEM_STICK, ITEM_EGG, ITEM_MILK, ITEM_HOUSE, ITEM_FISH, FOODS, ITEM_FIREWORK, ITEM_RING, ITEM_SLING, ITEM_PEBBLE, ITEM_POPPER } from './blocks.js';
 
 // stats: { dug: {id: n}, got: {id: n}, made: {id: n}, placed: {id: n}, tamed, hatched, bonked, filled, nights, climbed, chicks, grown, gifts: {id: n} }
 const n = (map, id) => (map && map[id]) || 0;
@@ -30,6 +30,7 @@ export const GOALS = [
   ['night', 'Keep the nursery safe through 2 nights', 2, s => s.nights || 0, [[B.LAMP, 3]]],
   ['lamppost', 'Light the way: put up 3 lamp posts', 3, s => n(s.placed, B.LAMPPOST), [[B.LAMP, 2], [ITEM_STICK, 4]]],
   ['grow', 'Look after 2 babies until they grow up', 2, s => s.grown || 0, [[ITEM_MILK, 2]]],
+  ['sling', 'Make a slingshot and hit a fox, crow or snake with a pebble', 1, s => s.slung || 0, [[ITEM_PEBBLE, 12], [ITEM_APPLE, 3]]],
   ['gifts', 'Pick up 10 gifts from your grown-ups', 10, s => Object.values(s.gifts || {}).reduce((a, b) => a + b, 0), [[ITEM_EGG, 3]]],
   ['job', 'Teach a grown-up a job: tap it and pick one', 1, s => s.trained || 0, [[ITEM_BONE, 2], [ITEM_SEEDS, 6]]],
   ['sew', 'Sew something new in the Wardrobe (pause menu)', 1, s => s.sewn || 0, [[B.WOOL, 3], [ITEM_APPLE, 3]]],
@@ -46,6 +47,7 @@ export const GOALS = [
   ['scare', 'Make a scarecrow and stand it by your nursery: snakes slow right down near it', 1, s => n(s.placed, B.SCARECROW), [[B.WOOL_PINK, 2], [B.HAY, 2]]],
   ['bell', 'Make a dinner bell and ring it: tap it and your animals come running', 1, s => s.rang || 0, [[ITEM_APPLE, 4], [ITEM_CLOVER, 3]]],
   ['firework', 'Launch a firework (they look best at night!)', 1, s => s.fireworks || 0, [[B.FLOWER_RED, 2], [B.FLOWER_YELLOW, 2]]],
+  ['popper', 'Throw a confetti popper and catch a fox, crow or snake in the burst', 1, s => s.popped || 0, [[ITEM_POPPER, 2], [ITEM_BONE, 3]]],
   ['streak', 'Keep every baby safe 3 nights in a row', 3, s => s.bestStreak || 0, [[ITEM_FIREWORK, 3], [ITEM_MILK, 2]]],
   ['bounce', 'Make a bouncy pad and bounce on it 10 times (hold jump as you land to go higher)', 10, s => s.bounced || 0, [[B.LAMP, 2], [ITEM_APPLE, 3]]],
   ['jar', 'Catch 3 fireflies at night: hold glass and tap a firefly to put it in a jar', 3, s => s.jars || 0, [[B.WOOL_ORANGE, 1], [ITEM_CLOVER, 3]]],

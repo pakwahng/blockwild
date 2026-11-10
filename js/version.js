@@ -1,11 +1,18 @@
 // The game's version and what changed in each one. Shown on the front screen ("What's new")
 // and in CHANGELOG.md. When you release: bump VERSION, add an entry at the top of CHANGES,
 // and set the same number in sw.js (CACHE = 'blockwild-v<VERSION>') so phones pick it up.
-export const VERSION = 42;
+export const VERSION = 43;
 export const RELEASED = '10 Nov 2026';
 
 // [version, date, headline, [details]]
 export const CHANGES = [
+  [43, '10 Nov 2026', 'Fight hotbar, a slingshot and tougher snakes', [
+    'Two hotbars: tap Fight at the end of the hotbar (or press Q) to swap to your fighting things, and Build to swap back. Each keeps its own items.',
+    'New slingshot (Wood & tools, at a table: 3 sticks, 1 wool): hold it and tap to fling a pebble a long way. Make pebbles from cobble (2 make 6). You learn it from the grow-up goal.',
+    'New confetti popper (Wood & tools, at a table: 1 stick, 2 sand, 1 yellow flower make 2): throw it and it bursts where it lands, bonking every fox, crow or snake close by. You learn it from the firework goal.',
+    'Snakes are tougher: most take 3 hits, diggers 5 and boom snakes 4. They’re a bit faster, come more often and up to 5 a night. Boom snakes fizz for less time and blast a bigger hole.',
+    'Two new goals: hit a raider with a slingshot pebble, and catch one in a popper’s burst.',
+  ]],
   [42, '10 Nov 2026', 'Scrolling on phones turned sideways', [
     'The map, Pip’s cart, the sign and job cards now scroll with your finger when they’re taller than the screen. Before, only the bag, menu and wardrobe would.',
     'The map shrinks to fit a short screen, so you can see all of it and the key below.',

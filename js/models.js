@@ -567,6 +567,20 @@ export function treatIcon(kind, px = 64) {
       g.fillStyle = '#ffcf3a'; g.beginPath(); g.moveTo(32, 14); g.quadraticCurveTo(18, 16, 18, 36); g.lineTo(13, 46); g.lineTo(51, 46); g.lineTo(46, 36); g.quadraticCurveTo(46, 16, 32, 14); g.fill();
       rr(g, 22, 18, 5, 18, 2.5, '#fff1a8');                                            // shine
       g.fillStyle = '#c98a00'; g.beginPath(); g.arc(32, 49, 4.5, 0, Math.PI * 2); g.fill(); // clapper
+    } else if (kind === 'slingshot') {
+      g.strokeStyle = '#8f5f34'; g.lineWidth = 7; g.lineCap = 'round';
+      g.beginPath(); g.moveTo(32, 60); g.lineTo(32, 36); g.lineTo(16, 12); g.moveTo(32, 36); g.lineTo(48, 12); g.stroke(); // forked stick
+      g.strokeStyle = '#e8443a'; g.lineWidth = 3;
+      g.beginPath(); g.moveTo(16, 12); g.quadraticCurveTo(32, 30, 48, 12); g.stroke();                               // band
+      rr(g, 27, 20, 10, 8, 3, '#7a4a2a');                                                                           // pouch
+    } else if (kind === 'pebbles') {
+      for (const [x, y, w, h, c] of [[8, 34, 22, 18, '#a9b1ba'], [30, 30, 24, 22, '#c2c8ce'], [18, 14, 20, 18, '#9aa2ac']]) {
+        rr(g, x, y, w, h, 8, c); rr(g, x + 4, y + 3, w * 0.35, 4, 2, 'rgba(255,255,255,0.5)');
+      }
+    } else if (kind === 'confetti popper') {
+      g.fillStyle = '#7c5cd6'; g.beginPath(); g.moveTo(14, 60); g.lineTo(26, 24); g.lineTo(40, 32); g.closePath(); g.fill(); // cone
+      g.fillStyle = '#ffd23c'; g.beginPath(); g.moveTo(18, 52); g.lineTo(21, 44); g.lineTo(31, 49); g.lineTo(26, 56); g.fill(); // stripe
+      for (const [x, y, c] of [[38, 10, '#e8443a'], [50, 18, '#4cc25a'], [44, 4, '#ffd23c'], [56, 8, '#3aa0e8'], [34, 18, '#f29ab8'], [52, 30, '#ffd23c']]) rr(g, x, y, 6, 6, 1.5, c);
     } else if (kind === 'swim ring') {
       g.lineWidth = 13;
       for (let k = 0; k < 8; k++) {                                                      // red and white stripes

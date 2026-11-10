@@ -230,10 +230,17 @@ export class Raiders {
       if ((dot > 0.75 || d < 1) && d < bd) { bd = d; best = r; }
     }
     if (!best) return false;
-    const r = best;
+    this.hurt(best, fwd, by);
+    return true;
+  }
+  // Every fox or crow within r of p (for pebbles and poppers).
+  near(p, r) { return this.list.filter(q => !q.gone && Math.hypot(q.p[0] - p[0], q.p[1] + 0.3 - p[1], q.p[2] - p[2]) < r); }
+  // A hit from a sword, a pebble or a popper, pushing it along dir.
+  hurt(r, dir, by = 0) {
+    if (r.gone) return;
     r.hp--; r.hit = 0.5; r.knock = 0.35;
-    const l = Math.hypot(fwd[0], fwd[2]) || 1;
-    r.v[0] = fwd[0] / l * 5; r.v[2] = fwd[2] / l * 5; r.v[1] = 4.5;
+    const l = Math.hypot(dir[0], dir[2]) || 1;
+    r.v[0] = dir[0] / l * 5; r.v[2] = dir[2] / l * 5; r.v[1] = 4.5;
     if (r.kind === CROW) r.p[1] += 0.2;
     this.events.push({ type: 'bonk', p: [...r.p] });
     if (r.hp <= 0) {

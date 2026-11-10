@@ -256,13 +256,13 @@ A full day lasts 10 minutes: about 6 minutes of daylight, a pink dusk, roughly 3
 - At night the babies doze off, and a big green and purple striped **block snake** (taller than the babies) slithers towards your nursery (one snake at first, up to four on later nights).
 - If it reaches a baby, the baby is spooked out of your nursery and runs off. Feed it again to bring it back. Babies run from a snake that gets close.
 - Snakes slither over a **one-block fence** but not a **two-block wall**.
-- Pick the **toy sword** and tap (or click) to swing. Two bonks and the snake poofs into confetti cubes.
+- Pick the **toy sword** and tap (or click) to swing. Three bonks and the snake poofs into confetti cubes (snakes got tougher in v43).
 - At sunrise any remaining snakes leave. Lamps stay bright at night.
 - **Kinds of snake** (`SNAKE_KINDS` in `js/snakes.js`). A new kind joins each night, and a newly unlocked kind comes first that night:
   - Night 1: **block snake** (green and purple) and **poison snake** (purple and lime). The poison snake leaves a trail of green goo from its tail that lasts 5 seconds. Babies that step in it run off; it slows you to 40% speed.
   - Night 2: **flying snake** (sky blue, white wings). Flies about 4.5 blocks up over fences and walls, then swoops down when it's close to a baby. Bonk it when it comes low.
-  - Night 3: **digger snake** (clay orange, yellow hard hat). Chews a two-high tunnel through any wall in its way instead of going round. Three bonks.
-  - Night 4: **boom snake** (red and black, with a fuse). Stops next to a baby (or you) and fizzes for 1.8 seconds, then goes BOOM: blocks within about 2.5 blocks are blasted away, babies within 6 run off, and you're blown back. A bonk while it fizzes puts the fuse out.
+  - Night 3: **digger snake** (clay orange, yellow hard hat). Chews a two-high tunnel through any wall in its way instead of going round. Five bonks.
+  - Night 4: **boom snake** (red and black, with a fuse). Stops next to a baby (or you) and fizzes for 1.5 seconds, then goes BOOM: blocks within about 3 blocks are blasted away, babies within 8 run off. Four bonks to pop it, and you're blown back. A bonk while it fizzes puts the fuse out.
 - Blocks chewed or blasted go through `smashBlock` in `main.js`, so they save and reach other players. Bedrock and water can't be broken.
 
 ## Chicken king
@@ -321,6 +321,15 @@ A full day lasts 10 minutes: about 6 minutes of daylight, a pink dusk, roughly 3
 - **Keyboard and mouse:** the top buttons show their keys (P photo, M map, E bag, Esc pause), hotbar slots show 1–9, and a strip of the main controls shows for the first 20 seconds. E or Esc closes the bag; Esc closes the map, Pip's cart and the job card. In the bag, point at something and press 1–9 to put it on that slot. None of this shows on touch screens.
 - **Scrolling on phones:** the page blocks touch scrolling (so the game doesn't rubber-band), except inside anything that has more to show (`scrollsInside` in `js/input.js` checks for an overflowing parent), so every panel scrolls on a phone turned sideways. On short screens (under 500px tall) the map shrinks to fit and the bag tabs stay on one swipeable row.
 - **Recipe cards:** things you can make right now come first. A card says "Make it anywhere" when no table is needed, and a recipe you haven't learned says which goal teaches it (or to find a recipe page).
+
+## Build and fight hotbars, the slingshot, and tougher snakes
+
+- **Two hotbars:** the button at the end of the hotbar (or **Q**) swaps between the building hotbar and the fighting hotbar (`barMode`, `otherBar` in `js/main.js`). The fighting one starts with the sword, slingshot, pebbles, confetti poppers, bread, grilled fish, apple pie and fireworks. Each keeps its own items and selected slot, and both are saved (`hotbar`/`selected` for building, `fightbar`/`fightSel`, and `barMode`). The hotbar gets a red edge while it's the fighting one.
+- **Slingshot** (Wood & tools, at a table: 3 sticks, 1 wool; a tool, never used up) and **pebbles** (2 cobble make 6). Hold the slingshot and tap to fling a pebble: it flies fast with a gentle drop and hits the first fox, crow or snake it touches (one hit) or stops at a block. Learned from the grow-up goal.
+- **Confetti popper** (Wood & tools, at a table: 1 stick, 2 sand, 1 yellow flower make 2): thrown in a slow arc, it bursts where it lands and gives every fox, crow and snake within 3 blocks a hit. Learned from the firework goal.
+- Shots (`shots`, `fling`, `shotStep` in `js/main.js`) fly on each player's own screen. A guest's shot is sent to the host (`'shoot'`), who works out the hits for everyone.
+- **Tougher snakes:** block, poison and flying snakes take 3 hits (was 2), diggers 5 (was 3) and boom snakes 4 (was 2). Snakes slither a bit faster (2.0, was 1.7), come every 28 seconds (was 35) and up to 5 a night (was 4). Boom snakes' fuses are shorter (1.5 s) and their blasts bigger (about 3 blocks, spooking babies within 8).
+- Two new goals: hit a raider with a slingshot pebble, and catch one in a popper's burst.
 
 ## Play together
 

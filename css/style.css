@@ -12,7 +12,7 @@
   --safe-r: env(safe-area-inset-right, 0px);
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-l: env(safe-area-inset-left, 0px);
-  --slot: min(48px, calc((100vw - 40px) / 9));
+  --slot: min(48px, calc((100vw - 52px) / 10.3));
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -585,3 +585,14 @@ body.touch kbd.key, body.touch kbd.slot-key, body.touch #desk-hint { display: no
   .panel-head { margin-bottom: 6px; }
   .bag-tip { margin-bottom: 6px; }
 }
+
+/* ---------- the build / fight hotbar swap ---------- */
+.bar-swap {
+  position: relative; height: var(--slot); min-width: calc(var(--slot) * 1.15); padding: 2px 6px; margin-left: 4px; border-radius: 8px;
+  border: 2px solid rgba(255, 255, 255, 0.25); background: rgba(124, 92, 214, 0.55); color: #fff;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0;
+  font: 700 11px/1.1 system-ui, sans-serif;
+}
+.bar-swap img { width: 60%; height: 60%; image-rendering: pixelated; pointer-events: none; }
+.bar-swap.fight { background: rgba(124, 195, 90, 0.55); }
+#hotbar.fight { border-color: rgba(232, 68, 58, 0.7); box-shadow: 0 0 0 2px rgba(232, 68, 58, 0.25); }

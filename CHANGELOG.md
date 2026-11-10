@@ -2,6 +2,13 @@
 
 The same list is in the game: tap the version number on the front screen, or open **What’s new**.
 
+## 43. Fight hotbar, a slingshot and tougher snakes (10 Nov 2026)
+- Two hotbars: tap Fight at the end of the hotbar (or press Q) to swap to your fighting things, and Build to swap back. Each keeps its own items.
+- New slingshot (Wood & tools, at a table: 3 sticks, 1 wool): hold it and tap to fling a pebble a long way. Make pebbles from cobble (2 make 6). You learn it from the grow-up goal.
+- New confetti popper (Wood & tools, at a table: 1 stick, 2 sand, 1 yellow flower make 2): throw it and it bursts where it lands, bonking every fox, crow or snake close by. You learn it from the firework goal.
+- Snakes are tougher: most take 3 hits, diggers 5 and boom snakes 4. They’re a bit faster, come more often and up to 5 a night. Boom snakes fizz for less time and blast a bigger hole.
+- Two new goals: hit a raider with a slingshot pebble, and catch one in a popper’s burst.
+
 ## 42. Scrolling on phones turned sideways (10 Nov 2026)
 - The map, Pip’s cart, the sign and job cards now scroll with your finger when they’re taller than the screen. Before, only the bag, menu and wardrobe would.
 - The map shrinks to fit a short screen, so you can see all of it and the key below.

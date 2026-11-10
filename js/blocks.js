@@ -175,3 +175,7 @@ ITEM_NAMES[ITEM_FIREWORK] = 'Firework';
 // A swim ring: hold it in the water and you float on top and swim fast.
 export const ITEM_RING = 217;
 ITEM_NAMES[ITEM_RING] = 'Swim ring';
+// Fighting from afar: a slingshot (kept, like the sword) that flings pebbles, and a confetti popper
+// you throw that bursts and bonks everything close to where it lands.
+export const ITEM_SLING = 218, ITEM_PEBBLE = 219, ITEM_POPPER = 220;
+ITEM_NAMES[ITEM_SLING] = 'Slingshot'; ITEM_NAMES[ITEM_PEBBLE] = 'Pebbles'; ITEM_NAMES[ITEM_POPPER] = 'Confetti popper';

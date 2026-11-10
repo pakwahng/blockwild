@@ -7,10 +7,10 @@ import { CONFETTI_COLORS } from './models.js';
 
 // SIZE scales the whole snake: its blocks, spacing, body and reach (3 = a big scary snake).
 const SIZE = 3;
-const SEGMENTS = 9, SPACING = 0.4 * SIZE, SPEED = 1.7, HALF = 0.45, HEIGHT = 0.9, GRAVITY = 20;
+const SEGMENTS = 9, SPACING = 0.4 * SIZE, SPEED = 2.0, HALF = 0.45, HEIGHT = 0.9, GRAVITY = 20;
 export const SCARE_RANGE = 7, SCARE_SLOW = 0.4; // snakes near a scarecrow slow right down
 const GROUND = new Set([B.GRASS, B.DIRT, B.SAND, B.MUD, B.SNOW]);
-const MAX_SNAKES = 4;
+const MAX_SNAKES = 5;
 
 // The kinds of snake. A new kind joins each night, so the first night only has plain and poison snakes.
 //  plain:   slithers to a baby and spooks it.
@@ -20,14 +20,14 @@ const MAX_SNAKES = 4;
 //  boom:    stops beside a baby, fizzes… and goes BOOM, blasting blocks and spooking every baby nearby.
 //           Bonk it while it fizzes to put the fuse out.
 export const SNAKE_KINDS = [
-  { key: 'plain', name: 'block snake', hp: 2 },
-  { key: 'poison', name: 'poison snake', hp: 2 },
-  { key: 'flying', name: 'flying snake', hp: 2 },
-  { key: 'digger', name: 'digger snake', hp: 3 },
-  { key: 'boom', name: 'boom snake', hp: 2 },
+  { key: 'plain', name: 'block snake', hp: 3 },
+  { key: 'poison', name: 'poison snake', hp: 3 },
+  { key: 'flying', name: 'flying snake', hp: 3 },
+  { key: 'digger', name: 'digger snake', hp: 5 },
+  { key: 'boom', name: 'boom snake', hp: 4 },
 ];
 export const K_PLAIN = 0, K_POISON = 1, K_FLYING = 2, K_DIGGER = 3, K_BOOM = 4;
-const GOO_LIFE = 5, GOO_EVERY = 0.3, FLY_HEIGHT = 4.5, FUSE = 1.8, BOOM_RADIUS = 2.4, BOOM_SPOOK = 6;
+const GOO_LIFE = 5, GOO_EVERY = 0.3, FLY_HEIGHT = 4.5, FUSE = 1.5, BOOM_RADIUS = 3.2, BOOM_SPOOK = 8;
 const UNBREAKABLE = new Set([B.AIR, B.WATER, B.BEDROCK]);
 
 export class Snakes {
@@ -105,7 +105,7 @@ export class Snakes {
       const want = Math.min(MAX_SNAKES, 1 + Math.floor(nights / 2));
       this.timer -= dt;
       if (this.spawned < want && this.timer <= 0) {
-        this.timer = 35;
+        this.timer = 28;
         if (this.spawn(nursery, player, this.pickKind(nights))) this.spawned++;
         else this.timer = 2;
       }
@@ -323,7 +323,7 @@ export class Snakes {
     const p = [s.p[0], s.p[1] + 0.5, s.p[2]];
     const blocks = [];
     const r = BOOM_RADIUS, cx = Math.floor(p[0]), cy = Math.floor(p[1]), cz = Math.floor(p[2]);
-    for (let x = cx - 3; x <= cx + 3; x++) for (let y = cy - 2; y <= cy + 3; y++) for (let z = cz - 3; z <= cz + 3; z++) {
+    for (let x = cx - 4; x <= cx + 4; x++) for (let y = cy - 3; y <= cy + 4; y++) for (let z = cz - 4; z <= cz + 4; z++) {
       const d = Math.hypot(x + 0.5 - p[0], (y + 0.5 - p[1]) * 1.2, z + 0.5 - p[2]);
       if (d > r + Math.random() * 0.6) continue;
       const id = this.world.getBlock(x, y, z);
@@ -371,17 +371,25 @@ export class Snakes {
       }
     }
     if (!best) return false;
-    const s = best;
-    s.hp--; s.hit = 0.55; s.knock = 0.35; s.fuse = 0; // a bonk puts a boom snake's fuse out
-    const l = Math.hypot(fwd[0], fwd[2]) || 1;
-    s.v[0] = fwd[0] / l * 4; s.v[2] = fwd[2] / l * 4; s.v[1] = 4;
-    this.events.push({ type: 'bonk', p: [...s.p] });
+    this.hurt(best, fwd);
+    return true;
+  }
+  // A hit from a sword, a pebble or a popper, pushing it along dir. A hit puts a boom snake's fuse out.
+  hurt(s, dir, how = 'bonk') {
+    if (s.gone) return;
+    s.hp--; s.hit = 0.55; s.knock = 0.35; s.fuse = 0;
+    const l = Math.hypot(dir[0], dir[2]) || 1;
+    s.v[0] = dir[0] / l * 4; s.v[2] = dir[2] / l * 4; s.v[1] = 4;
+    this.events.push({ type: 'bonk', p: [...s.p], how });
     if (s.hp <= 0) {
       this.poof(s, true);
       s.gone = true;
       this.events.push({ type: 'poof', p: [...s.p], id: s.id });
     }
-    return true;
+  }
+  // Every snake with a body block within r of p (for pebbles and poppers).
+  near(p, r) {
+    return this.list.filter(s => !s.gone && [s.p, ...s.segs.map(g => g.p)].some(q => Math.hypot(q[0] - p[0], q[1] + 0.2 * SIZE - p[1], q[2] - p[2]) < r));
   }
 
   // A grown wolf from the nursery nips the snake: same as a bonk, knocked away from the wolf.
