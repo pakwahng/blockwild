@@ -239,6 +239,19 @@ function checkGoals() {
   const text = g ? `★ ${g[2] > 1 ? `${goalProgress(g)}/${g[2]} · ` : ''}${g[1]}` : ''; // the count goes first so a long goal never hides it
   if (text !== shownGoal) { shownGoal = text; el.querySelector('span').textContent = text; el.hidden = !g; }
   dailyStep();
+  goalNudge();
+}
+// Five minutes of play with no change on your next goal? A gentle nudge (then not again for 15 minutes).
+let nudge = { id: '', p: -1, t: 0 };
+function goalNudge() {
+  const g = nextGoal();
+  if (!g || !running || net.isGuest) return;
+  const p = goalProgress(g);
+  if (g[0] !== nudge.id || p !== nudge.p) { nudge = { id: g[0], p, t: nudge.id === g[0] ? Math.min(nudge.t, 0) : 0 }; return; }
+  if ((nudge.t += 0.5) < 300) return;
+  nudge.t = -600;
+  const r = goalRecipe(g);
+  toast(`🤔 Need a hand? Your goal is: ${g[1]}.` + (r ? ` Tap the ★ line, then the yellow “Make ${itemName(r.out).toLowerCase()}” button.` : ' Tap the ★ line to see all your goals.'), 6500);
 }
 // ---------- today's job: a small task each day, with its own little reward ----------
 // Kept in stats.daily = { seed, day, id, base, done }: base is the job's count at the start of the day.
@@ -2882,7 +2895,7 @@ let duskWarned = -1, zzT = 0, peaceNight = false;
 function clockStep() {
   const t = clock;
   const left = snakes.list.filter(s => !s.gone).length;
-  const text = t >= NIGHT && t < DAWN ? `🌙 Night ${nights + 1}` + (left ? ` · 🐍 ${left}` : (net.isGuest ? peaceNight : settings.peaceful) ? ' · 🕊️' : '') : t >= DUSK && t < NIGHT ? '🌅 Dusk' : `☀️ Day ${nights + 1}`;
+  const text = t >= NIGHT && t < DAWN ? `🌙 Night ${nights + 1}` + (left ? ` · 🐍 ${left}` : (net.isGuest ? peaceNight : settings.peaceful) ? ' · 🕊️' : '') : t >= DUSK && t < NIGHT ? '🌅 Dusk' : `☀️ Day ${nights + 1}` + (trader.here ? ' · 🛒 Pip' : ''); // Pip's cart is here today
   if (clockEl.textContent !== text) { clockEl.textContent = text; clockEl.classList.toggle('night', t >= DUSK && t < DAWN); }
   // a snake creeping up on the nursery while you're far away: say so, once for each snake
   if (left) {

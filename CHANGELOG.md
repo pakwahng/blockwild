@@ -2,6 +2,10 @@
 
 The same list is in the game: tap the version number on the front screen, or open **What’s new**.
 
+## 82. A helping hand (14 Nov 2026)
+- Stuck on a goal for a while? After five minutes with no change, a friendly message reminds you what it is and how to get started.
+- When Pip the goose is visiting, the day line at the top says 🛒 Pip.
+
 ## 81. Undo on phones and tablets (14 Nov 2026)
 - Put a block in the wrong place? On a touch screen, a ↶ Undo button shows for a few seconds after you put a block down. Tap it to pick the block back up.
 
