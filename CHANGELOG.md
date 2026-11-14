@@ -2,6 +2,10 @@
 
 The same list is in the game: tap the version number on the front screen, or open **What’s new**.
 
+## 60. When Pip comes next (14 Nov 2026)
+- Your story so far (pause menu) now shows when Pip the goose visits next.
+- The help has a new part on the settings for little ones: Peaceful and Read messages aloud.
+
 ## 59. Read messages aloud (14 Nov 2026)
 - New in Settings: Read messages aloud. The game reads out each message (goals, night warnings, Pip’s visits and the rest) in your device’s own voice, for players still learning to read.
 

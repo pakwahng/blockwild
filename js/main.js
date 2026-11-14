@@ -1996,6 +1996,10 @@ function buildStory() {
     ['🐟', stats.fished || 0, 'Things fished up'], ['✨', stats.chests || 0, 'Treasure chests opened'],
     ['🏆', `${goalsDone.length} / ${GOALS.length}`, 'Goals done'],
   ];
+  // when Pip the goose comes next: today if she's here (or still to come this morning), else the next visiting day
+  let pd = nights;
+  if (!(trader.here || (visitDay(pd) && clock < TRADE_TILL))) do pd++; while (!visitDay(pd));
+  rows.push(['🛒', pd === nights ? 'Today' : `Day ${pd + 1}`, 'Pip’s next visit']);
   $('#story-list').innerHTML = rows.map(([e, v, t]) => `<div><b>${e} ${v}</b><span>${t}</span></div>`).join('');
 }
 $('#story').addEventListener('toggle', () => { if ($('#story').open) buildStory(); });
