@@ -2,6 +2,9 @@
 
 The same list is in the game: tap the version number on the front screen, or open **What’s new**.
 
+## 67. Low on pebbles (14 Nov 2026)
+- The number on your pebbles and confetti poppers turns orange when you’re down to 3 or fewer.
+
 ## 66. Last pebble (14 Nov 2026)
 - Firing your last pebble or popper tells you straight away, so you’re not left tapping an empty slingshot with a snake coming.
 

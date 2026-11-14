@@ -1594,6 +1594,7 @@ function updateCounts() {
     el.setAttribute('aria-label', id ? `${itemName(id)}${TOOLS.has(id) ? '' : ', ' + n}` : 'Empty slot');
     const c = el.querySelector('.n');
     if (c) c.textContent = !n || TOOLS.has(id) ? '' : n > 999 ? '999+' : n;
+    if (c) c.classList.toggle('low', (id === ITEM_PEBBLE || id === ITEM_POPPER) && n > 0 && n <= 3); // running low on ammo
   });
   updateHeld();
 }
