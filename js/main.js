@@ -696,11 +696,24 @@ let toastTimer = 0;
 // keep: an important message (a bottle's note, a wish) stays up for its full time, and anything said
 // meanwhile waits its turn instead of covering it.
 let toastHold = 0, toastQueue = [];
+// Read messages aloud (a setting), for players who are still learning to read. Uses the browser's own voice.
+function sayAloud(text) {
+  if (!settings.speak || !window.speechSynthesis) return;
+  const words = String(text).replace(/[\p{Extended_Pictographic}\u2600-\u27BF\uFE0F★·]/gu, ' ').replace(/\s+/g, ' ').trim();
+  if (!words) return;
+  try {
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(words);
+    u.rate = 0.95; u.pitch = 1.1;
+    speechSynthesis.speak(u);
+  } catch { /* no voice on this device */ }
+}
 function toast(text, ms = 4200, keep = false) {
   if (!keep && performance.now() < toastHold) { if (toastQueue.length < 3) toastQueue.push([text, ms]); return; }
   const t = $('#toast');
   t.textContent = text;
   t.classList.add('show');
+  sayAloud(text);
   if (keep) toastHold = performance.now() + ms;
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => {
@@ -2919,6 +2932,7 @@ function applySettings() {
   sSens.value = settings.sens; $('#sens-val').textContent = (+settings.sens).toFixed(1) + '×';
   sAuto.checked = settings.autoJump; sFps.checked = settings.showFps; sSound.checked = settings.sound;
   $('#set-peace').checked = !!settings.peaceful;
+  $('#set-speak').checked = !!settings.speak; $('#set-speak').disabled = !window.speechSynthesis;
   sfx.enabled = settings.sound;
   sMusic.checked = settings.music; sMusic.disabled = !settings.sound;
   music.enabled = settings.sound && settings.music;
@@ -2935,6 +2949,7 @@ sAuto.addEventListener('change', () => { settings.autoJump = sAuto.checked; appl
 sFps.addEventListener('change', () => { settings.showFps = sFps.checked; applySettings(); });
 sSound.addEventListener('change', () => { settings.sound = sSound.checked; applySettings(); });
 sMusic.addEventListener('change', () => { settings.music = sMusic.checked; applySettings(); });
+$('#set-speak').addEventListener('change', e => { settings.speak = e.target.checked; applySettings(); if (settings.speak) toast('I’ll read the messages out loud for you.'); else window.speechSynthesis?.cancel(); });
 const sPeace = $('#set-peace');
 sPeace.addEventListener('change', () => { settings.peaceful = sPeace.checked; applySettings(); toast((sPeace.checked ? '🕊️ Peaceful: no snakes, foxes or crows will come. Nights won’t count for goals or crowns.' : 'Snakes, foxes and crows are back. Guard your nursery!') + (net.isGuest ? ' (While you’re visiting a friend, their setting is the one that counts.)' : ''), 3500); });
 for (const b of document.querySelectorAll('#set-char .char')) {

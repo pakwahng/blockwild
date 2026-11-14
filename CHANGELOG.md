@@ -2,6 +2,9 @@
 
 The same list is in the game: tap the version number on the front screen, or open **What’s new**.
 
+## 59. Read messages aloud (14 Nov 2026)
+- New in Settings: Read messages aloud. The game reads out each message (goals, night warnings, Pip’s visits and the rest) in your device’s own voice, for players still learning to read.
+
 ## 58. Tidier screen-edge tags (14 Nov 2026)
 - Tags pointing the same way (a snake, your pin, treasure, Pip’s cart) no longer pile on top of each other at the edge of the screen: they line up so you can read them all.
 
