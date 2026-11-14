@@ -2,6 +2,11 @@
 
 The same list is in the game: tap the version number on the front screen, or open **What’s new**.
 
+## 45. Snake alerts and fight trades (14 Nov 2026)
+- If a snake sneaks up on your nursery while you’re far away, a message tells you to hurry back.
+- At night the clock shows how many snakes are still about, and sunrise tells you how many you popped.
+- Pip’s cart can now offer pebbles (6 cobble for 12), confetti poppers (4 apples for 2) and fireworks (6 wheat and 2 eggs for 2).
+
 ## 44. A day clock, snake finder and gentler first nights (14 Nov 2026)
 - A clock at top left shows ☀️ Day, 🌅 Dusk or 🌙 Night and which day it is. About 20 seconds before dusk a message warns you, and reminds you to swap to the fight hotbar.
 - A red 🐍 Snake tag shows how far away the nearest snake (or 🦊 fox) is, and points to it from the edge of the screen when it’s out of sight. Snakes and foxes now show on the map too.

@@ -209,12 +209,12 @@ The front screen shows the version number. Tap it, or open **What’s new**, for
 
 - The **map button** (top right, between the camera and the bag), or **M** on a keyboard, opens a bird's-eye map around you: 128 blocks across, or 256 with **Zoom out**. North is up.
 - Ground you've been near is drawn from the real blocks, with your buildings, paths and wool. Further out it's drawn from the world's own shape (`heightAt`), so you can see hills, beaches and the sea before you get there. Higher ground is lighter, and slopes are shaded from the west.
-- Markers: a white arrow for you (pointing the way you face), 🐣 your nursery, 🪧 signs with their words, 🛏️ beds and 🔥 campfires you've put down, ✨ shut treasure chests in places you've been, 🛒 Pip's cart, and friends playing with you. Code: `drawMap()` in `js/main.js`.
+- Markers: a white arrow for you (pointing the way you face), 🐣 your nursery, 🪧 signs with their words, 🛏️ beds and 🔥 campfires you've put down, ✨ shut treasure chests in places you've been, 🛒 Pip's cart, 🐍 snakes and 🦊 foxes, and friends playing with you. Code: `drawMap()` in `js/main.js`.
 
 ## Pip the travelling goose
 
 - Every other day (day 2, 4, 6 …), from morning till early afternoon, **Pip** pulls her striped market cart up near your nursery (or near you, if there's no dry ground there). A 🛒 tag points the way.
-- Tap Pip or her cart to see five swaps. They change each visit (picked from `TRADES` using the world seed and the day) and are the same for everyone playing together. One is always a **recipe page**. The others swap spare things for handy ones: eggs for a party cake, fish for lamps, wheat for apples, logs and fish for a house kit, and so on. Each swap can be made once or twice per visit.
+- Tap Pip or her cart to see five swaps. They change each visit (picked from `TRADES` using the world seed and the day) and are the same for everyone playing together. One is always a **recipe page**. The others swap spare things for handy ones: eggs for a party cake, fish for lamps, wheat for apples, logs and fish for a house kit, cobble for pebbles, apples for confetti poppers, wheat and eggs for fireworks, and so on. Each swap can be made once or twice per visit.
 - Playing together, the host decides when Pip comes and where she parks (`td` in the state message); everyone swaps from their own bag. New goal: swap something with Pip.
 
 ## Cooking
@@ -261,6 +261,8 @@ A full day lasts 10 minutes: about 6 minutes of daylight, a pink dusk, roughly 3
 - The first two nights are gentler: every snake takes one bonk less (never fewer than 2). Each bonk shows how many more it needs ("BONK! 2 more").
 - A clock pill in the top corner shows ☀️ Day, 🌅 Dusk or 🌙 Night with the day number (`clockStep()` in `main.js`). About 20 seconds before dusk a message warns you, and tells you to swap to the fight hotbar if you're on the build one.
 - A red **🐍 Snake** (or **🦊 Fox**) tag with the distance points to the nearest one within 60 blocks, pinned to the screen edge when it's off screen. Snakes and foxes also show on the map.
+- At night the clock adds a snake count (`🌙 Night 2 · 🐍 3`), and the sunrise message says how many snakes you popped that night (`nightPops`).
+- If a snake gets within 14 blocks of the nursery while you're 25 or more blocks away, a message (once per snake) tells you to hurry back.
 - **Kinds of snake** (`SNAKE_KINDS` in `js/snakes.js`). A new kind joins each night, and a newly unlocked kind comes first that night:
   - Night 1: **block snake** (green and purple) and **poison snake** (purple and lime). The poison snake leaves a trail of green goo from its tail that lasts 5 seconds. Babies that step in it run off; it slows you to 40% speed.
   - Night 2: **flying snake** (sky blue, white wings). Flies about 4.5 blocks up over fences and walls, then swoops down when it's close to a baby. Bonk it when it comes low.

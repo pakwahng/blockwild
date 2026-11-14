@@ -1,11 +1,16 @@
 // The game's version and what changed in each one. Shown on the front screen ("What's new")
 // and in CHANGELOG.md. When you release: bump VERSION, add an entry at the top of CHANGES,
 // and set the same number in sw.js (CACHE = 'blockwild-v<VERSION>') so phones pick it up.
-export const VERSION = 44;
+export const VERSION = 45;
 export const RELEASED = '10 Nov 2026';
 
 // [version, date, headline, [details]]
 export const CHANGES = [
+  [45, '14 Nov 2026', 'Snake alerts and fight trades', [
+    'If a snake sneaks up on your nursery while you’re far away, a message tells you to hurry back.',
+    'At night the clock shows how many snakes are still about, and sunrise tells you how many you popped.',
+    'Pip’s cart can now offer pebbles (6 cobble for 12), confetti poppers (4 apples for 2) and fireworks (6 wheat and 2 eggs for 2).',
+  ]],
   [44, '14 Nov 2026', 'A day clock, snake finder and gentler first nights', [
     'A clock at top left shows ☀️ Day, 🌅 Dusk or 🌙 Night and which day it is. About 20 seconds before dusk a message warns you, and reminds you to swap to the fight hotbar.',
     'A red 🐍 Snake tag shows how far away the nearest snake (or 🦊 fox) is, and points to it from the edge of the screen when it’s out of sight. Snakes and foxes now show on the map too.',

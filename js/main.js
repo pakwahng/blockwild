@@ -92,7 +92,7 @@ try {
 }
 
 let world = null, player = null, flock = null, snakes = null, raiders = null, weather = null, critters = null, running = false, firsts = [];
-let clock = 0.08, nights = 0, swingCool = 0, wasBreaking = false;
+let clock = 0.08, nights = 0, nightPops = 0, swingCool = 0, wasBreaking = false;
 let crown = 0, seat = null; // crown: 0 none, 1 gold, 2 ruby, 3 diamond
 let streak = 0;              // perfect nights in a row (no baby spooked)
 let sleptNight = false;      // slept through tonight: it doesn't count towards a crown
@@ -802,17 +802,19 @@ function handleChickEvents() {
   }
   flock.events.length = 0;
 
+// the night's tally for the sunrise message
+const popped = () => nightPops ? ` You popped ${nightPops} ${nightPops === 1 ? 'snake' : 'snakes'} into confetti.` : '';
   for (const ev of snakes.events) {
     const d = ev.p ? Math.hypot(ev.p[0] - eye[0], ev.p[1] - eye[1], ev.p[2] - eye[2]) : 0;
     if (ev.type === 'night') {
-      sfx.nightfall();
+      sfx.nightfall(); nightPops = 0;
       toast(nights === 0
         ? 'Night falls under the square moon… a block snake is coming for the nursery! Grab your toy sword and guard the gate.'
         : 'Night falls. Watch out for the block snake!');
     } else if (ev.type === 'dawn') {
       if (ev.spooked === 0) bump(stats, 'nights');
       if (net.isGuest) {
-        toast(ev.spooked ? `Day ${nights + 1}. Sunrise! The snake spooked ${ev.spooked} ${ev.spooked === 1 ? 'baby' : 'babies'}, but the nursery made it.` : `Day ${nights + 1}. Sunrise! Every baby made it safely through the night.`);
+        toast((ev.spooked ? `Day ${nights + 1}. Sunrise! The snake spooked ${ev.spooked} ${ev.spooked === 1 ? 'baby' : 'babies'}, but the nursery made it.` : `Day ${nights + 1}. Sunrise! Every baby made it safely through the night.`) + popped());
         sfx.fanfare();
         continue;
       }
@@ -822,7 +824,7 @@ function handleChickEvents() {
       if (more === null) continue;
       sfx.fanfare();
       toast((ev.spooked ? `Day ${nights + 1}. Sunrise! The snake spooked ${ev.spooked} ${ev.spooked === 1 ? 'baby' : 'babies'}, but the nursery made it.`
-        : `Day ${nights + 1}. Sunrise! Every baby made it safely through the night.`) + more);
+        : `Day ${nights + 1}. Sunrise! Every baby made it safely through the night.`) + popped() + more);
     } else if (ev.type === 'scared') {
       if (!firsts.includes('scared')) { firsts.push('scared'); toast('Eek! The scarecrow gave the snake a fright. Near a scarecrow it creeps along at under half speed.'); }
     } else if (ev.type === 'hiss') { if (d < 24) sfx.hiss(0.25 * (1 - d / 24)); }
@@ -852,11 +854,11 @@ function handleChickEvents() {
       }
       if (!firsts.includes('boom') && d < 60) { firsts.push('boom'); setTimeout(() => toast('BOOM! The boom snake blew a hole in the ground. Bonk them before they fizz out!'), 800); }
     } else if (ev.type === 'bonk') { sfx.bonk(); floatFx(ev.p, 'bonk', ev.left > 0 ? `BONK! ${ev.left} more` : 'BONK!'); buzz(30); }
-    else if (ev.type === 'poof' && ev.wolf) {
+    else if (ev.type === 'poof' && ev.wolf) { nightPops++;
       sfx.poof(); buzz(40);
       if (d < 60) toast('Your grown-up wolf nipped the snake into confetti! Good wolf.');
     } else if (ev.type === 'poof') {
-      sfx.poof(); buzz(60); bump(stats, 'bonked');
+      sfx.poof(); buzz(60); bump(stats, 'bonked'); nightPops++;
       if (!firsts.includes('poof')) { firsts.push('poof'); toast('Bonk, bonk, bonk! The snake poofed into confetti cubes. Snakes take a few hits now: a slingshot helps you hit them from further away.'); }
     }
   }
@@ -970,7 +972,7 @@ function fling(kind) {
   if (slingCool > 0) return;
   const item = kind === 'pebble' ? ITEM_PEBBLE : ITEM_POPPER;
   if (!have(item)) {
-    toast(kind === 'pebble' ? 'Out of pebbles! Make more from cobble (Wood & tools tab).' : 'No confetti poppers left.', 2400);
+    toast(kind === 'pebble' ? 'Out of pebbles! Dig some stone, or make more from cobble (Wood & tools tab).' : 'No confetti poppers left.', 2400);
     return;
   }
   slingCool = kind === 'pebble' ? 0.4 : 0.6;
@@ -2336,6 +2338,9 @@ const TRADES = [
   [[[B.SAND, 10]], [[B.CLAY, 6]], 2],
   [[[ITEM_PIE, 1]], [[ITEM_BONE, 6], [ITEM_SEEDS, 10]], 1],
   [[[B.COBBLE, 10]], [[ITEM_GRILLED, 2]], 2],
+  [[[B.COBBLE, 6]], [[ITEM_PEBBLE, 12]], 2],
+  [[[ITEM_APPLE, 4]], [[ITEM_POPPER, 2]], 2],
+  [[[ITEM_WHEAT, 6], [ITEM_EGG, 2]], [[ITEM_FIREWORK, 2]], 1],
 ];
 // Five offers for this visit (the same for everyone playing together), always with a recipe page among them.
 function todaysTrades() {
@@ -2498,8 +2503,24 @@ $('#nursery').prepend(clockEl);
 let duskWarned = -1;
 function clockStep() {
   const t = clock;
-  const text = t >= NIGHT && t < DAWN ? `🌙 Night ${nights + 1}` : t >= DUSK && t < NIGHT ? '🌅 Dusk' : `☀️ Day ${nights + 1}`;
+  const left = snakes.list.filter(s => !s.gone).length;
+  const text = t >= NIGHT && t < DAWN ? `🌙 Night ${nights + 1}` + (left ? ` · 🐍 ${left}` : '') : t >= DUSK && t < NIGHT ? '🌅 Dusk' : `☀️ Day ${nights + 1}`;
   if (clockEl.textContent !== text) { clockEl.textContent = text; clockEl.classList.toggle('night', t >= DUSK && t < DAWN); }
+  // a snake creeping up on the nursery while you're far away: say so, once for each snake
+  if (left) {
+    let n = 0, hx = 0, hz = 0;
+    for (const a of flock.animals) if (a.tame) { n++; hx += a.p[0]; hz += a.p[2]; }
+    if (n) {
+      hx /= n; hz /= n;
+      const me = Math.hypot(player.pos[0] - hx, player.pos[2] - hz);
+      for (const s of snakes.list) {
+        if (s.gone || s.warned || me < 25 || Math.hypot(s.p[0] - hx, s.p[2] - hz) > 14) continue;
+        s.warned = true; sfx.hiss(0.35); buzz(40);
+        toast(`🐍 A snake is sneaking up on your nursery! Hurry back: it’s ${Math.round(me)} m away. Follow the red tag.`, 4500);
+        break;
+      }
+    }
+  }
   // about 20 seconds before dusk, once per evening
   if (t > DUSK - 20 / CYCLE && t < DUSK && duskWarned !== nights && !net.isGuest) {
     duskWarned = nights;
