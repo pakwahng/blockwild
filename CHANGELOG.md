@@ -2,6 +2,9 @@
 
 The same list is in the game: tap the version number on the front screen, or open **What’s new**.
 
+## 66. Last pebble (14 Nov 2026)
+- Firing your last pebble or popper tells you straight away, so you’re not left tapping an empty slingshot with a snake coming.
+
 ## 65. See where things went (14 Nov 2026)
 - When you get something that goes onto your other hotbar (like pebbles while you’re building), the Fight / Build button glows for a moment, so you know where to find it.
 

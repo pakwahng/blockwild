@@ -1,11 +1,14 @@
 // The game's version and what changed in each one. Shown on the front screen ("What's new")
 // and in CHANGELOG.md. When you release: bump VERSION, add an entry at the top of CHANGES,
 // and set the same number in sw.js (CACHE = 'blockwild-v<VERSION>') so phones pick it up.
-export const VERSION = 65;
+export const VERSION = 66;
 export const RELEASED = '14 Nov 2026'; // (the menu shows the newest What's new date instead)
 
 // [version, date, headline, [details]]
 export const CHANGES = [
+  [66, '14 Nov 2026', 'Last pebble', [
+    'Firing your last pebble or popper tells you straight away, so you’re not left tapping an empty slingshot with a snake coming.',
+  ]],
   [65, '14 Nov 2026', 'See where things went', [
     'When you get something that goes onto your other hotbar (like pebbles while you’re building), the Fight / Build button glows for a moment, so you know where to find it.',
   ]],

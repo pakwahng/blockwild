@@ -1024,6 +1024,7 @@ function fling(kind) {
   }
   slingCool = kind === 'pebble' ? 0.4 : 0.6;
   useItem(item);
+  if (!have(item)) toast(kind === 'pebble' ? 'That was your last pebble! Dig some stone, or make more from cobble.' : 'That was your last confetti popper!', 2600);
   const e = player.eye(), f = player.forward();
   spawnShot(kind, e, f, !net.isGuest, myNetId, true);
   if (net.isGuest) net.toHost({ t: 'shoot', kind, eye: e, fwd: f });
