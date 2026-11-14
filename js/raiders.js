@@ -32,7 +32,7 @@ export class Raiders {
   update(dt, nursery, players, day, nights) {
     this.time += dt;
     const me = players[0];
-    if (!day) {
+    if (!day || this.peaceful) { // dusk, or peaceful: everyone scarpers home
       // the sun's going down: everyone scarpers home
       for (const r of this.list) if (!r.leaving) this.leave(r);
     } else {

@@ -451,7 +451,7 @@ function startWorld(save) {
   streak = save?.streak | 0; sleptNight = false;
   loadSigns(save?.signs);
   snackT = 0; boostEl.hidden = true;
-  trader.here = false; trader.day = -1; trader.look = 0; mapView.pin = null;
+  trader.here = false; trader.day = -1; trader.look = 0; mapView.pin = null; duskWarned = -1;
   fireworks.rockets.length = 0; fireworks.sparks.length = 0; fireworks.stars.length = 0; starT = 20; wishStar = null; mapChest = null; boxes = []; seek = null; seekT = 150 + Math.random() * 150;
   seat = null;
   showCrown();
@@ -810,18 +810,19 @@ function handleChickEvents() {
   flock.events.length = 0;
 
 // the night's tally for the sunrise message
-const popOne = () => { nightPops++; stats.bestPops = Math.max(stats.bestPops || 0, nightPops); };
+const popOne = d => { if (d > 24) return; nightPops++; // only pops near you count as yours
+  stats.bestPops = Math.max(stats.bestPops || 0, nightPops); };
 const popped = () => nightPops ? ` You popped ${nightPops} ${nightPops === 1 ? 'snake' : 'snakes'} into confetti.` : '';
   for (const ev of snakes.events) {
     const d = ev.p ? Math.hypot(ev.p[0] - eye[0], ev.p[1] - eye[1], ev.p[2] - eye[2]) : 0;
     if (ev.type === 'night') {
-      sfx.nightfall(); nightPops = 0;
-      toast(settings.peaceful ? 'Night falls under the square moon. It’s a peaceful night: the babies are snoozing and no snakes will come.'
+      sfx.nightfall(); nightPops = 0; peaceNight = !!ev.peaceful;
+      toast(ev.peaceful ? 'Night falls under the square moon. It’s a peaceful night: the babies are snoozing and no snakes will come.'
         : nights === 0
         ? 'Night falls under the square moon… a block snake is coming for the nursery! Grab your toy sword and guard the gate.'
         : 'Night falls. Watch out for the block snake!');
     } else if (ev.type === 'dawn') {
-      if (ev.spooked === 0) bump(stats, 'nights');
+      if (ev.spooked === 0 && !ev.peaceful) bump(stats, 'nights'); // peaceful nights don't count
       if (net.isGuest) {
         toast((ev.spooked ? `Day ${nights + 1}. Sunrise! The snake spooked ${ev.spooked} ${ev.spooked === 1 ? 'baby' : 'babies'}, but the nursery made it.` : `Day ${nights + 1}. Sunrise! Every baby made it safely through the night.`) + popped());
         sfx.fanfare();
@@ -874,11 +875,11 @@ const popped = () => nightPops ? ` You popped ${nightPops} ${nightPops === 1 ? '
       }
       if (!firsts.includes('boom') && d < 60) { firsts.push('boom'); setTimeout(() => toast('BOOM! The boom snake blew a hole in the ground. Bonk them before they fizz out!'), 800); }
     } else if (ev.type === 'bonk') { sfx.bonk(); floatFx(ev.p, 'bonk', ev.left > 0 ? `BONK! ${ev.left} more` : 'BONK!'); buzz(30); }
-    else if (ev.type === 'poof' && ev.wolf) { popOne();
+    else if (ev.type === 'poof' && ev.wolf) { popOne(d);
       sfx.poof(); buzz(40);
       if (d < 60) toast('Your grown-up wolf nipped the snake into confetti! Good wolf.');
     } else if (ev.type === 'poof') {
-      sfx.poof(); buzz(60); bump(stats, 'bonked'); popOne();
+      sfx.poof(); buzz(60); bump(stats, 'bonked'); popOne(d);
       if (!firsts.includes('poof')) { firsts.push('poof'); toast('Bonk, bonk, bonk! The snake poofed into confetti cubes. Snakes take a few hits now: a slingshot helps you hit them from further away.'); }
       // something left in the confetti for whoever's close by
       else if (d < 16) {
@@ -1193,7 +1194,7 @@ function pickBlock() {
   const id = placeable.includes(target.id) ? target.id : drops(target.id)[0]?.[0];
   if (!id) return;
   if (!have(id)) { toast(`You don’t have any ${itemName(id).toLowerCase()} to build with.`, 2000); return; }
-  if (barMode === 'fight' && !hotbar.includes(id)) toggleBar();
+  if (!hotbar.includes(id) && (otherBar.includes(id) || barMode === 'fight')) toggleBar(); // use the hotbar it's already on
   let slot = hotbar.indexOf(id);
   if (slot < 0) { hotbar[selected] = id; buildHotbar(); slot = selected; }
   selectSlot(slot); sfx.pickup?.();
@@ -1538,6 +1539,9 @@ function toggleBar() {
   barMode = barMode === 'build' ? 'fight' : 'build';
   buildHotbar(); updateHeld();
   sfx.pickup(); buzz(10);
+  const nm = $('#slot-name');
+  nm.textContent = barMode === 'fight' ? '⚔️ Fight hotbar' : '🔨 Build hotbar';
+  nm.classList.add('show'); clearTimeout(slotNameT); slotNameT = setTimeout(() => nm.classList.remove('show'), 1100);
   if (!firsts.includes('bar-' + barMode)) {
     firsts.push('bar-' + barMode);
     toast(barMode === 'fight' ? '⚔️ Fighting hotbar: sword, slingshot, pebbles, poppers and snacks. Tap Build (or press Q) to swap back.'
@@ -2579,11 +2583,11 @@ $('#nursery').appendChild(boostEl);
 const clockEl = document.createElement('div');
 clockEl.className = 'pill clock';
 $('#nursery').prepend(clockEl);
-let duskWarned = -1, zzT = 0;
+let duskWarned = -1, zzT = 0, peaceNight = false;
 function clockStep() {
   const t = clock;
   const left = snakes.list.filter(s => !s.gone).length;
-  const text = t >= NIGHT && t < DAWN ? `🌙 Night ${nights + 1}` + (left ? ` · 🐍 ${left}` : settings.peaceful ? ' · 🕊️' : '') : t >= DUSK && t < NIGHT ? '🌅 Dusk' : `☀️ Day ${nights + 1}`;
+  const text = t >= NIGHT && t < DAWN ? `🌙 Night ${nights + 1}` + (left ? ` · 🐍 ${left}` : (net.isGuest ? peaceNight : settings.peaceful) ? ' · 🕊️' : '') : t >= DUSK && t < NIGHT ? '🌅 Dusk' : `☀️ Day ${nights + 1}`;
   if (clockEl.textContent !== text) { clockEl.textContent = text; clockEl.classList.toggle('night', t >= DUSK && t < DAWN); }
   // a snake creeping up on the nursery while you're far away: say so, once for each snake
   if (left) {
@@ -2928,7 +2932,7 @@ sFps.addEventListener('change', () => { settings.showFps = sFps.checked; applySe
 sSound.addEventListener('change', () => { settings.sound = sSound.checked; applySettings(); });
 sMusic.addEventListener('change', () => { settings.music = sMusic.checked; applySettings(); });
 const sPeace = $('#set-peace');
-sPeace.addEventListener('change', () => { settings.peaceful = sPeace.checked; applySettings(); toast(sPeace.checked ? '🕊️ Peaceful: no snakes, foxes or crows will come. Nights won’t count for crowns.' : 'Snakes, foxes and crows are back. Guard your nursery!', 3500); });
+sPeace.addEventListener('change', () => { settings.peaceful = sPeace.checked; applySettings(); toast((sPeace.checked ? '🕊️ Peaceful: no snakes, foxes or crows will come. Nights won’t count for goals or crowns.' : 'Snakes, foxes and crows are back. Guard your nursery!') + (net.isGuest ? ' (While you’re visiting a friend, their setting is the one that counts.)' : ''), 3500); });
 for (const b of document.querySelectorAll('#set-char .char')) {
   b.querySelector('svg').innerHTML = M.KID_FACE_SVG[b.dataset.char];
   b.addEventListener('click', () => { settings.char = b.dataset.char; applySettings(); });

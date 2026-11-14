@@ -2,6 +2,13 @@
 
 The same list is in the game: tap the version number on the front screen, or open **What’s new**.
 
+## 54. Peaceful fixes (14 Nov 2026)
+- Peaceful now really keeps foxes and crows away too, not just snakes.
+- Peaceful nights no longer count for the night goals or the Safe nights total.
+- Playing together, the host’s Peaceful setting is the one that counts, and guests now see the right night message.
+- Only snakes popped near you count towards your “popped in one night” goal and tally.
+- Swapping hotbars shows “⚔️ Fight hotbar” or “🔨 Build hotbar” above it for a moment.
+
 ## 53. Prizes in the confetti (14 Nov 2026)
 - Pop a snake and there’s often something left in its confetti for anyone close by: pebbles, a bone, apples, a confetti popper or a lamp.
 - Finishing a goal sets off a little firework in front of you.

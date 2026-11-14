@@ -1,11 +1,18 @@
 // The game's version and what changed in each one. Shown on the front screen ("What's new")
 // and in CHANGELOG.md. When you release: bump VERSION, add an entry at the top of CHANGES,
 // and set the same number in sw.js (CACHE = 'blockwild-v<VERSION>') so phones pick it up.
-export const VERSION = 53;
+export const VERSION = 54;
 export const RELEASED = '10 Nov 2026';
 
 // [version, date, headline, [details]]
 export const CHANGES = [
+  [54, '14 Nov 2026', 'Peaceful fixes', [
+    'Peaceful now really keeps foxes and crows away too, not just snakes.',
+    'Peaceful nights no longer count for the night goals or the Safe nights total.',
+    'Playing together, the host’s Peaceful setting is the one that counts, and guests now see the right night message.',
+    'Only snakes popped near you count towards your “popped in one night” goal and tally.',
+    'Swapping hotbars shows “⚔️ Fight hotbar” or “🔨 Build hotbar” above it for a moment.',
+  ]],
   [53, '14 Nov 2026', 'Prizes in the confetti', [
     'Pop a snake and there’s often something left in its confetti for anyone close by: pebbles, a bone, apples, a confetti popper or a lamp.',
     'Finishing a goal sets off a little firework in front of you.',

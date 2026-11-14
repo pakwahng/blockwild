@@ -93,14 +93,14 @@ export class Snakes {
     this.time += dt;
     if (night && !this.wasNight) {
       this.wasNight = true; this.spawned = 0; this.timer = 4; this.spooked = 0;
-      this.events.push({ type: 'night' });
+      this.events.push({ type: 'night', peaceful: !!this.peaceful });
     }
     if (!night && this.wasNight) {
       this.wasNight = false;
       for (const s of this.list) this.poof(s, false);
       this.list = [];
       this.goo = [];
-      this.events.push({ type: 'dawn', spooked: this.spooked });
+      this.events.push({ type: 'dawn', spooked: this.spooked, peaceful: !!this.peaceful });
     }
     if (this.peaceful && this.list.length) { for (const s of this.list) this.poof(s, false); this.list = []; this.goo = []; }
     if (night && !this.peaceful) {
