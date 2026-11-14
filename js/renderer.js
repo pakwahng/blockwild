@@ -476,6 +476,12 @@ export class Renderer {
       gl.uniform4f(this.line.u.uColor, 0.05, 0.05, 0.08, 1);
       gl.bindVertexArray(this.lineVao);
       gl.drawArrays(gl.LINES, 0, 24);
+      if (target.place) { // where the block you're holding will go
+        t[12] = target.place[0]; t[13] = target.place[1]; t[14] = target.place[2];
+        gl.uniformMatrix4fv(this.line.u.uMVP, false, mul(mvp, t));
+        gl.uniform4f(this.line.u.uColor, 1, 0.85, 0.25, 1);
+        gl.drawArrays(gl.LINES, 0, 24);
+      }
       gl.useProgram(prog.p);
     }
 

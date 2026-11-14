@@ -1,11 +1,14 @@
 // The game's version and what changed in each one. Shown on the front screen ("What's new")
 // and in CHANGELOG.md. When you release: bump VERSION, add an entry at the top of CHANGES,
 // and set the same number in sw.js (CACHE = 'blockwild-v<VERSION>') so phones pick it up.
-export const VERSION = 85;
+export const VERSION = 86;
 export const RELEASED = '14 Nov 2026'; // (the menu shows the newest What's new date instead)
 
 // [version, date, headline, [details]]
 export const CHANGES = [
+  [86, '14 Nov 2026', 'See where your block will go', [
+    'Holding a block to build with, a yellow outline shows exactly where it will go before you place it.',
+  ]],
   [85, '14 Nov 2026', 'Rain on the day line, and fixes', [
     'The day line at the top shows 🌧️ when it’s raining and ❄️ when it’s snowing.',
     'Fixes: the Undo button moved so it no longer gets in the way of walking or the Fight button; the Volume slider’s little test sound always plays; the “need a hand?” reminder starts fresh in a new world; phones whose view the game had already lowered can be helped again.',

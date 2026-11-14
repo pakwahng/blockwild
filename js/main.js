@@ -1071,6 +1071,15 @@ function swing() {
   if (net.isGuest) { net.toHost({ t: 'swing', eye: player.eye(), fwd: player.forward() }); sfx.whoosh(); return; }
   if (!snakes.swing(player.eye(), player.forward()) && !raiders.swing(player.eye(), player.forward(), myNetId)) sfx.whoosh();
 }
+// Holding a block to build with? A yellow outline shows where it will go (the target's open side).
+function placeGhost(t) {
+  if (!t || !running || !(t.nx || t.ny || t.nz)) return t;
+  const id = hotbar[selected];
+  if (!id || have(id) <= 0 || !PLACEABLE.includes(id)) return t;
+  const x = t.x + t.nx, y = t.y + t.ny, z = t.z + t.nz, here = world.getBlock(x, y, z);
+  if (here !== B.AIR && here !== B.WATER) return t;
+  return { ...t, place: [x, y, z] };
+}
 function updateHeld() {
   const id = hotbar[selected], el = $('#held');
   el.hidden = !TOOLS.has(id) || !have(id);
@@ -3878,7 +3887,7 @@ function frame(now, photo = false) {
     fogNear: underwater ? 0 : far * 0.6, fogFar: underwater ? 22 : far,
     tint: underwater ? [0.6 * sky.tint[0], 0.75 * sky.tint[1], sky.tint[2]] : sky.tint,
     entTint: sky.entTint, glowLayer: T.LAMP,
-  }, world.chunks.values(), target, now / 1000, { groups: [...a.groups, ...s.groups], shadowGroups: [...a.shadowGroups, ...s.shadowGroups] });
+  }, world.chunks.values(), photo ? null : placeGhost(target), now / 1000, { groups: [...a.groups, ...s.groups], shadowGroups: [...a.shadowGroups, ...s.shadowGroups] });
   if (photo) grabPhoto();
 
   updateTags(); spreadEdgeTags();
