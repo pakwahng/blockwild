@@ -2,6 +2,10 @@
 
 The same list is in the game: tap the version number on the front screen, or open **What’s new**.
 
+## 75. Take me home, and farm news (14 Nov 2026)
+- Stuck in a hole or lost? Pause and tap 🏠 Take me home to go straight back to your babies.
+- A message tells you when a feeder runs out of treats, and when wheat in a planter turns golden.
+
 ## 74. Undo a new world, and a tidier screen (14 Nov 2026)
 - Started a new world by mistake? Pause, open Saved games and tap “Bring back the world you had” to get your old one back.
 - On a tall phone the camera, map, bag and pause buttons line up down the right edge, so your goal lines have room.

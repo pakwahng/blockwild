@@ -113,6 +113,7 @@ let stats = newStats(), goalsDone = [], goalTimer = 0, climbT = 0;
 let selected = 0;
 let target = null, breakT = { key: '', p: 0 };
 let milestone = 0, throwCool = 0, feederTimer = 0;
+const farmNoteT = { feeder: 0, wheat: 0 }; // when the next "feeder empty" or "wheat ready" message may show
 const sfx = new Sfx();
 const music = new Music(sfx);
 // the first tap anywhere wakes the sound up, so the theme song can play on the front screen
@@ -1888,6 +1889,7 @@ function pause() {
   music.setMode('menu');
   updateBackupUi();
   showTip();
+  $('#btn-home').hidden = !world;
   if ($('#story').open) buildStory(); // fresh numbers if it was left open
 }
 
@@ -2251,6 +2253,27 @@ function saveToSlot(n) {
   sfx.pickup();
   saveMsg(`Saved “${name}” in slot ${n + 1}.`);
 }
+// Take me home (pause menu): stuck in a hole or lost? Back beside your tame babies (or where the world began).
+function takeMeHome() {
+  if (!world || !player) return;
+  let n = 0, hx = 0, hz = 0;
+  for (const a of flock.animals) if (a.tame) { n++; hx += a.p[0]; hz += a.p[2]; }
+  const x = n ? hx / n + 2 : 0.5, z = n ? hz / n + 2 : 0.5;
+  const cx = Math.floor(x / CS), cz = Math.floor(z / CS);
+  for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) world.generate(cx + dx, cz + dz);
+  let y = CH - 1;
+  while (y > 1 && !SOLID[world.getBlock(Math.floor(x), y - 1, Math.floor(z))]) y--;
+  if (seat) standUp();
+  seat = null; player.flying = false;
+  player.pos = [x, y, z]; player.vel = [0, 0, 0];
+  if (n) player.yaw = Math.atan2(2, 2); // facing back towards the babies
+  fishing = null;
+  saveGame();
+  resume();
+  toast(n ? '🏠 Home again, next to your babies!' : '🏠 Back where your world began.', 2500);
+}
+$('#btn-home').addEventListener('click', takeMeHome);
+
 // The world you had before you last tapped Create world (one only), so a new world can be undone.
 const PREV_KEY = 'blockwild.prev.v1';
 function updateUndoNew() { $('#btn-undo-new').hidden = !(store.get(PREV_KEY)?.seed !== undefined); }
@@ -3643,7 +3666,10 @@ function frame(now, photo = false) {
         for (const q of players) for (const f of world.placedNear(q.pos[0], q.pos[2], 40, id => FEEDER_TREAT[id] !== undefined)) {
           const k = f.slice(0, 3).join(); if (!seen.has(k)) { seen.add(k); feeders.push(f); }
         }
-        for (const [x, y, z] of flock.feedersStep(feeders, FEEDER_TREAT)) { editBlock(x, y, z, B.FEEDER); remeshAround(x, z); }
+        for (const [x, y, z] of flock.feedersStep(feeders, FEEDER_TREAT)) {
+          editBlock(x, y, z, B.FEEDER); remeshAround(x, z);
+          if (performance.now() > farmNoteT.feeder) { farmNoteT.feeder = performance.now() + 90000; toast('🍽️ A feeder ran out of treats. Hold a treat and tap it to fill it up again.'); }
+        }
         // wheat in the planters grows a stage now and then (about two minutes from seed to golden)
         const grows = new Set();
         for (const q of players) for (const [x, y, z, id] of world.placedNear(q.pos[0], q.pos[2], 48, id => id === B.PLANTER_SEEDED || id === B.PLANTER_GROWING)) {
@@ -3651,6 +3677,7 @@ function frame(now, photo = false) {
           if (grows.has(k) || Math.random() > 0.035 * (1 + 1.5 * weather.amount)) continue;
           grows.add(k);
           editBlock(x, y, z, id + 1); remeshAround(x, z);
+          if (id + 1 === B.PLANTER_RIPE && performance.now() > farmNoteT.wheat) { farmNoteT.wheat = performance.now() + 120000; toast('🌾 Some wheat has turned golden. Tap the planter to pick it!'); }
         }
       }
       snakes.peaceful = raiders.peaceful = !!settings.peaceful;

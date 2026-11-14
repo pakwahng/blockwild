@@ -1,11 +1,15 @@
 // The game's version and what changed in each one. Shown on the front screen ("What's new")
 // and in CHANGELOG.md. When you release: bump VERSION, add an entry at the top of CHANGES,
 // and set the same number in sw.js (CACHE = 'blockwild-v<VERSION>') so phones pick it up.
-export const VERSION = 74;
+export const VERSION = 75;
 export const RELEASED = '14 Nov 2026'; // (the menu shows the newest What's new date instead)
 
 // [version, date, headline, [details]]
 export const CHANGES = [
+  [75, '14 Nov 2026', 'Take me home, and farm news', [
+    'Stuck in a hole or lost? Pause and tap 🏠 Take me home to go straight back to your babies.',
+    'A message tells you when a feeder runs out of treats, and when wheat in a planter turns golden.',
+  ]],
   [74, '14 Nov 2026', 'Undo a new world, and a tidier screen', [
     'Started a new world by mistake? Pause, open Saved games and tap “Bring back the world you had” to get your old one back.',
     'On a tall phone the camera, map, bag and pause buttons line up down the right edge, so your goal lines have room.',
