@@ -565,6 +565,7 @@ function awardCrown(level = crown + 1) {
 function crownDawn(spooked, babies) {
   const slept = sleptNight; sleptNight = false;
   if (babies <= 0) return '';                 // nobody to keep safe: the streak waits
+  if (settings.peaceful && !spooked) return ''; // peaceful nights: no snakes came, so the streak waits too
   if (slept && !spooked) return CROWNS[crown + 1] ? ' (A night slept through doesn’t count towards a crown: stay up and guard it!)' : '';
   if (spooked) { const lost = streak; streak = 0; showStreak(); return lost >= 2 ? ` That ends your run of ${lost} perfect nights.` : ''; }
   streak++; stats.bestStreak = Math.max(stats.bestStreak || 0, streak); showStreak();
@@ -812,7 +813,8 @@ const popped = () => nightPops ? ` You popped ${nightPops} ${nightPops === 1 ? '
     const d = ev.p ? Math.hypot(ev.p[0] - eye[0], ev.p[1] - eye[1], ev.p[2] - eye[2]) : 0;
     if (ev.type === 'night') {
       sfx.nightfall(); nightPops = 0;
-      toast(nights === 0
+      toast(settings.peaceful ? 'Night falls under the square moon. It’s a peaceful night: the babies are snoozing and no snakes will come.'
+        : nights === 0
         ? 'Night falls under the square moon… a block snake is coming for the nursery! Grab your toy sword and guard the gate.'
         : 'Night falls. Watch out for the block snake!');
     } else if (ev.type === 'dawn') {
@@ -2540,7 +2542,7 @@ let duskWarned = -1, zzT = 0;
 function clockStep() {
   const t = clock;
   const left = snakes.list.filter(s => !s.gone).length;
-  const text = t >= NIGHT && t < DAWN ? `🌙 Night ${nights + 1}` + (left ? ` · 🐍 ${left}` : '') : t >= DUSK && t < NIGHT ? '🌅 Dusk' : `☀️ Day ${nights + 1}`;
+  const text = t >= NIGHT && t < DAWN ? `🌙 Night ${nights + 1}` + (left ? ` · 🐍 ${left}` : settings.peaceful ? ' · 🕊️' : '') : t >= DUSK && t < NIGHT ? '🌅 Dusk' : `☀️ Day ${nights + 1}`;
   if (clockEl.textContent !== text) { clockEl.textContent = text; clockEl.classList.toggle('night', t >= DUSK && t < DAWN); }
   // a snake creeping up on the nursery while you're far away: say so, once for each snake
   if (left) {
@@ -2564,7 +2566,7 @@ function clockStep() {
     if (near.length) floatFx(near[Math.random() * near.length | 0].p, 'zz', 'z z z');
   }
   // about 20 seconds before dusk, once per evening
-  if (t > DUSK - 20 / CYCLE && t < DUSK && duskWarned !== nights && !net.isGuest) {
+  if (t > DUSK - 20 / CYCLE && t < DUSK && duskWarned !== nights && !net.isGuest && !settings.peaceful) {
     duskWarned = nights; sfx.ding();
     toast(barMode === 'build'
       ? '🌅 The sun is setting soon. Get ready for the snake: tap ⚔️ Fight (or press Q) for your sword and slingshot.'
@@ -2867,6 +2869,7 @@ function applySettings() {
   sView.value = settings.view; $('#view-val').textContent = settings.view + ' chunks';
   sSens.value = settings.sens; $('#sens-val').textContent = (+settings.sens).toFixed(1) + '×';
   sAuto.checked = settings.autoJump; sFps.checked = settings.showFps; sSound.checked = settings.sound;
+  $('#set-peace').checked = !!settings.peaceful;
   sfx.enabled = settings.sound;
   sMusic.checked = settings.music; sMusic.disabled = !settings.sound;
   music.enabled = settings.sound && settings.music;
@@ -2883,6 +2886,8 @@ sAuto.addEventListener('change', () => { settings.autoJump = sAuto.checked; appl
 sFps.addEventListener('change', () => { settings.showFps = sFps.checked; applySettings(); });
 sSound.addEventListener('change', () => { settings.sound = sSound.checked; applySettings(); });
 sMusic.addEventListener('change', () => { settings.music = sMusic.checked; applySettings(); });
+const sPeace = $('#set-peace');
+sPeace.addEventListener('change', () => { settings.peaceful = sPeace.checked; applySettings(); toast(sPeace.checked ? '🕊️ Peaceful: no snakes, foxes or crows will come. Nights won’t count for crowns.' : 'Snakes, foxes and crows are back. Guard your nursery!', 3500); });
 for (const b of document.querySelectorAll('#set-char .char')) {
   b.querySelector('svg').innerHTML = M.KID_FACE_SVG[b.dataset.char];
   b.addEventListener('click', () => { settings.char = b.dataset.char; applySettings(); });
@@ -3372,6 +3377,7 @@ function frame(now, photo = false) {
           editBlock(x, y, z, id + 1); remeshAround(x, z);
         }
       }
+      snakes.peaceful = raiders.peaceful = !!settings.peaceful;
       snakes.update(dt, flock, player, isNight, nights);
       weather.update(dt, skyAt(clock).night < 0.3);
     }

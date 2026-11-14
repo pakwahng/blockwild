@@ -260,6 +260,7 @@ A full day lasts 10 minutes: about 6 minutes of daylight, a pink dusk, roughly 3
 - Snakes within 7 blocks of a scarecrow move at 40% speed; within 5 blocks of a lamp post or campfire, at 70% (`GLOW_RANGE`, `GLOW_SLOW` in `js/snakes.js`; a `glow` event gives a first-time tip).
 - Pick the **toy sword** and tap (or click) to swing. Three bonks and the snake poofs into confetti cubes (snakes got tougher in v43).
 - At sunrise any remaining snakes leave. Lamps stay bright at night.
+- **Peaceful** (Settings, `settings.peaceful`): no snakes, foxes or crows. Snakes and raiders get a `peaceful` flag each frame on the host; any already out poof or head home. Nights still count for the night goals but not for crown streaks (`crownDawn`), and there is no dusk warning.
 - The first two nights are gentler: every snake takes one bonk less (never fewer than 2). Each bonk shows how many more it needs ("BONK! 2 more").
 - A clock pill in the top corner shows ☀️ Day, 🌅 Dusk or 🌙 Night with the day number (`clockStep()` in `main.js`). About 20 seconds before dusk a message warns you, and tells you to swap to the fight hotbar if you're on the build one.
 - A red **🐍 Snake** (or **🦊 Fox**) tag with the distance points to the nearest one within 60 blocks, pinned to the screen edge when it's off screen. Snakes and foxes also show on the map.

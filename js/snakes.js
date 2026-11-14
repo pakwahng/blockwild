@@ -102,7 +102,8 @@ export class Snakes {
       this.goo = [];
       this.events.push({ type: 'dawn', spooked: this.spooked });
     }
-    if (night) {
+    if (this.peaceful && this.list.length) { for (const s of this.list) this.poof(s, false); this.list = []; this.goo = []; }
+    if (night && !this.peaceful) {
       // one snake on the first nights, more as the nursery survives more of them
       const want = Math.min(MAX_SNAKES, 1 + Math.floor(nights / 2));
       this.timer -= dt;

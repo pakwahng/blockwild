@@ -1,11 +1,14 @@
 // The game's version and what changed in each one. Shown on the front screen ("What's new")
 // and in CHANGELOG.md. When you release: bump VERSION, add an entry at the top of CHANGES,
 // and set the same number in sw.js (CACHE = 'blockwild-v<VERSION>') so phones pick it up.
-export const VERSION = 48;
+export const VERSION = 49;
 export const RELEASED = '10 Nov 2026';
 
 // [version, date, headline, [details]]
 export const CHANGES = [
+  [49, '14 Nov 2026', 'Peaceful nights', [
+    'New in Settings: Peaceful. No snakes, foxes or crows come, so little ones can build and raise babies without any scares. The clock shows a 🕊️ at night. Peaceful nights don’t count towards a crown.',
+  ]],
   [48, '14 Nov 2026', 'Hotbar names and sleepy babies', [
     'When you pick something on the hotbar, its name and how many you have pop up above it for a moment.',
     'Babies sleeping near you at night puff a little “z z z”.',

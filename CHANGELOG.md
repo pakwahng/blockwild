@@ -2,6 +2,9 @@
 
 The same list is in the game: tap the version number on the front screen, or open **What’s new**.
 
+## 49. Peaceful nights (14 Nov 2026)
+- New in Settings: Peaceful. No snakes, foxes or crows come, so little ones can build and raise babies without any scares. The clock shows a 🕊️ at night. Peaceful nights don’t count towards a crown.
+
 ## 48. Hotbar names and sleepy babies (14 Nov 2026)
 - When you pick something on the hotbar, its name and how many you have pop up above it for a moment.
 - Babies sleeping near you at night puff a little “z z z”.
