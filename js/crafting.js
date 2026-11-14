@@ -14,7 +14,8 @@ export function drops(id) {
       if (chance(0.12)) add(ITEM_CLOVER);
       break;
     case B.DIRT: add(B.DIRT); if (chance(0.04)) add(ITEM_BONE); break;
-    case B.STONE: add(B.COBBLE); if (chance(0.03)) add(ITEM_BONE); break;
+    case B.STONE: add(B.COBBLE); if (chance(0.3)) add(ITEM_PEBBLE, 1 + (Math.random() * 2 | 0)); if (chance(0.03)) add(ITEM_BONE); break;
+    case B.SAND: add(B.SAND); if (chance(0.08)) add(B.CLAY); break;
     case B.LEAVES: add(B.LEAVES); if (chance(0.22)) add(ITEM_APPLE); if (chance(0.15)) add(ITEM_STICK); break;
     case B.GATE_OPEN: add(B.GATE); break;
     case B.DOOR: case B.DOOR_TOP: case B.DOOR_OPEN: case B.DOOR_OPEN_TOP: add(B.DOOR); break;

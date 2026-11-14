@@ -2,6 +2,13 @@
 
 The same list is in the game: tap the version number on the front screen, or open **What’s new**.
 
+## 44. A day clock, snake finder and gentler first nights (14 Nov 2026)
+- A clock at top left shows ☀️ Day, 🌅 Dusk or 🌙 Night and which day it is. About 20 seconds before dusk a message warns you, and reminds you to swap to the fight hotbar.
+- A red 🐍 Snake tag shows how far away the nearest snake (or 🦊 fox) is, and points to it from the edge of the screen when it’s out of sight. Snakes and foxes now show on the map too.
+- The first two nights are gentler: each snake takes one bonk less. Every bonk now shows how many more it needs, like “BONK! 2 more”.
+- Digging stone turns up a few pebbles now and then, and digging sand sometimes finds a lump of clay.
+- New things go to the right hotbar: swords, slingshots, pebbles and poppers to the fight hotbar, building things to the build one.
+
 ## 43. Fight hotbar, a slingshot and tougher snakes (10 Nov 2026)
 - Two hotbars: tap Fight at the end of the hotbar (or press Q) to swap to your fighting things, and Build to swap back. Each keeps its own items.
 - New slingshot (Wood & tools, at a table: 3 sticks, 1 wool): hold it and tap to fling a pebble a long way. Make pebbles from cobble (2 make 6). You learn it from the grow-up goal.

@@ -88,6 +88,7 @@ export class Snakes {
   heads() { return this.list.map(s => s.p); }
 
   update(dt, nursery, player, night, nights) {
+    this.nights = nights; // the first two nights, snakes take one hit less
     this.time += dt;
     if (night && !this.wasNight) {
       this.wasNight = true; this.spawned = 0; this.timer = 4; this.spooked = 0;
@@ -146,7 +147,7 @@ export class Snakes {
     const s = {
       id: this.nextId++, kind,
       p: [...p], v: [0, 0, 0], yaw, onGround: false,
-      hp: SNAKE_KINDS[kind].hp, hit: 0, knock: 0, pause: 0, target: null, retarget: 0, fuse: 0, chew: 0, flap: 0,
+      hp: Math.max(2, SNAKE_KINDS[kind].hp - ((this.nights || 0) < 2 ? 1 : 0)), hit: 0, knock: 0, pause: 0, target: null, retarget: 0, fuse: 0, chew: 0, flap: 0,
       wig: Math.random() * 6, detour: 0, detourDir: 1, hiss: 2, gone: false, trail: [], segs: [],
     };
     for (let d = 0; d <= SEGMENTS * SPACING + 1; d += 0.1) s.trail.push([s.p[0] - Math.sin(yaw) * d, y, s.p[2] - Math.cos(yaw) * d]);
@@ -380,7 +381,7 @@ export class Snakes {
     s.hp--; s.hit = 0.55; s.knock = 0.35; s.fuse = 0;
     const l = Math.hypot(dir[0], dir[2]) || 1;
     s.v[0] = dir[0] / l * 4; s.v[2] = dir[2] / l * 4; s.v[1] = 4;
-    this.events.push({ type: 'bonk', p: [...s.p], how });
+    this.events.push({ type: 'bonk', p: [...s.p], how, left: Math.max(0, s.hp) });
     if (s.hp <= 0) {
       this.poof(s, true);
       s.gone = true;

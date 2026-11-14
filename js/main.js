@@ -7,7 +7,7 @@ import { Critters, BUTTERFLY_KINDS } from './critters.js';
 import { GOALS, newStats, bump } from './goals.js';
 import { drops, RECIPES, TABS, TOOLS, STARTER, OLD_SAVE_BAG, TABLE_REACH, FEEDER_FILL } from './crafting.js';
 import { STARTER_RECIPES, SEW, patternKey, GOAL_TEACH, goalRecipes, PAGE_CHANCE, unlearned, pickPage, oldWorldRecipes } from './recipes.js';
-import { skyAt, CYCLE } from './sky.js';
+import { skyAt, CYCLE, DUSK, NIGHT, DAWN } from './sky.js';
 import { buildTextures, blockIcon } from './textures.js';
 import * as M from './models.js';
 import { Nursery, SPECIES, SPECIES_ORDER, isTreat, GIFTS, BABY_NAMES, cleanAnimalNick, ANIMAL_HATS } from './animals.js';
@@ -102,6 +102,8 @@ let hotbar = [...NEW_HOTBAR];
 // Two hotbars: one for building and farming, one for fighting. Q (or the button by the hotbar) swaps them.
 // hotbar is always the one showing; otherBar waits its turn.
 const FIGHT_HOTBAR = [ITEM_SWORD, ITEM_SLING, ITEM_PEBBLE, ITEM_POPPER, ITEM_BREAD, ITEM_GRILLED, ITEM_PIE, ITEM_FIREWORK, 0];
+const FIGHT_ITEMS = new Set([ITEM_SWORD, ITEM_SLING, ITEM_PEBBLE, ITEM_POPPER]);
+const EITHER_ITEMS = new Set([ITEM_BREAD, ITEM_GRILLED, ITEM_PIE, ITEM_FIREWORK]); // fine on either hotbar
 let barMode = 'build', otherBar = [...FIGHT_HOTBAR], otherSel = 0;
 const buildBar = () => barMode === 'build' ? hotbar : otherBar, buildSel = () => barMode === 'build' ? selected : otherSel;
 const fightBar = () => barMode === 'fight' ? hotbar : otherBar, fightSel = () => barMode === 'fight' ? selected : otherSel;
@@ -140,11 +142,15 @@ function addItem(id, n = 1, quiet = false) {
   if (!isItem(id) || n <= 0) return;
   inv[id] = have(id) + n;
   let slot = hotbar.indexOf(id);
-  if (slot < 0) {
-    // new things go into an empty slot, or one whose item has run out
-    slot = hotbar.indexOf(0);
-    if (slot < 0) slot = hotbar.findIndex((h, i) => i !== selected && !have(h));
-    if (slot >= 0) hotbar[slot] = id;
+  if (slot < 0 && otherBar.includes(id)) slot = -2; // already waiting on the other hotbar
+  if (slot === -1) {
+    // fighting things go on the fighting hotbar and building things on the building one;
+    // new things take an empty slot, or one whose item has run out
+    const fighty = FIGHT_ITEMS.has(id), toOther = fighty ? barMode === 'build' : barMode === 'fight' && !EITHER_ITEMS.has(id);
+    const bar = toOther ? otherBar : hotbar, sel = toOther ? otherSel : selected;
+    let s = bar.indexOf(0);
+    if (s < 0) s = bar.findIndex((h, i) => i !== sel && !have(h));
+    if (s >= 0) { bar[s] = id; slot = toOther ? -2 : s; }
   }
   buildHotbar();
   if (slot >= 0 && !quiet) { const el = $('#hotbar').children[slot]; el?.classList.remove('got'); void el?.offsetWidth; el?.classList.add('got'); }
@@ -714,13 +720,13 @@ function project(x, y, z) {
 }
 
 // Floating hearts and "+1" pops above chicks, positioned by projecting the 3D point to the screen.
-function floatFx(p, kind) {
+function floatFx(p, kind, text) {
   const at = project(p[0], p[1] + 0.8, p[2]);
   if (!at) return;
   const [sx, sy] = at;
   const el = document.createElement('div');
   el.className = 'fx ' + kind;
-  el.textContent = kind === 'hatch' ? '+1' : kind === 'bonk' ? 'BONK!' : kind === 'grown' ? 'All grown up!' : kind === 'note' ? (Math.random() < 0.5 ? '♪' : '♫') : '';
+  el.textContent = text ?? (kind === 'hatch' ? '+1' : kind === 'bonk' ? 'BONK!' : kind === 'grown' ? 'All grown up!' : kind === 'note' ? (Math.random() < 0.5 ? '♪' : '♫') : '');
   el.style.left = sx + 'px'; el.style.top = sy + 'px';
   $('#fx').appendChild(el);
   setTimeout(() => el.remove(), kind === 'grown' ? 1800 : 1300);
@@ -845,7 +851,7 @@ function handleChickEvents() {
         buzz(120);
       }
       if (!firsts.includes('boom') && d < 60) { firsts.push('boom'); setTimeout(() => toast('BOOM! The boom snake blew a hole in the ground. Bonk them before they fizz out!'), 800); }
-    } else if (ev.type === 'bonk') { sfx.bonk(); floatFx(ev.p, 'bonk'); buzz(30); }
+    } else if (ev.type === 'bonk') { sfx.bonk(); floatFx(ev.p, 'bonk', ev.left > 0 ? `BONK! ${ev.left} more` : 'BONK!'); buzz(30); }
     else if (ev.type === 'poof' && ev.wolf) {
       sfx.poof(); buzz(40);
       if (d < 60) toast('Your grown-up wolf nipped the snake into confetti! Good wolf.');
@@ -873,7 +879,7 @@ function handleChickEvents() {
       toast(`The fox spooked ${callName(ev.name, ev.sp, 'a', ev.nick)} out of your nursery! Feed it again to bring it back.`);
     } else if (ev.type === 'foxChased') { sfx.yelp(0.45); if (d < 60) toast('Your grown-up wolf chased the fox away!'); }
     else if (ev.type === 'foxGiveUp') { if (d < 60) toast('The fox couldn’t get past your fence and slunk off home.'); }
-    else if (ev.type === 'bonk') { sfx.bonk(); floatFx(ev.p, 'bonk'); buzz(30); }
+    else if (ev.type === 'bonk') { sfx.bonk(); floatFx(ev.p, 'bonk', ev.left > 0 ? `BONK! ${ev.left} more` : 'BONK!'); buzz(30); }
     else if (ev.type === 'rpoof') {
       sfx.poof(); buzz(60);
       const fox = ev.kind === 0;
@@ -2240,6 +2246,8 @@ function drawMap() {
   for (const a of flock.animals) if (a.tame) { n++; hx += a.p[0]; hz += a.p[2]; }
   if (n) { emoji('🐣', hx / n, hz / n, 26); label('Nursery', hx / n, hz / n, 20); }
   if (trader.here) { emoji('🛒', trader.p[0], trader.p[2], 24); label('Pip’s cart', trader.p[0], trader.p[2], 20); }
+  for (const s of snakes.list) if (!s.gone) emoji('🐍', s.p[0], s.p[2], 22);
+  for (const x of raiders.foes()) emoji('🦊', x.p[0], x.p[2], 22);
   for (const o of others.values()) {
     if (o.id === myNetId) continue;
     const p = at(o.p[0], o.p[2]); if (!inside(p)) continue;
@@ -2483,6 +2491,23 @@ let snackT = 0, snackOf = 0;
 const boostEl = document.createElement('div');
 boostEl.className = 'pill boost'; boostEl.hidden = true;
 $('#nursery').appendChild(boostEl);
+// A little clock pill: day, dusk or night, plus a warning shortly before the snakes come out.
+const clockEl = document.createElement('div');
+clockEl.className = 'pill clock';
+$('#nursery').prepend(clockEl);
+let duskWarned = -1;
+function clockStep() {
+  const t = clock;
+  const text = t >= NIGHT && t < DAWN ? `🌙 Night ${nights + 1}` : t >= DUSK && t < NIGHT ? '🌅 Dusk' : `☀️ Day ${nights + 1}`;
+  if (clockEl.textContent !== text) { clockEl.textContent = text; clockEl.classList.toggle('night', t >= DUSK && t < DAWN); }
+  // about 20 seconds before dusk, once per evening
+  if (t > DUSK - 20 / CYCLE && t < DUSK && duskWarned !== nights && !net.isGuest) {
+    duskWarned = nights;
+    toast(barMode === 'build'
+      ? '🌅 The sun is setting soon. Get ready for the snake: tap ⚔️ Fight (or press Q) for your sword and slingshot.'
+      : '🌅 The sun is setting soon. Get ready to guard the nursery!', 5000);
+  }
+}
 function eat(id) {
   const s = SNACK[id];
   useItem(id); bump(stats, 'ate', id);
@@ -2912,6 +2937,21 @@ function updateTags() {
     if (traderEl.lastName !== label) { traderEl.querySelector('.name').textContent = label; traderEl.lastName = label; }
     pinTag(traderEl, 'tag trader', trader.p[0], trader.p[1] + 2.4, trader.p[2], W, H, eye, f, r, u);
   }
+  // Danger: a red tag points to the nearest snake or fox, so you can find it in the dark.
+  if (!foeEl) {
+    foeEl = document.createElement('div');
+    foeEl.innerHTML = '<span class="arrow" aria-hidden="true"></span><span class="name"></span>';
+    box.appendChild(foeEl);
+  }
+  let foe = null, fd = 60;
+  for (const s of snakes.list) if (!s.gone) { const dd = Math.hypot(s.p[0] - eye[0], s.p[2] - eye[2]); if (dd < fd) { fd = dd; foe = ['🐍 Snake', s.p]; } }
+  for (const x of raiders.foes()) { const dd = Math.hypot(x.p[0] - eye[0], x.p[2] - eye[2]); if (dd < fd) { fd = dd; foe = ['🦊 Fox', x.p]; } }
+  foeEl.hidden = !(foe && fd > 5);
+  if (!foeEl.hidden) {
+    const label = `${foe[0]} · ${Math.round(fd)} m`;
+    if (foeEl.lastName !== label) { foeEl.querySelector('.name').textContent = label; foeEl.lastName = label; }
+    pinTag(foeEl, 'tag snake', foe[1][0], foe[1][1] + 1.6, foe[1][2], W, H, eye, f, r, u);
+  }
   // The home arrow: when you wander far from your tame babies, it points the way back to them.
   let n = 0, hx = 0, hy = 0, hz = 0;
   for (const a of flock.animals) if (a.tame) { n++; hx += a.p[0]; hy += a.p[1]; hz += a.p[2]; }
@@ -2927,7 +2967,7 @@ function updateTags() {
   if (homeEl.lastName !== label) { homeEl.querySelector('.name').textContent = label; homeEl.lastName = label; }
   pinTag(homeEl, 'tag home', hx / n, hy / n + 1.2, hz / n, W, H, eye, f, r, u);
 }
-let homeEl = null, traderEl = null;
+let homeEl = null, traderEl = null, foeEl = null;
 // Puts a tag over a point, or pins it to the screen edge with an arrow when the point is off screen.
 function pinTag(el, cls, tx, ty, tz, W, H, eye, f, r, u) {
     const at = project(tx, ty, tz);
@@ -3308,7 +3348,7 @@ function frame(now, photo = false) {
   s.groups.push(...fireworks.instances(eye, far + 8));
   sfx.rain(running && !underwater && !weather.snowing ? weather.amount : 0);
   music.day = skyAt(clock).night < 0.3;
-  if (running) snackStep(dt);
+  if (running) { snackStep(dt); clockStep(); }
   traderStep(dt);
   campfireCrackle(dt);
   if (weather.snowing && weather.amount > 0.3 && running && !firsts.includes('snow')) { firsts.push('snow'); toast('It’s snowing up here on the mountain! Down in the valley it’s only rain.'); }

@@ -258,6 +258,9 @@ A full day lasts 10 minutes: about 6 minutes of daylight, a pink dusk, roughly 3
 - Snakes slither over a **one-block fence** but not a **two-block wall**.
 - Pick the **toy sword** and tap (or click) to swing. Three bonks and the snake poofs into confetti cubes (snakes got tougher in v43).
 - At sunrise any remaining snakes leave. Lamps stay bright at night.
+- The first two nights are gentler: every snake takes one bonk less (never fewer than 2). Each bonk shows how many more it needs ("BONK! 2 more").
+- A clock pill in the top corner shows ☀️ Day, 🌅 Dusk or 🌙 Night with the day number (`clockStep()` in `main.js`). About 20 seconds before dusk a message warns you, and tells you to swap to the fight hotbar if you're on the build one.
+- A red **🐍 Snake** (or **🦊 Fox**) tag with the distance points to the nearest one within 60 blocks, pinned to the screen edge when it's off screen. Snakes and foxes also show on the map.
 - **Kinds of snake** (`SNAKE_KINDS` in `js/snakes.js`). A new kind joins each night, and a newly unlocked kind comes first that night:
   - Night 1: **block snake** (green and purple) and **poison snake** (purple and lime). The poison snake leaves a trail of green goo from its tail that lasts 5 seconds. Babies that step in it run off; it slows you to 40% speed.
   - Night 2: **flying snake** (sky blue, white wings). Flies about 4.5 blocks up over fences and walls, then swoops down when it's close to a baby. Bonk it when it comes low.
@@ -314,7 +317,7 @@ A full day lasts 10 minutes: about 6 minutes of daylight, a pink dusk, roughly 3
 - **Stone bricks** (Building tab: 4 cobble make 4): smart grey castle-wall blocks. Learned from the bonk goal.
 - **Windows** (Building tab, at a table: 2 glass and 1 wood make 2): glass in a wooden frame with four panes. Learned from the house goal.
 - **Lamp post** (Building tab, at a table: 1 lamp, 1 log, 1 cobble): a post on a stone foot with a lantern that glows at night. Learned from the night goal.
-- **Flower pot** (Building tab: 2 clay, 1 dirt, 1 red flower): a terracotta pot with a red flower. Learned from the treasure chest goal. Clay is at the bottom of deep water.
+- **Flower pot** (Building tab: 2 clay, 1 dirt, 1 red flower): a terracotta pot with a red flower. Learned from the treasure chest goal. Clay is at the bottom of deep water, and digging sand turns up a lump now and then (about 1 in 12).
 - **Bench** (Building tab, at a table: 4 wood, 2 sticks): tap it to sit down (`sitBench`, a lower `seat` than the throne); walk or jump to stand up. A bench next to another along z turns to line up with it.
 - Five new goals: place 20 stone bricks, put in 4 windows, put up 3 lamp posts, put out 4 flower pots and sit on a bench.
 - **Prompts:** a label under the crosshair says what tapping (or right clicking) does to the thing you're looking at: open a gate, door or chest, sit, sleep, ring, play, write, pick wheat, plant seeds, fill a feeder, swap with Pip. At a crafting table or campfire it tells you to open the bag (press E).
@@ -325,6 +328,8 @@ A full day lasts 10 minutes: about 6 minutes of daylight, a pink dusk, roughly 3
 ## Build and fight hotbars, the slingshot, and tougher snakes
 
 - **Two hotbars:** the button at the end of the hotbar (or **Q**) swaps between the building hotbar and the fighting hotbar (`barMode`, `otherBar` in `js/main.js`). The fighting one starts with the sword, slingshot, pebbles, confetti poppers, bread, grilled fish, apple pie and fireworks. Each keeps its own items and selected slot, and both are saved (`hotbar`/`selected` for building, `fightbar`/`fightSel`, and `barMode`). The hotbar gets a red edge while it's the fighting one.
+- **Where new things go:** something you pick up or make that isn't on the showing hotbar goes to the right one: the sword, slingshot, pebbles and poppers to the fighting hotbar, other things to the building one, and snacks and fireworks to whichever is showing (`FIGHT_ITEMS`, `EITHER_ITEMS` in `addItem`). If it's already on the hidden hotbar it stays there.
+- **Pebbles from stone:** digging stone gives 1–2 pebbles about 3 times in 10 (`drops()` in `js/crafting.js`), so you can top up without the crafting table.
 - **Slingshot** (Wood & tools, at a table: 3 sticks, 1 wool; a tool, never used up) and **pebbles** (2 cobble make 6). Hold the slingshot and tap to fling a pebble: it flies fast with a gentle drop and hits the first fox, crow or snake it touches (one hit) or stops at a block. Learned from the grow-up goal.
 - **Confetti popper** (Wood & tools, at a table: 1 stick, 2 sand, 1 yellow flower make 2): thrown in a slow arc, it bursts where it lands and gives every fox, crow and snake within 3 blocks a hit. Learned from the firework goal.
 - Shots (`shots`, `fling`, `shotStep` in `js/main.js`) fly on each player's own screen. A guest's shot is sent to the host (`'shoot'`), who works out the hits for everyone.

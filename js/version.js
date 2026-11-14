@@ -1,11 +1,18 @@
 // The game's version and what changed in each one. Shown on the front screen ("What's new")
 // and in CHANGELOG.md. When you release: bump VERSION, add an entry at the top of CHANGES,
 // and set the same number in sw.js (CACHE = 'blockwild-v<VERSION>') so phones pick it up.
-export const VERSION = 43;
+export const VERSION = 44;
 export const RELEASED = '10 Nov 2026';
 
 // [version, date, headline, [details]]
 export const CHANGES = [
+  [44, '14 Nov 2026', 'A day clock, snake finder and gentler first nights', [
+    'A clock at top left shows ☀️ Day, 🌅 Dusk or 🌙 Night and which day it is. About 20 seconds before dusk a message warns you, and reminds you to swap to the fight hotbar.',
+    'A red 🐍 Snake tag shows how far away the nearest snake (or 🦊 fox) is, and points to it from the edge of the screen when it’s out of sight. Snakes and foxes now show on the map too.',
+    'The first two nights are gentler: each snake takes one bonk less. Every bonk now shows how many more it needs, like “BONK! 2 more”.',
+    'Digging stone turns up a few pebbles now and then, and digging sand sometimes finds a lump of clay.',
+    'New things go to the right hotbar: swords, slingshots, pebbles and poppers to the fight hotbar, building things to the build one.',
+  ]],
   [43, '10 Nov 2026', 'Fight hotbar, a slingshot and tougher snakes', [
     'Two hotbars: tap Fight at the end of the hotbar (or press Q) to swap to your fighting things, and Build to swap back. Each keeps its own items.',
     'New slingshot (Wood & tools, at a table: 3 sticks, 1 wool): hold it and tap to fling a pebble a long way. Make pebbles from cobble (2 make 6). You learn it from the grow-up goal.',

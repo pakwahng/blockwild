@@ -242,7 +242,7 @@ export class Raiders {
     const l = Math.hypot(dir[0], dir[2]) || 1;
     r.v[0] = dir[0] / l * 5; r.v[2] = dir[2] / l * 5; r.v[1] = 4.5;
     if (r.kind === CROW) r.p[1] += 0.2;
-    this.events.push({ type: 'bonk', p: [...r.p] });
+    this.events.push({ type: 'bonk', p: [...r.p], left: Math.max(0, r.hp) });
     if (r.hp <= 0) {
       this.poof(r);
       r.gone = true;
