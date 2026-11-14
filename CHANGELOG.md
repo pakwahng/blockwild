@@ -2,6 +2,9 @@
 
 The same list is in the game: tap the version number on the front screen, or open **What’s new**.
 
+## 65. See where things went (14 Nov 2026)
+- When you get something that goes onto your other hotbar (like pebbles while you’re building), the Fight / Build button glows for a moment, so you know where to find it.
+
 ## 64. Pip at sunrise, and undo fixes (14 Nov 2026)
 - On a day Pip visits, the sunrise message says she’s coming this morning.
 - Your story so far shows Pip’s visit as “Today” right from sunrise.

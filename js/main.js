@@ -155,6 +155,7 @@ function addItem(id, n = 1, quiet = false) {
   }
   buildHotbar();
   if (slot >= 0 && !quiet) { const el = $('#hotbar').children[slot]; el?.classList.remove('got'); void el?.offsetWidth; el?.classList.add('got'); }
+  else if (slot === -2 && !quiet) { const el = $('#hotbar .bar-swap'); el?.classList.remove('got'); void el?.offsetWidth; el?.classList.add('got'); } // it went to the other hotbar: flash the swap button
 }
 function useItem(id, n = 1) {
   if (TOOLS.has(id)) return have(id) > 0;

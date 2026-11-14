@@ -282,6 +282,8 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
 .slot.none img { opacity: 0.28; filter: grayscale(1); }
 .slot.got { animation: got .35s ease-out; }
 @keyframes got { 40% { transform: scale(1.22); } }
+.bar-swap.got { animation: gotSwap .9s ease-out; }
+@keyframes gotSwap { 20%, 60% { transform: scale(1.18); box-shadow: 0 0 14px #ffd23c; } }
 #craft-tabs { display: flex; gap: 6px; margin-bottom: 8px; overflow-x: auto; }
 .tab {
   position: relative; flex: 0 0 auto; padding: 8px 14px; border-radius: 99px; border: 2px solid transparent;
