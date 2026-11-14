@@ -2,6 +2,9 @@
 
 The same list is in the game: tap the version number on the front screen, or open **What’s new**.
 
+## 83. A tidier bag (14 Nov 2026)
+- Your things in the bag is sorted into groups: Tools, Treats & food, Blocks to build with, and Other things, so it’s easier to find what you want.
+
 ## 82. A helping hand (14 Nov 2026)
 - Stuck on a goal for a while? After five minutes with no change, a friendly message reminds you what it is and how to get started.
 - When Pip the goose is visiting, the day line at the top says 🛒 Pip.

@@ -1775,7 +1775,18 @@ function buildOwned() {
   const grid = $('#picker-grid');
   grid.innerHTML = '';
   const owned = BAG_ORDER.filter(id => have(id) > 0);
+  // in groups, so things are easier to find: tools, treats and food, blocks, then everything else
+  const group = id => TOOLS.has(id) || id === ITEM_RING || id === ITEM_FIREWORK || id === ITEM_PEBBLE || id === ITEM_POPPER ? 0 : TREATS.includes(id) || FOODS.includes(id) || id === ITEM_EGG || id === ITEM_MILK || id === ITEM_FISH ? 1 : PLACEABLE.includes(id) ? 2 : 3;
+  const NAMES = ['Tools', 'Treats & food', 'Blocks to build with', 'Other things'];
+  owned.sort((a, b) => group(a) - group(b)); // (a stable sort: the usual order inside each group)
+  const groups = new Set(owned.map(group));
+  let shown = -1;
   for (const id of owned) {
+    if (groups.size > 1 && group(id) !== shown) {
+      shown = group(id);
+      const h = document.createElement('h3'); h.className = 'bag-group'; h.textContent = NAMES[shown];
+      grid.appendChild(h);
+    }
     const b = document.createElement('button');
     const n = have(id);
     b.className = 'pick' + (hotbar[selected] === id ? ' cur' : '');

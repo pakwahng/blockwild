@@ -702,3 +702,6 @@ body:has(#menu:not([hidden])) #loading { display: none; }
 }
 #btn-undo[hidden] { display: none; }
 @media (orientation: portrait) { #btn-undo { left: calc(84px + var(--safe-l)); } }
+/* headings between the groups in Your things */
+.bag-group { grid-column: 1 / -1; margin: 6px 0 0; font-size: 13px; font-weight: 800; color: var(--ink-dim); text-transform: none; }
+.bag-group:first-child { margin-top: 0; }

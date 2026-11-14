@@ -1,11 +1,14 @@
 // The game's version and what changed in each one. Shown on the front screen ("What's new")
 // and in CHANGELOG.md. When you release: bump VERSION, add an entry at the top of CHANGES,
 // and set the same number in sw.js (CACHE = 'blockwild-v<VERSION>') so phones pick it up.
-export const VERSION = 82;
+export const VERSION = 83;
 export const RELEASED = '14 Nov 2026'; // (the menu shows the newest What's new date instead)
 
 // [version, date, headline, [details]]
 export const CHANGES = [
+  [83, '14 Nov 2026', 'A tidier bag', [
+    'Your things in the bag is sorted into groups: Tools, Treats & food, Blocks to build with, and Other things, so it’s easier to find what you want.',
+  ]],
   [82, '14 Nov 2026', 'A helping hand', [
     'Stuck on a goal for a while? After five minutes with no change, a friendly message reminds you what it is and how to get started.',
     'When Pip the goose is visiting, the day line at the top says 🛒 Pip.',
