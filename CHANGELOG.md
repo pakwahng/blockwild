@@ -2,6 +2,10 @@
 
 The same list is in the game: tap the version number on the front screen, or open **What’s new**.
 
+## 53. Prizes in the confetti (14 Nov 2026)
+- Pop a snake and there’s often something left in its confetti for anyone close by: pebbles, a bone, apples, a confetti popper or a lamp.
+- Finishing a goal sets off a little firework in front of you.
+
 ## 52. Middle click to pick a block (14 Nov 2026)
 - Keyboard and mouse: middle click a block to put that kind in your hand, if you have some. It jumps to the slot it’s already in, or takes the slot you’re on.
 

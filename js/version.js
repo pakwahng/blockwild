@@ -1,11 +1,15 @@
 // The game's version and what changed in each one. Shown on the front screen ("What's new")
 // and in CHANGELOG.md. When you release: bump VERSION, add an entry at the top of CHANGES,
 // and set the same number in sw.js (CACHE = 'blockwild-v<VERSION>') so phones pick it up.
-export const VERSION = 52;
+export const VERSION = 53;
 export const RELEASED = '10 Nov 2026';
 
 // [version, date, headline, [details]]
 export const CHANGES = [
+  [53, '14 Nov 2026', 'Prizes in the confetti', [
+    'Pop a snake and there’s often something left in its confetti for anyone close by: pebbles, a bone, apples, a confetti popper or a lamp.',
+    'Finishing a goal sets off a little firework in front of you.',
+  ]],
   [52, '14 Nov 2026', 'Middle click to pick a block', [
     'Keyboard and mouse: middle click a block to put that kind in your hand, if you have some. It jumps to the slot it’s already in, or takes the slot you’re on.',
   ]],

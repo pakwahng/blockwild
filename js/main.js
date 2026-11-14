@@ -104,6 +104,7 @@ let hotbar = [...NEW_HOTBAR];
 const FIGHT_HOTBAR = [ITEM_SWORD, ITEM_SLING, ITEM_PEBBLE, ITEM_POPPER, ITEM_BREAD, ITEM_GRILLED, ITEM_PIE, ITEM_FIREWORK, 0];
 const FIGHT_ITEMS = new Set([ITEM_SWORD, ITEM_SLING, ITEM_PEBBLE, ITEM_POPPER]);
 const EITHER_ITEMS = new Set([ITEM_BREAD, ITEM_GRILLED, ITEM_PIE, ITEM_FIREWORK]); // fine on either hotbar
+const SNAKE_PRIZES = [[ITEM_PEBBLE, 4], [ITEM_PEBBLE, 6], [ITEM_BONE, 1], [ITEM_APPLE, 2], [ITEM_POPPER, 1], [B.LAMP, 1]]; // left in a popped snake's confetti
 let barMode = 'build', otherBar = [...FIGHT_HOTBAR], otherSel = 0;
 const buildBar = () => barMode === 'build' ? hotbar : otherBar, buildSel = () => barMode === 'build' ? selected : otherSel;
 const fightBar = () => barMode === 'fight' ? hotbar : otherBar, fightSel = () => barMode === 'fight' ? selected : otherSel;
@@ -223,6 +224,8 @@ function checkGoals() {
   }
   if (finished) {
     sfx.fanfare();
+    // a little firework just in front of you to celebrate (only you see it)
+    if (player) { const f = player.forward(), l = Math.hypot(f[0], f[2]) || 1; fireworks.launch([player.pos[0] + f[0] / l * 4, player.pos[1], player.pos[2] + f[2] / l * 4]); }
     const next = nextGoal();
     toast(`★ Goal done: ${finished[1]}! You got ${rewardText(finished[4])}.` + (taught ? ` 📜 You learned how to make: ${taught}!` : '') + (next ? '' : ' That’s every goal. Chicken king!'), taught ? 4500 : undefined);
     const el = $('#goal'); el.classList.remove('done'); void el.offsetWidth; el.classList.add('done');
@@ -877,6 +880,12 @@ const popped = () => nightPops ? ` You popped ${nightPops} ${nightPops === 1 ? '
     } else if (ev.type === 'poof') {
       sfx.poof(); buzz(60); bump(stats, 'bonked'); popOne();
       if (!firsts.includes('poof')) { firsts.push('poof'); toast('Bonk, bonk, bonk! The snake poofed into confetti cubes. Snakes take a few hits now: a slingshot helps you hit them from further away.'); }
+      // something left in the confetti for whoever's close by
+      else if (d < 16) {
+        const [id, k] = SNAKE_PRIZES[Math.random() * SNAKE_PRIZES.length | 0];
+        addItem(id, k); bump(stats, 'got', id, k); sfx.pickup();
+        floatFx(ev.p, 'hatch', `+${k} ${nameN(id, k)}`);
+      }
     }
   }
   snakes.events.length = 0;
