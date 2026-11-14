@@ -2,6 +2,9 @@
 
 The same list is in the game: tap the version number on the front screen, or open **What’s new**.
 
+## 70. Your crown in your story (14 Nov 2026)
+- Your story so far shows which crown you have, and what the next one needs.
+
 ## 69. A gentle hint on the first night (14 Nov 2026)
 - The very first nightfall message mentions that you can turn on Peaceful in Settings if snakes are too scary.
 

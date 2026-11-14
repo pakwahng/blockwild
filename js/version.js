@@ -1,11 +1,14 @@
 // The game's version and what changed in each one. Shown on the front screen ("What's new")
 // and in CHANGELOG.md. When you release: bump VERSION, add an entry at the top of CHANGES,
 // and set the same number in sw.js (CACHE = 'blockwild-v<VERSION>') so phones pick it up.
-export const VERSION = 69;
+export const VERSION = 70;
 export const RELEASED = '14 Nov 2026'; // (the menu shows the newest What's new date instead)
 
 // [version, date, headline, [details]]
 export const CHANGES = [
+  [70, '14 Nov 2026', 'Your crown in your story', [
+    'Your story so far shows which crown you have, and what the next one needs.',
+  ]],
   [69, '14 Nov 2026', 'A gentle hint on the first night', [
     'The very first nightfall message mentions that you can turn on Peaceful in Settings if snakes are too scary.',
   ]],

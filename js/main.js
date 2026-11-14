@@ -2023,6 +2023,10 @@ function buildStory() {
   let pd = nights;
   if (!(trader.here || (visitDay(pd) && (clock < TRADE_TILL || clock >= DAWN)))) do pd++; while (!visitDay(pd)); // (after sunrise, before the clock wraps, counts as the new day)
   rows.push(['🛒', pd === nights ? 'Today' : `Day ${pd + 1}`, 'Pip’s next visit']);
+  // your crown, or how far along the next one you are
+  const next = CROWNS[crown + 1];
+  rows.push(['👑', crown ? CROWNS[crown].name.replace(' crown', '') : 'None yet',
+    next ? `Crown · next: ${next.nights} safe nights in a row with ${next.flock} animals` : 'Crown · the best one!']);
   $('#story-list').innerHTML = rows.map(([e, v, t]) => `<div><b>${e} ${v}</b><span>${t}</span></div>`).join('');
 }
 $('#story').addEventListener('toggle', () => { if ($('#story').open) buildStory(); });
