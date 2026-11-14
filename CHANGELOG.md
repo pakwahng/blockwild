@@ -2,6 +2,11 @@
 
 The same list is in the game: tap the version number on the front screen, or open **What’s new**.
 
+## 62. Little fixes (14 Nov 2026)
+- With Read messages aloud on, tapping your goal at the top reads it out too.
+- Middle clicking a block shows its name above the hotbar, like picking a slot does.
+- The version on the menu shows the right date again (it was stuck on 10 Nov).
+
 ## 61. Take back a block (14 Nov 2026)
 - Keyboard: put a block in the wrong place? Press Ctrl+Z (⌘Z on a Mac) to take it back into your bag. Press it again for the one before, up to 30 blocks.
 

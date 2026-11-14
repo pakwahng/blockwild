@@ -235,7 +235,7 @@ function checkGoals() {
   const text = g ? `★ ${g[1]}${g[2] > 1 ? ` · ${goalProgress(g)}/${g[2]}` : ''}` : '';
   if (text !== shownGoal) { shownGoal = text; el.querySelector('span').textContent = text; el.hidden = !g; }
 }
-$('#goal').addEventListener('click', () => { bagTab = 'goals'; openPicker(); });
+$('#goal').addEventListener('click', () => { const g = nextGoal(); if (g) sayAloud('Your goal: ' + g[1]); bagTab = 'goals'; openPicker(); });
 function buildGoals() {
   const list = $('#goal-list');
   list.innerHTML = '';
@@ -1211,7 +1211,7 @@ function pickBlock() {
   if (!hotbar.includes(id) && (otherBar.includes(id) || barMode === 'fight')) toggleBar(); // use the hotbar it's already on
   let slot = hotbar.indexOf(id);
   if (slot < 0) { hotbar[selected] = id; buildHotbar(); slot = selected; }
-  selectSlot(slot); sfx.pickup?.();
+  selectSlot(slot); showSlotName(slotLabel(id)); sfx.pickup?.();
 }
 function placeBlock() {
   if (!running) return;
@@ -1571,9 +1571,7 @@ function toggleBar() {
   barMode = barMode === 'build' ? 'fight' : 'build';
   buildHotbar(); updateHeld();
   sfx.pickup(); buzz(10);
-  const nm = $('#slot-name');
-  nm.textContent = barMode === 'fight' ? '⚔️ Fight hotbar' : '🔨 Build hotbar';
-  nm.classList.add('show'); clearTimeout(slotNameT); slotNameT = setTimeout(() => nm.classList.remove('show'), 1100);
+  showSlotName(barMode === 'fight' ? '⚔️ Fight hotbar' : '🔨 Build hotbar');
   if (!firsts.includes('bar-' + barMode)) {
     firsts.push('bar-' + barMode);
     toast(barMode === 'fight' ? '⚔️ Fighting hotbar: sword, slingshot, pebbles, poppers and snacks. Tap Build (or press Q) to swap back.'
@@ -1603,16 +1601,17 @@ function emptyHint(id) {
   if (TOOLS.has(id)) { toast(made ? `You don’t have a ${itemName(id).toLowerCase()} yet. Open your bag at a crafting table to make one.` : `You don’t have a ${itemName(id).toLowerCase()} yet. Finish goals to learn how to make one.`); return; }
   toast(made ? `You’re out of ${itemName(id).toLowerCase()}. Open your bag to make more.` : `You’re out of ${itemName(id).toLowerCase()}. Dig or find some more.`);
 }
+// a short label above the hotbar for a moment: what you picked, or which hotbar is showing
 let slotNameT = 0;
+function showSlotName(text) {
+  const el = $('#slot-name');
+  el.textContent = text; el.classList.add('show');
+  clearTimeout(slotNameT); slotNameT = setTimeout(() => el.classList.remove('show'), 1100);
+}
+const slotLabel = id => itemName(id) + (TOOLS.has(id) ? '' : ` · ${have(id)}`);
 function selectSlot(i) {
-  // say what you picked, for a moment, above the hotbar
   const id = hotbar[i];
-  if (i !== selected && id && running) {
-    const el = $('#slot-name'), n = have(id);
-    el.textContent = itemName(id) + (TOOLS.has(id) ? '' : ` · ${n}`);
-    el.classList.add('show');
-    clearTimeout(slotNameT); slotNameT = setTimeout(() => el.classList.remove('show'), 1100);
-  }
+  if (i !== selected && id && running) showSlotName(slotLabel(id));
   selected = i;
   [...$('#hotbar').children].forEach((el, k) => el.classList.toggle('sel', k === i));
   updateHeld();
@@ -1995,7 +1994,7 @@ const seenVersion = () => settings.seenVersion || (store.get(SAVE_KEY) ? 17 : 0)
 function buildVersion() {
   const seen = seenVersion(), fresh = seen > 0 && seen < VERSION;
   const pill = $('#version');
-  pill.innerHTML = `Version <b>${VERSION}</b> · ${RELEASED}`;
+  pill.innerHTML = `Version <b>${VERSION}</b> · ${CHANGES[0][1]}`;
   pill.classList.toggle('new', fresh);
   $('#changelog').innerHTML = CHANGES.map(([v, date, head, list], k) =>
     `<section class="${(fresh ? v > seen : k === 0) ? 'latest' : ''}"><h3>${v}. ${esc(head)}<span>${esc(date)}</span></h3><ul>${list.map(t => `<li>${esc(t)}</li>`).join('')}</ul></section>`).join('');
