@@ -1071,13 +1071,21 @@ function swing() {
   if (net.isGuest) { net.toHost({ t: 'swing', eye: player.eye(), fwd: player.forward() }); sfx.whoosh(); return; }
   if (!snakes.swing(player.eye(), player.forward()) && !raiders.swing(player.eye(), player.forward(), myNetId)) sfx.whoosh();
 }
+const TAP_USES = new Set([B.THRONE, B.BENCH, B.GATE, B.GATE_OPEN, B.CHEST, B.BED, B.BELL, B.MUSICBOX, B.SIGN, B.PLANTER_RIPE]);
 // Holding a block to build with? A yellow outline shows where it will go (the target's open side).
 function placeGhost(t) {
   if (!t || !running || !(t.nx || t.ny || t.nz)) return t;
   const id = hotbar[selected];
   if (!id || have(id) <= 0 || !PLACEABLE.includes(id)) return t;
+  // tapping these uses them instead of building, so don't promise a block there
+  if (TAP_USES.has(t.id) || IS_DOOR(t.id) || aimingAtTrader()) return t;
   const x = t.x + t.nx, y = t.y + t.ny, z = t.z + t.nz, here = world.getBlock(x, y, z);
   if (here !== B.AIR && here !== B.WATER) return t;
+  if (SOLID[id] && player.intersectsBlock(x, y, z)) return t; // it would go where you're standing
+  if (id === B.DOOR) {
+    const up = world.getBlock(x, y + 1, z);
+    if ((up !== B.AIR && up !== B.WATER) || player.intersectsBlock(x, y + 1, z)) return t;
+  }
   return { ...t, place: [x, y, z] };
 }
 function updateHeld() {

@@ -1,11 +1,15 @@
 // The game's version and what changed in each one. Shown on the front screen ("What's new")
 // and in CHANGELOG.md. When you release: bump VERSION, add an entry at the top of CHANGES,
 // and set the same number in sw.js (CACHE = 'blockwild-v<VERSION>') so phones pick it up.
-export const VERSION = 86;
+export const VERSION = 87;
 export const RELEASED = '14 Nov 2026'; // (the menu shows the newest What's new date instead)
 
 // [version, date, headline, [details]]
 export const CHANGES = [
+  [87, '14 Nov 2026', 'Fixes', [
+    'The yellow outline no longer shows on doors, gates, chests, beds, bells, music boxes, signs, seats or ripe wheat (tapping those uses them), or where a block can’t go because you’re standing there.',
+    'With Bigger words on, long messages no longer run off the edge of a narrow phone.',
+  ]],
   [86, '14 Nov 2026', 'See where your block will go', [
     'Holding a block to build with, a yellow outline shows exactly where it will go before you place it.',
   ]],

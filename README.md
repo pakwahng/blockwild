@@ -223,7 +223,7 @@ The front screen shows the version number. Tap it, or open **What’s new**, for
 - **Bigger words and buttons** (Settings, `settings.big`, `body.big`): CSS `zoom` on panels, the menu card, the top pills and buttons, messages and the Undo button.
 - **Your things groups** (`buildOwned()`): Tools (with ammo, fireworks and the swim ring), Treats & food, Blocks to build with (`PLACEABLE`), Other things, each with a small heading when there's more than one group.
 - **Goal nudge** (`goalNudge()`): after 5 minutes of play (counted in `checkGoals` ticks) with no change on the next goal, a message repeats it and points to the Make button if there is one. It won't show again for 15 minutes.
-- **Where it goes** (`placeGhost()`): holding a block from `PLACEABLE`, the renderer draws a second, yellow outline on the open side of the targeted block (`target.place`), only where the spot is air or water.
+- **Where it goes** (`placeGhost()`): holding a block from `PLACEABLE`, the renderer draws a second, yellow outline on the open side of the targeted block (`target.place`), only where the spot is air or water, the block would not overlap you (doors need room above too), and the target is not something a tap uses (`TAP_USES`, doors, Pip).
 - **Undo button** (touch only, `showUndo()`): shows for 4 s after you place a block and runs the same `undoPlace()` as Ctrl+Z. Off when playing together.
 - **Volume** (Settings, `settings.volume` 0.1–1): scales the sound effects' master gain (`sfx.setVolume`) and the theme song (`music.level`).
 - **Wandered off:** tame animals without a job more than 16 blocks from the nursery's middle get their own small mark on the map (`STRAY_MARK`).

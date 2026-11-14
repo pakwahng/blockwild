@@ -2,6 +2,10 @@
 
 The same list is in the game: tap the version number on the front screen, or open **What’s new**.
 
+## 87. Fixes (14 Nov 2026)
+- The yellow outline no longer shows on doors, gates, chests, beds, bells, music boxes, signs, seats or ripe wheat (tapping those uses them), or where a block can’t go because you’re standing there.
+- With Bigger words on, long messages no longer run off the edge of a narrow phone.
+
 ## 86. See where your block will go (14 Nov 2026)
 - Holding a block to build with, a yellow outline shows exactly where it will go before you place it.
 
