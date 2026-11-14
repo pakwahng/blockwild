@@ -4,7 +4,7 @@ import { Snakes, SNAKE_KINDS, snakesTonight, K_POISON, K_FLYING, K_DIGGER, K_BOO
 import { Raiders } from './raiders.js';
 import { Weather } from './weather.js';
 import { Critters, BUTTERFLY_KINDS } from './critters.js';
-import { GOALS, newStats, bump } from './goals.js';
+import { GOALS, DAILY, newStats, bump } from './goals.js';
 import { drops, RECIPES, TABS, TOOLS, STARTER, OLD_SAVE_BAG, TABLE_REACH, FEEDER_FILL } from './crafting.js';
 import { STARTER_RECIPES, SEW, patternKey, GOAL_TEACH, goalRecipes, PAGE_CHANCE, unlearned, pickPage, oldWorldRecipes } from './recipes.js';
 import { skyAt, CYCLE, DUSK, NIGHT, DAWN } from './sky.js';
@@ -235,11 +235,54 @@ function checkGoals() {
   const g = nextGoal(), el = $('#goal');
   const text = g ? `★ ${g[1]}${g[2] > 1 ? ` · ${goalProgress(g)}/${g[2]}` : ''}` : '';
   if (text !== shownGoal) { shownGoal = text; el.querySelector('span').textContent = text; el.hidden = !g; }
+  dailyStep();
+}
+// ---------- today's job: a small task each day, with its own little reward ----------
+// Kept in stats.daily = { seed, day, id, base, done }: base is the job's count at the start of the day.
+function dailyJob() {
+  if (!world || net.isGuest) return null; // daily jobs are for your own world only
+  const d = stats.daily, same = d && d.seed === world.seed;
+  if (same && d.day === nights) return DAILY.find(j => j[0] === d.id) || null;
+  // a new day: pick a job you can do (the same pick for the same world and day), not yesterday's
+  const ok = DAILY.filter(j => (!j[5] || j[5](stats, have)) && !(same && d.day === nights - 1 && j[0] === d.id));
+  let h = (world.seed ^ Math.imul(nights + 7, 2654435761)) >>> 0; h = Math.imul(h ^ (h >>> 13), 1274126177) >>> 0;
+  const j = ok[h % ok.length];
+  stats.daily = { seed: world.seed, day: nights, id: j[0], base: j[3](stats), done: false };
+  return j;
+}
+const dailyProgress = j => Math.max(0, Math.min(j[2], j[3](stats) - stats.daily.base));
+let shownDaily = '';
+function dailyStep() {
+  const el = $('#daily');
+  const j = goalsDone.length >= 3 ? dailyJob() : null; // new players get a few goals in before the daily jobs start
+  if (j && !stats.daily.done && dailyProgress(j) >= j[2]) {
+    stats.daily.done = true; bump(stats, 'dailies');
+    for (const [id, k] of j[4]) addItem(id, k, true);
+    sfx.fanfare();
+    toast(`☀️ Today’s job done: ${j[1]}! You got ${rewardText(j[4])}. A new job comes tomorrow.`);
+    el.classList.remove('done'); void el.offsetWidth; el.classList.add('done');
+    saveGame();
+  }
+  const text = !j ? '' : stats.daily.done ? '☀️ Today’s job done! New one tomorrow.' : `☀️ Today: ${j[1]}${j[2] > 1 ? ` · ${dailyProgress(j)}/${j[2]}` : ''}`;
+  if (text !== shownDaily) { shownDaily = text; el.querySelector('span').textContent = text; el.hidden = !j; el.classList.toggle('finished', !!j && stats.daily.done); }
 }
 $('#goal').addEventListener('click', () => { const g = nextGoal(); if (g) sayAloud('Your goal: ' + g[1]); bagTab = 'goals'; openPicker(); });
+$('#daily').addEventListener('click', () => { const j = dailyJob(); if (j && !stats.daily.done) sayAloud('Today’s job: ' + j[1]); bagTab = 'goals'; openPicker(); });
 function buildGoals() {
   const list = $('#goal-list');
   list.innerHTML = '';
+  // today's job sits at the top
+  const j = goalsDone.length >= 3 ? dailyJob() : null;
+  if (j) {
+    const done = stats.daily.done, p = dailyProgress(j);
+    const row = document.createElement('div');
+    row.className = 'goal-row daily' + (done ? ' done' : ' next');
+    row.innerHTML = `<span class="tick" aria-hidden="true">${done ? '✓' : '☀️'}</span>` +
+      `<span class="what">Today: ${j[1]}${!done && j[2] > 1 ? ` <em>${p}/${j[2]}</em>` : ''}</span>` +
+      `<span class="prize">${j[4].map(([id, k]) => `<img alt="" src="${icons[id]}">${k}`).join(' ')}</span>`;
+    row.setAttribute('aria-label', `Today’s job: ${j[1]}. ${done ? 'Done.' : `${p} of ${j[2]}.`} Reward: ${rewardText(j[4])}.`);
+    list.appendChild(row);
+  }
   for (const g of GOALS) {
     const done = goalsDone.includes(g[0]), p = goalProgress(g);
     const row = document.createElement('div');
@@ -524,7 +567,7 @@ nurseryEl.prepend(crownEl);
 const streakEl = document.createElement('div');
 streakEl.className = 'pill streak'; streakEl.hidden = true;
 crownEl.after(streakEl);
-{ const br = document.createElement('div'); br.className = 'break'; nurseryEl.append(br, $('#goal')); }
+{ const br = document.createElement('div'); br.className = 'break'; const br2 = document.createElement('div'); br2.className = 'break daily-break'; nurseryEl.append(br, $('#goal'), br2, $('#daily')); }
 // Crowns get harder: each needs more perfect nights in a row (no baby spooked) and a bigger nursery.
 // The snakes grow in number and kind every night too, so a long streak is a real feat.
 const CROWNS = [
@@ -1804,6 +1847,36 @@ function pause() {
   $('#menu').classList.add('paused');
   music.setMode('menu');
   updateBackupUi();
+  showTip();
+}
+
+// A different helpful tip each time the game is paused, so features get found.
+const TIPS = [
+  'Tap ⇄ to swap between your building and fighting hotbars.',
+  'Lamp posts and campfires slow snakes down. Light up your nursery!',
+  'Tap the map to drop a blue pin, so you can find your way back.',
+  'Turn on Peaceful in Settings for nights with no snakes or foxes.',
+  'Patting a baby helps it grow up a little. Pat it again to give it a name.',
+  'Fill a feeder with treats and your animals can snack while you explore.',
+  'Pip the goose visits every few days with new things to trade.',
+  'Do the ☀️ job each day for a little reward.',
+  'Fish with a rod. Sometimes you reel in a bottle with a treasure note!',
+  'A party cake calls your animals together and helps babies grow.',
+  'Brighter nights in Settings makes it easier to see after dark.',
+  'Read aloud in Settings reads messages out for you.',
+];
+const KEY_TIPS = [
+  'Press Ctrl+Z to take back the last block you put down.',
+  'Middle-click a block to pick the same kind for your hotbar.',
+  'Press E to open your things, and M for the map.',
+];
+let tipAt = Math.floor(Math.random() * 100);
+function showTip() {
+  const el = $('#tip');
+  if (!el) return;
+  const list = coarse ? TIPS : TIPS.concat(KEY_TIPS);
+  el.textContent = '💡 ' + list[tipAt++ % list.length];
+  el.hidden = false;
 }
 
 function resume() {

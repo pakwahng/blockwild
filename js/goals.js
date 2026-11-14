@@ -1,6 +1,6 @@
 // Goals: a short list of things to try, in order, each with a little reward.
 // They lead a new player from digging their first block to building a pen and surviving the night.
-import { B, ITEM_SEEDS, ITEM_WHEAT, ITEM_APPLE, ITEM_CLOVER, ITEM_BONE, ITEM_STICK, ITEM_EGG, ITEM_MILK, ITEM_HOUSE, ITEM_FISH, FOODS, ITEM_FIREWORK, ITEM_RING, ITEM_SLING, ITEM_PEBBLE, ITEM_POPPER, ITEM_PIE } from './blocks.js';
+import { B, ITEM_SEEDS, ITEM_WHEAT, ITEM_APPLE, ITEM_CLOVER, ITEM_BONE, ITEM_STICK, ITEM_EGG, ITEM_MILK, ITEM_HOUSE, ITEM_FISH, FOODS, ITEM_FIREWORK, ITEM_RING, ITEM_SLING, ITEM_PEBBLE, ITEM_POPPER, ITEM_PIE, ITEM_ROD, ITEM_BREAD } from './blocks.js';
 
 // stats: { dug: {id: n}, got: {id: n}, made: {id: n}, placed: {id: n}, tamed, hatched, bonked, filled, nights, climbed, chicks, grown, gifts: {id: n} }
 const n = (map, id) => (map && map[id]) || 0;
@@ -61,6 +61,13 @@ export const GOALS = [
   ['castle', 'Build a sandcastle on the beach', 1, s => n(s.placed, B.SANDCASTLE), [[ITEM_FIREWORK, 2], [ITEM_APPLE, 3]]],
   ['guard', 'Bonk 25 foxes, crows and snakes in all', 25, s => s.bonked || 0, [[ITEM_POPPER, 4], [ITEM_PEBBLE, 20]]],
   ['chicks', 'Grow your nursery to 37 chickens', 37, s => s.chicks || 0, [[B.HAY, 4], [ITEM_APPLE, 5]]],
+  ['dailies', 'Finish 5 of the daily jobs (the ☀️ one under your goal)', 5, s => s.dailies || 0, [[B.LAMP, 3], [ITEM_APPLE, 5]]],
+  ['fish20', 'Catch 20 things with a fishing rod', 20, s => s.fished || 0, [[ITEM_FISH, 4], [B.WOOL, 3]]],
+  ['chests5', 'Open 5 treasure chests', 5, s => s.chests || 0, [[ITEM_FIREWORK, 2], [B.GLASS, 4]]],
+  ['parties', 'Throw 3 parties with a party cake', 3, s => s.parties || 0, [[ITEM_MILK, 3], [ITEM_EGG, 4]]],
+  ['streak5', 'Keep every baby safe 5 nights in a row', 5, s => s.bestStreak || 0, [[ITEM_POPPER, 4], [ITEM_PIE, 1]]],
+  ['chicks67', 'Grow your nursery to 67 chickens', 67, s => s.chicks || 0, [[ITEM_FIREWORK, 4], [ITEM_PIE, 2]]],
+  ['chicks100', 'Raise 100 chickens. Chicken king!', 100, s => s.chicks || 0, [[ITEM_FIREWORK, 6], [B.HAY, 6]]],
 ];
 export const GOAL_IDS = GOALS.map(g => g[0]);
 
@@ -70,3 +77,19 @@ export function bump(stats, key, id, by = 1) {
   const m = stats[key] || (stats[key] = {});
   m[id] = (m[id] || 0) + by;
 }
+
+// A little job for each day, on top of the goals: one is picked each morning (the same for everyone in a world).
+// [id, what to do, how many, value(stats) (progress is how much it's gone up today), reward, can(stats, have)]
+const all = map => Object.values(map || {}).reduce((a, b) => a + b, 0);
+export const DAILY = [
+  ['pet', 'Pet your babies 5 times', 5, s => s.petted || 0, [[ITEM_CLOVER, 3], [ITEM_SEEDS, 6]]],
+  ['dig', 'Dig 40 blocks', 40, s => all(s.dug), [[ITEM_PEBBLE, 10], [ITEM_APPLE, 2]]],
+  ['build', 'Put down 30 blocks', 30, s => all(s.placed), [[B.LAMP, 2], [B.GLASS, 2]]],
+  ['make', 'Make 4 things', 4, s => all(s.made), [[ITEM_STICK, 4], [B.WOOL, 2]]],
+  ['hatch', 'Hatch a new baby: feed two of the same kind', 1, s => s.hatched || 0, [[ITEM_WHEAT, 4], [ITEM_EGG, 2]], s => (s.tamed || 0) >= 2],
+  ['tame', 'Feed a wild baby to bring it home', 1, s => s.tamed || 0, [[ITEM_FIREWORK, 1], [ITEM_APPLE, 3]]],
+  ['fish', 'Catch 2 things with your fishing rod', 2, s => s.fished || 0, [[ITEM_APPLE, 3], [B.LAMP, 1]], (s, have) => have(ITEM_ROD) > 0],
+  ['gifts', 'Pick up 3 gifts from your grown-ups', 3, s => all(s.gifts), [[ITEM_BREAD, 1], [ITEM_MILK, 1]], s => (s.grown || 0) > 0],
+  ['plant', 'Plant seeds in 3 planters', 3, s => s.planted || 0, [[ITEM_WHEAT, 4], [ITEM_BONE, 2]], s => n(s.placed, B.PLANTER) > 0],
+  ['fill', 'Fill a feeder 2 times', 2, s => s.filled || 0, [[ITEM_SEEDS, 8], [ITEM_CLOVER, 2]], s => n(s.placed, B.FEEDER) > 0],
+];

@@ -2,6 +2,11 @@
 
 The same list is in the game: tap the version number on the front screen, or open **What’s new**.
 
+## 71. Today’s jobs, more goals and pause tips (14 Nov 2026)
+- Once you have done 3 goals, a blue ☀️ Today line under your goal gives a small job each day, with its own little reward. A new one every morning.
+- Seven new goals for later on: daily jobs, fishing, treasure chests, parties, safe nights in a row, and growing to 67 and then 100 chickens.
+- The pause menu shows a handy tip each time you pause.
+
 ## 70. Your crown in your story (14 Nov 2026)
 - Your story so far shows which crown you have, and what the next one needs.
 

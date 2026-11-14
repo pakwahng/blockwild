@@ -1,11 +1,16 @@
 // The game's version and what changed in each one. Shown on the front screen ("What's new")
 // and in CHANGELOG.md. When you release: bump VERSION, add an entry at the top of CHANGES,
 // and set the same number in sw.js (CACHE = 'blockwild-v<VERSION>') so phones pick it up.
-export const VERSION = 70;
+export const VERSION = 71;
 export const RELEASED = '14 Nov 2026'; // (the menu shows the newest What's new date instead)
 
 // [version, date, headline, [details]]
 export const CHANGES = [
+  [71, '14 Nov 2026', 'Today’s jobs, more goals and pause tips', [
+    'Once you have done 3 goals, a blue ☀️ Today line under your goal gives a small job each day, with its own little reward. A new one every morning.',
+    'Seven new goals for later on: daily jobs, fishing, treasure chests, parties, safe nights in a row, and growing to 67 and then 100 chickens.',
+    'The pause menu shows a handy tip each time you pause.',
+  ]],
   [70, '14 Nov 2026', 'Your crown in your story', [
     'Your story so far shows which crown you have, and what the next one needs.',
   ]],
