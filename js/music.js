@@ -51,7 +51,7 @@ export class Music {
     if (!el) return;
     const want = this.want();
     if (want && this.mode === 'game' && !this.inGame && el.paused) { this.inGame = true; el.currentTime = 0; }
-    const target = want ? (this.mode === 'menu' ? MENU_VOL : GAME_VOL) : 0;
+    const target = want ? (this.mode === 'menu' ? MENU_VOL : GAME_VOL) * (this.level ?? 1) : 0; // level: the Volume setting
     this.vol += Math.sign(target - this.vol) * Math.min(Math.abs(target - this.vol), dt * 0.5);
     if (this.gain) this.gain.gain.value = this.vol; else el.volume = Math.min(1, this.vol);
     if (want && el.paused) el.play().catch(() => {});

@@ -1,6 +1,8 @@
 // Tiny synthesized sound effects (no audio files): cheeps, pops, seed tosses and block thuds.
 export class Sfx {
-  constructor() { this.ctx = null; this.enabled = true; this.master = null; }
+  constructor() { this.ctx = null; this.enabled = true; this.master = null; this.volume = 1; }
+  // the Volume setting (0 to 1)
+  setVolume(v) { this.volume = v; if (this.master) this.master.gain.value = 0.5 * v; }
 
   // Must be called from a user gesture (tap/click) for mobile browsers.
   unlock() {
@@ -9,7 +11,7 @@ export class Sfx {
       if (!AC) return;
       this.ctx = new AC();
       this.master = this.ctx.createGain();
-      this.master.gain.value = 0.5;
+      this.master.gain.value = 0.5 * this.volume;
       this.master.connect(this.ctx.destination);
     }
     if (this.ctx.state === 'suspended') this.ctx.resume();

@@ -1,11 +1,15 @@
 // The game's version and what changed in each one. Shown on the front screen ("What's new")
 // and in CHANGELOG.md. When you release: bump VERSION, add an entry at the top of CHANGES,
 // and set the same number in sw.js (CACHE = 'blockwild-v<VERSION>') so phones pick it up.
-export const VERSION = 79;
+export const VERSION = 80;
 export const RELEASED = '14 Nov 2026'; // (the menu shows the newest What's new date instead)
 
 // [version, date, headline, [details]]
 export const CHANGES = [
+  [80, '14 Nov 2026', 'A volume slider', [
+    'Settings has a Volume slider for the sounds and the theme song together. Let go of it to hear how loud it is.',
+    'Fixes: Take me home never leaves you inside a tree’s leaves.',
+  ]],
   [79, '14 Nov 2026', 'Find wandering babies, and a warm welcome back', [
     'The map shows any of your animals that have wandered off from the rest (🐥 🐮 🐷 🐑 🐶), so you can go and fetch them.',
     'Back after a while? A welcome message reminds you of the day, your next goal and today’s job.',

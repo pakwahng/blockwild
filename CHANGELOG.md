@@ -2,6 +2,10 @@
 
 The same list is in the game: tap the version number on the front screen, or open **What’s new**.
 
+## 80. A volume slider (14 Nov 2026)
+- Settings has a Volume slider for the sounds and the theme song together. Let go of it to hear how loud it is.
+- Fixes: Take me home never leaves you inside a tree’s leaves.
+
 ## 79. Find wandering babies, and a warm welcome back (14 Nov 2026)
 - The map shows any of your animals that have wandered off from the rest (🐥 🐮 🐷 🐑 🐶), so you can go and fetch them.
 - Back after a while? A welcome message reminds you of the day, your next goal and today’s job.

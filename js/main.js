@@ -34,7 +34,7 @@ const coarse = matchMedia('(pointer: coarse)').matches;
 const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 const settings = Object.assign({ view: coarse ? 5 : 7, sens: 1, autoJump: true, showFps: false, sound: true, music: true, char: 'lachie', nick: '', fits: {} }, store.get(SET_KEY) || {});
 // From v77 the game may lower How far you can see on a slow phone. A distance someone already picked by hand stays put.
-if (settings.viewChosen === undefined && store.get(SET_KEY) && settings.view !== (coarse ? 5 : 7)) settings.viewChosen = true;
+if (settings.viewChosen === undefined && store.get(SET_KEY) && !(settings.seenVersion >= 77) && settings.view !== (coarse ? 5 : 7)) settings.viewChosen = true;
 // Clothes patterns arrived in v26: a device from before then keeps what it has sewn and what anyone is wearing.
 if (!Array.isArray(settings.patterns)) {
   const keep = new Set(settings.sewn || []);
@@ -2326,6 +2326,8 @@ function takeMeHome() {
   // down through the air (and tree tops) to the first ground or water
   let y = CH - 1;
   for (let b; y > 1 && ((b = world.getBlock(Math.floor(x), y - 1, Math.floor(z))) === B.AIR || b === B.LEAVES); y--);
+  // landed on a tree trunk inside its leaves? climb back up to the top of the tree
+  while (y < CH - 2 && (world.getBlock(Math.floor(x), y, Math.floor(z)) !== B.AIR || world.getBlock(Math.floor(x), y + 1, Math.floor(z)) !== B.AIR)) y++;
   perf.t0 = 0; perf.windows = 0; // the world round here is still being built: don't count it as slow
   if (seat) standUp();
   seat = null; player.flying = false;
@@ -3211,6 +3213,9 @@ function applySettings() {
   $('#set-bright').checked = !!settings.brightNights;
   $('#set-speak').checked = !!settings.speak; $('#set-speak').disabled = !window.speechSynthesis;
   sfx.enabled = settings.sound;
+  const vol = Number.isFinite(settings.volume) ? settings.volume : 1;
+  sfx.setVolume(vol); music.level = vol;
+  $('#set-volume').value = vol; $('#vol-val').textContent = Math.round(vol * 100) + '%';
   sMusic.checked = settings.music; sMusic.disabled = !settings.sound;
   music.enabled = settings.sound && settings.music;
   input.touchSens = input.mouseSens = +settings.sens;
@@ -3225,6 +3230,8 @@ sSens.addEventListener('input', () => { settings.sens = +sSens.value; applySetti
 sAuto.addEventListener('change', () => { settings.autoJump = sAuto.checked; applySettings(); });
 sFps.addEventListener('change', () => { settings.showFps = sFps.checked; applySettings(); });
 sSound.addEventListener('change', () => { settings.sound = sSound.checked; applySettings(); });
+$('#set-volume').addEventListener('input', () => { settings.volume = +$('#set-volume').value; applySettings(); });
+$('#set-volume').addEventListener('change', () => { sfx.unlock(); sfx.cheep(); }); // a little sound so you can hear how loud it is
 sMusic.addEventListener('change', () => { settings.music = sMusic.checked; applySettings(); });
 $('#set-speak').addEventListener('change', e => { settings.speak = e.target.checked; applySettings(); if (settings.speak) toast('I’ll read the messages out loud for you.'); else window.speechSynthesis?.cancel(); });
 $('#set-bright').addEventListener('change', e => { settings.brightNights = e.target.checked; applySettings(); });
