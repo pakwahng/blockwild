@@ -839,6 +839,15 @@ const popped = () => nightPops ? ` You popped ${nightPops} ${nightPops === 1 ? '
     else if (ev.type === 'spawn') {
       const k = ev.kind | 0;
       if (k && !firsts.includes('snake' + k)) { firsts.push('snake' + k); setTimeout(() => toast(SNAKE_TIPS[k]), 1500); }
+      else if (ev.p) {
+        // which side it's coming from: measured from the nursery (or you), with north up like the map
+        let n = 0, hx = 0, hz = 0;
+        for (const a of flock.animals) if (a.tame) { n++; hx += a.p[0]; hz += a.p[2]; }
+        const c = n ? [hx / n, hz / n] : [player.pos[0], player.pos[2]];
+        const dirs = ['north', 'north-east', 'east', 'south-east', 'south', 'south-west', 'west', 'north-west'];
+        const side = dirs[((Math.round(Math.atan2(ev.p[0] - c[0], c[1] - ev.p[2]) / (Math.PI / 4)) % 8) + 8) % 8];
+        toast(`🐍 A ${SNAKE_KINDS[k]?.name || 'snake'} is coming from the ${side}${n ? ' of the nursery' : ''}!`, 3500);
+      }
     } else if (ev.type === 'spook') {
       sfx.hiss(0.4); sfx.call(ev.sp, 0.5);
       const who = callName(ev.name, ev.sp, 'a', ev.nick);

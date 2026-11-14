@@ -266,6 +266,7 @@ A full day lasts 10 minutes: about 6 minutes of daylight, a pink dusk, roughly 3
 - A clock pill in the top corner shows ☀️ Day, 🌅 Dusk or 🌙 Night with the day number (`clockStep()` in `main.js`). About 20 seconds before dusk a message warns you, and tells you to swap to the fight hotbar if you're on the build one.
 - A red **🐍 Snake** (or **🦊 Fox**) tag with the distance points to the nearest one within 60 blocks, pinned to the screen edge when it's off screen. Snakes and foxes also show on the map.
 - At night the clock adds a snake count (`🌙 Night 2 · 🐍 3`), and the sunrise message says how many snakes you popped that night (`nightPops`).
+- When a snake spawns (after its kind's first-time tip), a message names it and the side of the nursery it comes from, in eight compass points with north up.
 - If a snake gets within 14 blocks of the nursery while you're 25 or more blocks away, a message (once per snake) tells you to hurry back.
 - **Kinds of snake** (`SNAKE_KINDS` in `js/snakes.js`). A new kind joins each night, and a newly unlocked kind comes first that night:
   - Night 1: **block snake** (green and purple) and **poison snake** (purple and lime). The poison snake leaves a trail of green goo from its tail that lasts 5 seconds. Babies that step in it run off; it slows you to 40% speed.
