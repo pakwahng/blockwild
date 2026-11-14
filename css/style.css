@@ -689,3 +689,7 @@ body:has(#picker:not([hidden]), #jobcard:not([hidden]), #signcard:not([hidden]),
   top: auto; bottom: calc(16px + var(--safe-b));
 }
 body:has(#menu:not([hidden])) #loading { display: none; }
+/* "Make fences ›" on the next goal in the Goals tab */
+.goal-make { display: inline-block; margin: 6px 0 0; padding: 6px 12px; min-height: 34px; border-radius: 99px; border: 0;
+  background: #ffcf3a; color: #3a2600; font-weight: 800; font-size: 13px; cursor: pointer; }
+.goal-row .what .goal-make { display: table; }

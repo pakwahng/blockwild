@@ -2,6 +2,10 @@
 
 The same list is in the game: tap the version number on the front screen, or open **What’s new**.
 
+## 78. Quicker to the things you need (14 Nov 2026)
+- In the Goals tab, your next goal has a yellow button (like “Make fences ›”) that takes you straight to the recipe it needs.
+- Tap an empty or used-up hotbar slot a second time to open your bag right where you can get more.
+
 ## 77. Smoother on older phones (14 Nov 2026)
 - If the game keeps running slowly, it now sees a little less far on its own (down to Near) so it runs smoother, and tells you. If you set How far you can see yourself, it leaves your choice alone.
 

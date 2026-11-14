@@ -304,8 +304,28 @@ function buildGoals() {
       `<span class="what">${g[1]}${!done && g[2] > 1 ? ` <em>${p}/${g[2]}</em>` : ''}</span>` +
       `<span class="prize">${g[4].map(([id, k]) => `<img alt="" src="${icons[id]}">${k}`).join(' ')}</span>`;
     row.setAttribute('aria-label', `${g[1]}. ${done ? 'Done.' : `${p} of ${g[2]}.`} Reward: ${rewardText(g[4])}.`);
+    // the next goal: if it needs something you know how to make, a button takes you to its recipe
+    const r = !done && g === nextGoal() && goalRecipe(g);
+    if (r) {
+      const go = document.createElement('button');
+      go.type = 'button'; go.className = 'goal-make';
+      go.textContent = `Make ${itemName(r.out).toLowerCase()} ›`;
+      go.addEventListener('click', () => { bagTab = r.tab; buildMake(); });
+      row.querySelector('.what').appendChild(go);
+    }
     list.appendChild(row);
   }
+}
+// Which recipe a goal is about, found by asking its progress check "what if you'd made and put down lots of this?"
+const goalRecipeOf = {};
+function goalRecipe(g) {
+  if (!(g[0] in goalRecipeOf)) {
+    goalRecipeOf[g[0]] = RECIPES.find(r => {
+      try { return g[3]({ made: { [r.out]: 999 }, placed: { [r.out]: 999 } }) > 0; } catch { return false; }
+    }) || null;
+  }
+  const r = goalRecipeOf[g[0]];
+  return r && knows(r) ? r : null;
 }
 
 // Grown-ups: what each baby becomes, and what it does for you.
@@ -1637,7 +1657,18 @@ function buildHotbar() {
     const b = document.createElement('button');
     b.className = 'slot' + (i === selected ? ' sel' : '');
     b.innerHTML = `<kbd class="slot-key">${i + 1}</kbd>` + (id ? `<img alt="" src="${icons[id]}"><span class="n"></span>` : '');
-    b.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); selectSlot(i); });
+    b.addEventListener('pointerdown', e => {
+      e.preventDefault(); e.stopPropagation();
+      // tapping the slot you're already on when it's empty or used up opens the bag where you can get more
+      if (i === selected && running && (!hotbar[i] || have(hotbar[i]) <= 0)) {
+        const made = hotbar[i] && RECIPES.find(r => r.out === hotbar[i] && knows(r));
+        bagTab = made ? made.tab : 'have';
+        if (hotbar[i] && !made) emptyHint(hotbar[i]); // "dig or find some more"
+        openPicker();
+        return;
+      }
+      selectSlot(i);
+    });
     bar.appendChild(b);
   });
   // the swap button: shows which hotbar you'd switch to
@@ -1908,6 +1939,8 @@ const TIPS = [
   'Fill a feeder with treats and your animals can snack while you explore.',
   'Pip the goose visits every few days with new things to trade.',
   'Do the ☀️ job each day for a little reward.',
+  'Tap an empty or used-up hotbar slot twice to open your bag right where you can get more.',
+  'Stuck in a hole or lost? Pause and tap Take me home.',
   'Fish with a rod. Sometimes you reel in a bottle with a treasure note!',
   'A party cake calls your animals together and helps babies grow.',
   'Brighter nights in Settings makes it easier to see after dark.',
@@ -3776,7 +3809,7 @@ function frame(now, photo = false) {
 requestAnimationFrame(loop);
 
 // handy for debugging from the console
-window.blockwild = { toast, perfStep, fishTap, get fishing() { return fishing; }, selectSlot, get hotbar() { return hotbar; }, get known() { return knownList(); }, learn, unlearned: () => unlearned(knownList(), settings.patterns || []), get settings() { return settings; }, get world() { return world; }, get player() { return player; }, get target() { return target; }, get flock() { return flock; }, get nursery() { return flock; }, get snakes() { return snakes; }, get raiders() { return raiders; }, get weather() { return weather; }, get critters() { return critters; }, music, trader, openMap, get nights() { return nights; }, set nights(n) { nights = n; }, wardrobe, selfieCam, petBaby, openJobs, get inv() { return inv; }, addItem, RECIPES, craft, input, raycast,
+window.blockwild = { toast, perfStep, goalRecipe, GOALS, fishTap, get fishing() { return fishing; }, selectSlot, get hotbar() { return hotbar; }, get known() { return knownList(); }, learn, unlearned: () => unlearned(knownList(), settings.patterns || []), get settings() { return settings; }, get world() { return world; }, get player() { return player; }, get target() { return target; }, get flock() { return flock; }, get nursery() { return flock; }, get snakes() { return snakes; }, get raiders() { return raiders; }, get weather() { return weather; }, get critters() { return critters; }, music, trader, openMap, get nights() { return nights; }, set nights(n) { nights = n; }, wardrobe, selfieCam, petBaby, openJobs, get inv() { return inv; }, addItem, RECIPES, craft, input, raycast,
   get clock() { return clock; }, setTime(t) { clock = t; }, swing: () => swing(), catchFirefly: () => catchFirefly(), fishBottle: () => fishBottle(), startSeek: () => startSeek(), get seek() { return seek; }, playBox: t => playBox(t), get mapChest() { return mapChest; }, get boxes() { return boxes; }, get stats() { return stats; }, get goalsDone() { return goalsDone; }, checkGoals: () => checkGoals(), place: () => placeBlock(), pick: () => pickBlock(), get shots() { return shots; }, toggleBar: () => toggleBar(),
   net, others, get myNetId() { return myNetId; },
   get seat() { return seat; }, awardCrown: l => awardCrown(l), fireworks, get streak() { return streak; }, set streak(v) { streak = v; }, sit: (x, y, z) => sit(x, y, z), standUp: () => standUp(),
