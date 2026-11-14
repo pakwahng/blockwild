@@ -175,7 +175,7 @@ const learnName = u => u.kind === 'r' ? itemName(u.out) : (M[{ 0: 'TOPS', 2: 'BO
 // Learn a recipe or pattern. how: 'page' (found one) or 'goal'. Returns its name, or '' if you knew it already.
 function learn(u, how) {
   if (!u) return '';
-  if (u.kind === 'r') { if (knownList().includes(u.out)) return ''; knownList().push(u.out); }
+  if (u.kind === 'r') { if (knownList().includes(u.out)) return ''; knownList().push(u.out); bagTab = RECIPES.find(r => r.out === u.out)?.tab || bagTab; } // the bag opens on its tab next time
   else {
     if ((settings.patterns || []).includes(u.key)) return '';
     settings.patterns = [...(settings.patterns || []), u.key];
@@ -209,9 +209,9 @@ function maybePage(id) {
 const goalProgress = g => Math.min(g[2], g[3](stats));
 const nextGoal = () => GOALS.find(g => !goalsDone.includes(g[0]));
 // "2 fireworks", "3 apples", but "2 wool" and "4 glass"
-const PLURAL_S = /(firework|apple|lamp|egg|bone|stick|popper|pie|flower|window|pot|post|brick|cake|bottle|ring|scarecrow|bale|plant)$/;
+const PLURAL_S = /(firework|apple|lamp|egg|bone|stick|popper|pie|flower|window|pot|post|brick|cake|bottle|ring|scarecrow|bale|plant|planter|feeder|ladder|gate|fence|bench|table|bed|sign|door|sandcastle|jar|torch|pad)$/;
 const nameN = (id, k) => { const s = itemName(id).toLowerCase(); return k > 1 && PLURAL_S.test(s) ? s + 's' : s; };
-const rewardText = rw => rw.map(([id, k]) => `${k} ${nameN(id, k)}`).join(' and ');
+const rewardText = rw => { const w = rw.map(([id, k]) => `${k} ${nameN(id, k)}`); return w.length > 2 ? w.slice(0, -1).join(', ') + ' and ' + w[w.length - 1] : w.join(' and '); };
 let shownGoal = '';
 function checkGoals() {
   if (!world) return;
@@ -233,7 +233,7 @@ function checkGoals() {
     saveGame();
   }
   const g = nextGoal(), el = $('#goal');
-  const text = g ? `★ ${g[1]}${g[2] > 1 ? ` · ${goalProgress(g)}/${g[2]}` : ''}` : '';
+  const text = g ? `★ ${g[2] > 1 ? `${goalProgress(g)}/${g[2]} · ` : ''}${g[1]}` : ''; // the count goes first so a long goal never hides it
   if (text !== shownGoal) { shownGoal = text; el.querySelector('span').textContent = text; el.hidden = !g; }
   dailyStep();
 }
@@ -274,7 +274,7 @@ function dailyStep() {
     saveGame();
   }
   const run = dailyRun();
-  const text = !j ? '' : (stats.daily.done ? '☀️ Today’s job done! New one tomorrow.' : `☀️ Today: ${j[1]}${j[2] > 1 ? ` · ${dailyProgress(j)}/${j[2]}` : ''}`)
+  const text = !j ? '' : (stats.daily.done ? '☀️ Today’s job done! New one tomorrow.' : `☀️ Today${j[2] > 1 ? ` ${dailyProgress(j)}/${j[2]}` : ''}: ${j[1]}`)
     + (run >= 2 ? ` · 🔥${run}` : '');
   if (text !== shownDaily) { shownDaily = text; el.querySelector('span').textContent = text; el.hidden = !j; el.classList.toggle('finished', !!j && stats.daily.done); }
 }
@@ -495,8 +495,8 @@ function startWorld(save) {
   if (guest) flock.remoteCounts = { chick: 0, calf: 0, piglet: 0, lamb: 0, pup: 0 }; // the host's animals arrive over the network
   else if (save?.animals) flock.load(save.animals); else flock.loadChicks(save?.chicks);
   if (!guest) flock.loadGifts(save?.gifts);
-  milestone = save?.milestone || 0;
-  firsts = save?.firsts || [];
+  milestone = guest ? 1e9 : save?.milestone || 0; // a guest doesn't get the host's chick milestones
+  firsts = guest ? [...firsts] : save?.firsts || []; // and keeps the tips they've already seen
   snakes = new Snakes(world);
   raiders = new Raiders(world, snakes);
   weather = new Weather(world);
@@ -508,6 +508,9 @@ function startWorld(save) {
   loadSigns(save?.signs);
   snackT = 0; boostEl.hidden = true;
   trader.here = false; trader.day = -1; trader.look = 0; mapView.pin = null; duskWarned = -1; undoStack.length = 0;
+  fishing = null; shots.length = 0; nightPops = 0; // nothing carries over from the last world
+  for (const id of ['#tradecard', '#jobcard', '#signcard', '#mapcard']) $(id).hidden = true;
+  jobAnimal = null; signAt = null; mapView.open = false;
   fireworks.rockets.length = 0; fireworks.sparks.length = 0; fireworks.stars.length = 0; starT = 20; wishStar = null; mapChest = null; boxes = []; seek = null; seekT = 150 + Math.random() * 150;
   seat = null;
   showCrown();
@@ -559,9 +562,9 @@ function updateNursery() {
     el.querySelector('span').textContent = n[sp];
     el.hidden = sp !== 'chick' && !n[sp];
     if (was >= 0 && n[sp] > was) { el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); }
-    if (shownCounts && n[sp] > 0 && FIRSTS[sp] && !firsts.includes(sp)) { firsts.push(sp); toast(FIRSTS[sp]); sfx.fanfare(); }
+    if (shownCounts && !net.isGuest && n[sp] > 0 && FIRSTS[sp] && !firsts.includes(sp)) { firsts.push(sp); toast(FIRSTS[sp]); sfx.fanfare(); }
   }
-  if (shownCounts && SPECIES_ORDER.every(sp => n[sp] > 0) && !firsts.includes('all')) { firsts.push('all'); toast(EVERYONE); sfx.fanfare(); }
+  if (shownCounts && !net.isGuest && SPECIES_ORDER.every(sp => n[sp] > 0) && !firsts.includes('all')) { firsts.push('all'); toast(EVERYONE); sfx.fanfare(); }
   for (const [at, text] of MILESTONES) {
     if (n.chick >= at && milestone < at) { milestone = at; if (shownCounts) { toast(text); if (at > 1) sfx.fanfare(); } }
   }
@@ -621,10 +624,10 @@ function awardCrown(level = crown + 1) {
 }
 
 // At sunrise: counts the streak and says how close the next crown is.
-function crownDawn(spooked, babies) {
+function crownDawn(spooked, babies, peaceful = settings.peaceful) {
   const slept = sleptNight; sleptNight = false;
   if (babies <= 0) return '';                 // nobody to keep safe: the streak waits
-  if (settings.peaceful && !spooked) return ''; // peaceful nights: no snakes came, so the streak waits too
+  if (peaceful && !spooked) return ''; // peaceful nights: no snakes came, so the streak waits too
   if (slept && !spooked) return CROWNS[crown + 1] ? ' (A night slept through doesn’t count towards a crown: stay up and guard it!)' : '';
   if (spooked) { const lost = streak; streak = 0; showStreak(); return lost >= 2 ? ` That ends your run of ${lost} perfect nights.` : ''; }
   streak++; stats.bestStreak = Math.max(stats.bestStreak || 0, streak); showStreak();
@@ -765,19 +768,29 @@ function sayAloud(text) {
   } catch { /* no voice on this device */ }
 }
 function toast(text, ms = 4200, keep = false) {
-  if (!keep && performance.now() < toastHold) { if (toastQueue.length < 3) toastQueue.push([text, ms]); return; }
   const t = $('#toast');
+  if (t.classList.contains('show') && t.textContent === text) return; // already showing
+  ms = Math.min(10000, Math.max(ms, 1500 + text.length * 45)); // long messages stay long enough to read
+  if (!keep && performance.now() < toastHold) {
+    if (toastQueue.length < 4 && !toastQueue.some(q => q[0] === text)) toastQueue.push([text, ms]);
+    return;
+  }
   t.textContent = text;
   t.classList.add('show');
   sayAloud(text);
-  if (keep) toastHold = performance.now() + ms;
+  toastHold = performance.now() + (keep ? ms : Math.min(ms, 2500)); // every message gets a moment before the next replaces it
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => {
-    t.classList.remove('show');
-    const next = toastQueue.shift();
-    if (next) toastTimer = setTimeout(() => toast(...next), 350);
-  }, ms);
+  toastTimer = setTimeout(nextToast, ms);
 }
+function nextToast() {
+  clearTimeout(toastTimer);
+  $('#toast').classList.remove('show');
+  toastHold = 0;
+  const next = toastQueue.shift();
+  if (next) toastTimer = setTimeout(() => toast(...next), 350);
+}
+// tap a message to put it away (and see the next one)
+$('#toast').addEventListener('pointerdown', e => { e.stopPropagation(); nextToast(); });
 // "Nugget the lamb", or "Your lamb" / "a lamb" for a baby with no name.
 function callName(n, sp, fallback, nick) {
   const nm = nick || BABY_NAMES[n], s = SPECIES[sp] ? SPECIES[sp].name : 'baby';
@@ -900,8 +913,12 @@ function handleChickEvents() {
       }
       nights++;
       const babies = Object.values(flock.counts()).reduce((a, b) => a + b, 0);
-      const more = crownDawn(ev.spooked, babies);
-      if (more === null) continue;
+      const more = crownDawn(ev.spooked, babies, ev.peaceful);
+      if (more === null) { // a new crown has its own message: the big-day show and Pip's visit follow it
+        const extra = (visitDay(nights) ? ' Pip the goose is coming to visit this morning!' : '') + milestoneDay();
+        if (extra) setTimeout(() => toast(extra.trim()), 1500);
+        continue;
+      }
       sfx.fanfare();
       toast((ev.spooked ? `Day ${nights + 1}. Sunrise! The snake spooked ${ev.spooked} ${ev.spooked === 1 ? 'baby' : 'babies'}, but the nursery made it.`
         : `Day ${nights + 1}. Sunrise! Every baby made it safely through the night.`) + popped() + more
@@ -1329,8 +1346,8 @@ function placeBlock() {
   }
   if (target && IS_FEEDER(target.id) && FEEDER_OF[id]) {
     // fill a feeder with the treat you're holding
-    if (FEEDER_TREAT[target.id] === id) { toast(`That feeder’s already full of ${itemName(id).toLowerCase()}.`); return; }
-    if (have(id) < FEEDER_FILL) { toast(`You need ${FEEDER_FILL} ${itemName(id).toLowerCase()} to fill a feeder.`); return; }
+    if (FEEDER_TREAT[target.id] === id) { toast(`That feeder’s already full of ${nameN(id, 2)}.`); return; }
+    if (have(id) < FEEDER_FILL) { toast(`You need ${FEEDER_FILL} ${nameN(id, FEEDER_FILL)} to fill a feeder.`); return; }
     useItem(id, FEEDER_FILL); bump(stats, 'filled');
     editBlock(target.x, target.y, target.z, FEEDER_OF[id]);
     remeshAround(target.x, target.z); sfx.munch(); buzz(10);
@@ -1473,7 +1490,7 @@ function nameAnimal(a, text) {
   if (jobAnimal === a) buildJobs();
 }
 $('#job-name').addEventListener('change', () => nameAnimal(jobAnimal, $('#job-name').value));
-$('#job-name').addEventListener('keydown', e => { if (e.key === 'Enter') $('#job-name').blur(); e.stopPropagation(); });
+$('#job-name').addEventListener('keydown', e => { if (e.key === 'Enter') $('#job-name').blur(); if (e.key === 'Escape') closeJobs(); e.stopPropagation(); });
 // Hats for your animals: any hat you've sewn (or got free) in the Wardrobe.
 function buildHatChips(a) {
   const box = $('#job-hats');
@@ -1659,6 +1676,7 @@ function emptyHint(id) {
   if (performance.now() < hintCool) return;
   hintCool = performance.now() + 4000;
   const made = RECIPES.find(r => r.out === id && knows(r));
+  if (made) bagTab = made.tab; // so opening the bag goes straight to it
   // a tool (sword, rod, slingshot …) isn't "run out": you just don't have one yet
   if (TOOLS.has(id)) { toast(made ? `You don’t have a ${itemName(id).toLowerCase()} yet. Open your bag at a crafting table to make one.` : `You don’t have a ${itemName(id).toLowerCase()} yet. Finish goals to learn how to make one.`); return; }
   toast(made ? `You’re out of ${itemName(id).toLowerCase()}. Open your bag to make more.` : `You’re out of ${itemName(id).toLowerCase()}. Dig or find some more.`);
@@ -1738,6 +1756,7 @@ function buildMake() {
   list.innerHTML = '';
   cards = [];
   $('#bag-body').scrollTop = 0;
+  if (goals) requestAnimationFrame(() => $('#goal-list .goal-row.next:not(.daily)')?.scrollIntoView({ block: 'center' })); // jump to your next goal, past the finished ones
   const here = RECIPES.filter(q => q.tab === bagTab);
   if (here.length) {
     const k = here.filter(knows).length, all = RECIPES.filter(knows).length;
@@ -1861,11 +1880,12 @@ function pause() {
   music.setMode('menu');
   updateBackupUi();
   showTip();
+  if ($('#story').open) buildStory(); // fresh numbers if it was left open
 }
 
 // A different helpful tip each time the game is paused, so features get found.
 const TIPS = [
-  'Tap ⇄ to swap between your building and fighting hotbars.',
+  'Tap the Fight or Build button at the end of your hotbar to swap between building and your sword and slingshot.',
   'Lamp posts and campfires slow snakes down. Light up your nursery!',
   'Tap the map to drop a blue pin, so you can find your way back.',
   'Turn on Peaceful in Settings for nights with no snakes or foxes.',
@@ -1881,7 +1901,7 @@ const TIPS = [
 const KEY_TIPS = [
   'Press Ctrl+Z to take back the last block you put down.',
   'Middle-click a block to pick the same kind for your hotbar.',
-  'Press E to open your things, and M for the map.',
+  'Press E to open your things, M for the map, and Q to swap to your sword and slingshot.',
 ];
 let tipAt = Math.floor(Math.random() * 100);
 function showTip() {
@@ -2148,6 +2168,7 @@ $('#btn-play').addEventListener('click', () => {
 $('#btn-new').addEventListener('click', () => { $('#new-world').hidden = !$('#new-world').hidden; });
 $('#btn-create').addEventListener('click', () => {
   if (!renderer) return;
+  if (world && !net.isGuest && !confirm('Start a brand new world? Your babies and buildings in this one will be gone, unless you saved it in a slot (Saved games).')) return;
   const raw = $('#seed-input').value.trim();
   let seed;
   if (raw) seed = /^\d+$/.test(raw) ? (+raw >>> 0) : [...raw].reduce((h, ch) => (Math.imul(h, 31) + ch.charCodeAt(0)) >>> 0, 7);
@@ -2355,7 +2376,7 @@ function closeSign() {
   resume();
 }
 $('#sign-done').addEventListener('click', closeSign);
-$('#sign-text').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); closeSign(); } });
+$('#sign-text').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); closeSign(); } if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); closeSign(); } });
 $('#signcard').addEventListener('click', e => { if (e.target.id === 'signcard') closeSign(); });
 // The words on signs close by float over them (the nearest few, fading out further away).
 const signEls = new Map();
@@ -2528,6 +2549,8 @@ document.addEventListener('keydown', e => {
   if (mapView.open) closeMap();
   else if (!$('#tradecard').hidden) closeTrade();
   else if (!$('#jobcard').hidden) closeJobs();
+  else if (!$('#signcard').hidden) closeSign();
+  else if (wardrobe.open) closeWardrobe();
 });
 
 // ---------- the travelling trader ----------
@@ -2669,6 +2692,8 @@ function closeTrade() {
   resume();
 }
 const giveList = list => list.map(([id, k]) => `<span class="tr-item"><img alt="" src="${icons[id]}"><em>${k}</em></span>`).join('');
+// what you give shows how many you have: "3/4", in red when you need more
+const haveList = list => list.map(([id, k]) => `<span class="tr-item${have(id) < k ? ' short' : ''}"><img alt="" src="${icons[id]}"><em>${Math.min(have(id), 99)}/${k}</em></span>`).join('');
 function buildTrades() {
   const box = $('#trade-list');
   box.textContent = '';
@@ -2678,7 +2703,7 @@ function buildTrades() {
     const row = document.createElement('div');
     row.className = 'trade' + (can ? ' ready' : '');
     const getHtml = get === 'page' ? '<span class="tr-item page">📜<em>Recipe page</em></span>' : giveList(get);
-    row.innerHTML = `<div class="tr-give">${giveList(give)}</div><span class="tr-arrow" aria-hidden="true">→</span><div class="tr-get">${getHtml}</div>` +
+    row.innerHTML = `<div class="tr-give">${haveList(give)}</div><span class="tr-arrow" aria-hidden="true">→</span><div class="tr-get">${getHtml}</div>` +
       `<button type="button" class="primary"${can ? '' : ' disabled'}>${left > 0 ? 'Swap' : 'Sold out'}</button>`;
     const words = l => l.map(([id, k]) => { const n = itemName(id).toLowerCase(); return `${k} ${k > 1 && /(egg|apple|log|bone|lamp|kit|cake|pie|flower)$/.test(n) ? n + 's' : n}`; }).join(', ');
     row.querySelector('button').setAttribute('aria-label', `Swap ${words(give)} for ${get === 'page' ? 'a recipe page' : words(get)}. ${left} left.`);
@@ -2688,14 +2713,14 @@ function buildTrades() {
 }
 function doTrade(i) {
   const [give, get, times] = TRADES[i];
-  if ((trader.used[i] || 0) >= times || !give.every(([id, k]) => have(id) >= k)) return;
+  if (!trader.here || (trader.used[i] || 0) >= times || !give.every(([id, k]) => have(id) >= k)) return;
   for (const [id, k] of give) useItem(id, k);
   trader.used[i] = (trader.used[i] || 0) + 1;
   if (get === 'page') {
     const u = pickPage(knownList(), settings.patterns || [], foundEver);
     if (u) learn(u, 'page');
     else { addItem(ITEM_APPLE, 4); toast('You know every recipe already! Pip gives you 4 apples instead.'); }
-  } else for (const [id, k] of get) { addItem(id, k); bump(stats, 'got', id, k); }
+  } else { for (const [id, k] of get) { addItem(id, k); bump(stats, 'got', id, k); } toast(`🛒 Swapped! You got ${rewardText(get)}.`, 2200); }
   bump(stats, 'traded');
   sfx.pickup(); buzz(10);
   buildTrades();
@@ -3437,6 +3462,7 @@ function guestMessage(msg) {
 }
 
 function startGuestWorld(w) {
+  shownOthers = -1;
   myNetId = w.id;
   startWorld({ v: 3, guest: true, seed: w.seed, edits: w.edits, pos: w.pos, yaw: w.yaw, pitch: 0, clock: w.clock, nights: w.nights, crown: w.crown | 0, signs: w.signs });
   setNetStatus(`Playing in a friend’s world (room ${net.code}).`);
@@ -3448,6 +3474,7 @@ function startGuestWorld(w) {
 }
 
 function backToOwnWorld() {
+  shownOthers = -1;
   myNetId = 0;
   const bag = { inv, hotbar, selected, barMode, otherBar, otherSel, stats, goalsDone }; // what you collected on the visit comes home with you
   startWorld(store.get(SAVE_KEY));
@@ -3631,7 +3658,7 @@ function frame(now, photo = false) {
   critters.update(dt, player.pos, skyAt(clock).night, weather.amount);
   s.groups.push(...critters.instances(eye, Math.min(far, 40), now / 1000));
   fishStep(dt);
-  if (running) shotStep(dt);
+  if (running || net.isGuest || (net.isHost && net.guests)) shotStep(dt); // guests' shots keep flying while the host is in a menu
   if (shots.length) s.groups.push(...shotGroups());
   if (fishing) s.groups.push(bobberGroup());
   if (trader.here) s.groups.push(traderGroup(now / 1000));
@@ -3674,7 +3701,7 @@ function frame(now, photo = false) {
 requestAnimationFrame(loop);
 
 // handy for debugging from the console
-window.blockwild = { fishTap, get fishing() { return fishing; }, selectSlot, get hotbar() { return hotbar; }, get known() { return knownList(); }, learn, unlearned: () => unlearned(knownList(), settings.patterns || []), get settings() { return settings; }, get world() { return world; }, get player() { return player; }, get target() { return target; }, get flock() { return flock; }, get nursery() { return flock; }, get snakes() { return snakes; }, get raiders() { return raiders; }, get weather() { return weather; }, get critters() { return critters; }, music, trader, openMap, get nights() { return nights; }, set nights(n) { nights = n; }, wardrobe, selfieCam, petBaby, openJobs, get inv() { return inv; }, addItem, RECIPES, craft, input, raycast,
+window.blockwild = { toast, fishTap, get fishing() { return fishing; }, selectSlot, get hotbar() { return hotbar; }, get known() { return knownList(); }, learn, unlearned: () => unlearned(knownList(), settings.patterns || []), get settings() { return settings; }, get world() { return world; }, get player() { return player; }, get target() { return target; }, get flock() { return flock; }, get nursery() { return flock; }, get snakes() { return snakes; }, get raiders() { return raiders; }, get weather() { return weather; }, get critters() { return critters; }, music, trader, openMap, get nights() { return nights; }, set nights(n) { nights = n; }, wardrobe, selfieCam, petBaby, openJobs, get inv() { return inv; }, addItem, RECIPES, craft, input, raycast,
   get clock() { return clock; }, setTime(t) { clock = t; }, swing: () => swing(), catchFirefly: () => catchFirefly(), fishBottle: () => fishBottle(), startSeek: () => startSeek(), get seek() { return seek; }, playBox: t => playBox(t), get mapChest() { return mapChest; }, get boxes() { return boxes; }, get stats() { return stats; }, get goalsDone() { return goalsDone; }, checkGoals: () => checkGoals(), place: () => placeBlock(), pick: () => pickBlock(), get shots() { return shots; }, toggleBar: () => toggleBar(),
   net, others, get myNetId() { return myNetId; },
   get seat() { return seat; }, awardCrown: l => awardCrown(l), fireworks, get streak() { return streak; }, set streak(v) { streak = v; }, sit: (x, y, z) => sit(x, y, z), standUp: () => standUp(),

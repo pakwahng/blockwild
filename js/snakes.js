@@ -93,7 +93,7 @@ export class Snakes {
     this.nights = nights; // the first two nights, snakes take one hit less
     this.time += dt;
     if (night && !this.wasNight) {
-      this.wasNight = true; this.spawned = 0; this.timer = 4; this.spooked = 0;
+      this.wasNight = true; this.spawned = 0; this.timer = 4; this.spooked = 0; this.peaceNight = !!this.peaceful;
       this.events.push({ type: 'night', peaceful: !!this.peaceful });
     }
     if (!night && this.wasNight) {
@@ -101,8 +101,9 @@ export class Snakes {
       for (const s of this.list) this.poof(s, false);
       this.list = [];
       this.goo = [];
-      this.events.push({ type: 'dawn', spooked: this.spooked, peaceful: !!this.peaceful });
+      this.events.push({ type: 'dawn', spooked: this.spooked, peaceful: !!(this.peaceful || this.peaceNight) }); // Peaceful at any time in the night means it doesn't count
     }
+    if (this.peaceful && this.wasNight) this.peaceNight = true;
     if (this.peaceful && this.list.length) { for (const s of this.list) this.poof(s, false); this.list = []; this.goo = []; }
     if (night && !this.peaceful) {
       // one snake on the first nights, more as the nursery survives more of them

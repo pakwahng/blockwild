@@ -30,7 +30,6 @@
     <button id="goal" hidden aria-label="Your next goal. Tap to see all goals."><span></span></button>
     <button id="daily" hidden aria-label="Today’s job. Tap to see your goals."><span></span></button>
     <div id="info"></div>
-    <div id="toast" role="status" aria-live="polite"></div>
     <div id="fx"></div>
     <div id="tags"></div>
     <img id="held" alt="" hidden>
@@ -83,7 +82,7 @@
 
   <div id="jobcard" hidden>
     <div class="panel job-panel">
-      <div class="panel-head"><h2 id="job-title">Teach a job</h2><button type="button" id="job-close" class="text-btn">Done</button></div>
+      <div class="panel-head"><h2 id="job-title">Teach a job</h2><button type="button" id="job-close" class="text-btn">Done <kbd class="key in">Esc</kbd></button></div>
       <p id="job-now" class="job-now"></p>
       <label class="job-name"><span>Name</span><input id="job-name" type="text" maxlength="14" autocomplete="off" spellcheck="false" enterkeyhint="done"></label>
       <div class="job-hats"><span>Hat</span><div id="job-hats" class="chips"></div></div>
@@ -94,7 +93,7 @@
 
   <div id="signcard" hidden>
     <div class="panel sign-panel">
-      <div class="panel-head"><h2>Write on the sign</h2><button type="button" id="sign-done" class="text-btn">Done</button></div>
+      <div class="panel-head"><h2>Write on the sign</h2><button type="button" id="sign-done" class="text-btn">Done <kbd class="key in">Esc</kbd></button></div>
       <input id="sign-text" type="text" maxlength="40" autocomplete="off" placeholder="Lachie’s farm" enterkeyhint="done" aria-label="What the sign says">
       <p class="note">Everyone close by can read it. Leave it blank to rub it out.</p>
     </div>
@@ -102,7 +101,7 @@
 
   <div id="mapcard" hidden>
     <div class="panel map-panel">
-      <div class="panel-head"><h2>Map</h2><div class="head-btns"><button type="button" id="map-zoom" class="text-btn">Zoom out</button><button type="button" id="map-close" class="text-btn">Done</button></div></div>
+      <div class="panel-head"><h2>Map</h2><div class="head-btns"><button type="button" id="map-zoom" class="text-btn">Zoom out</button><button type="button" id="map-close" class="text-btn">Done <kbd class="key in">M</kbd></button></div></div>
       <canvas id="map-canvas" width="512" height="512" aria-label="Map of the land around you"></canvas>
       <p id="map-where" class="note"></p>
       <p class="note map-key">🐣 Nursery · 🪧 Signs · 🛏️ Beds · 🔥 Campfires · 🎃 Scarecrows · 🔔 Bells · ✨ Treasure · 🛒 Pip’s cart · 🐍 Snakes · 🦊 Foxes</p>
@@ -111,7 +110,7 @@
 
   <div id="tradecard" hidden>
     <div class="panel trade-panel">
-      <div class="panel-head"><h2>🛒 Pip’s cart</h2><button type="button" id="trade-close" class="text-btn">Done</button></div>
+      <div class="panel-head"><h2>🛒 Pip’s cart</h2><button type="button" id="trade-close" class="text-btn">Done <kbd class="key in">Esc</kbd></button></div>
       <p class="note">Honk! Pip the travelling goose swaps things. She has new swaps each visit, and she’s here till early afternoon.</p>
       <div id="trade-list"></div>
     </div>
@@ -227,7 +226,7 @@
             <p><b>Beds and signs:</b> make a bed (4 wood, 4 wool) and tap it when it’s dark to sleep till morning. Put a sign down to write on it: the words float above it when you’re close. Tap a sign to change what it says.</p>
             <p><b>Fishing:</b> once you’ve learned the fishing rod, make it at a crafting table. Hold it and tap to cast into water. When the float bobs under, tap quickly to reel in a fish (or something else!). Any grown-up will take a fish to learn a job.</p>
             <p><b>Names and hats:</b> pat a baby twice, or tap a grown-up, and type your own name for it in the <b>Name</b> box. Pick a <b>Hat</b> for it too: any hat you’ve sewn in the Wardrobe.</p>
-            <p><b>Goals:</b> the star line under your nursery counters shows your next goal. Tap it to see them all. Each goal you finish gives you a reward. Once you have done a few goals, a blue <b>☀️ Today</b> line shows a small job for the day (a new one each morning) with its own little reward. Do it 3 days in a row for a bonus of fireworks (🔥 shows your run). Big days, like day 10, 25 and 50, get fireworks at sunrise. Pause the game for a handy tip. Wild flowers grow on the grass: dig them to pick them and place them to plant them.</p>
+            <p><b>Goals:</b> the star line under your nursery counters shows your next goal. Tap it to see them all. Each goal you finish gives you a reward. Once you have done a few goals, a blue <b>☀️ Today</b> line shows a small job for the day (a new one each morning) with its own little reward. Do it 3 days in a row for a bonus of fireworks (🔥 shows your run). Big days, like day 10, 25 and 50, get fireworks at sunrise. Pause the game for a handy tip. Tap a message to put it away. On a computer, Esc closes any card. Wild flowers grow on the grass: dig them to pick them and place them to plant them.</p>
             <p><b>Collect and make:</b> you start with seeds and the toy sword. Dig blocks to collect them (grass can turn up seeds, wheat and clover, leaves can drop apples and sticks, dirt sometimes hides a bone). Open your bag (top right) to pick what to hold, and use its tabs to make new things: tap Make, hold it to keep making, or tap All. Wood comes from logs, sticks from wood. Fences, gates, ladders, feeders and the sword need a crafting table close by (make one from 4 wood). At first you only know a few recipes: learn more from <b>recipe pages</b>, which turn up when you dig leaves, grass, stone and sand, and from finishing goals. Tap a gate to open or shut it. Walk into a ladder to climb it. Tap a feeder while holding a treat to fill it, and it puts treats out for the babies.</p>
             <p><b>Planters and pets:</b> make a planter box (3 wood and 2 dirt at the table) and tap it while holding seeds to plant wheat. In a couple of minutes it turns golden: tap it to pick wheat and get some seeds back. Tap a baby in your nursery to pet it (not while holding a treat or the sword). Babies love a pat, and it helps them grow up a little.</p>
             <p><b>Photos:</b> tap the camera button at the top to take a picture of your world. On a phone you can save it or send it to someone.</p>
@@ -245,7 +244,7 @@
             <p><b>Build and fight hotbars:</b> you have two hotbars. Tap the Fight button at the end of the hotbar (or press Q) to swap to your fighting things: sword, slingshot, pebbles, confetti poppers and snacks. Tap Build to swap back. Hold the slingshot and tap to fling a pebble a long way (make pebbles from cobble, or dig stone and find a few). Throw a confetti popper and it bursts where it lands, bonking every fox, crow or snake close by.</p>
             <p><b>Chicken king:</b> keep every baby safe for 3 nights in a row with at least 8 animals in your nursery (or raise 100 chicks) to earn the gold crown and a hay bale throne. Keep the run going for the ruby crown (5 nights, 20 animals) and the diamond crown (8 nights, 40 animals). One spooked baby starts the run again, and nights you sleep through don't count. Place the throne, then tap it to sit: your babies gather round to cheer. Walk or jump to stand up.</p>
             <p><b>Settings for little ones:</b> turn on <b>Peaceful</b> and no snakes, foxes or crows will come (nights then don’t count for goals or crowns). Turn on <b>Read messages aloud</b> and the game reads each message out in your device’s voice. <b>Brighter nights</b> makes the dark easier to see on a dim screen.</p>
-            <p><b>Play together:</b> open Play together and tap Host my world to get a four-letter room code. Friends type the code and tap Join to come into your world as Lachie or Charli (pick in Settings). Everyone shares the same nursery, treats and night snakes. Your friends’ own worlds stay safe on their devices.</p>
+            <p><b>Play together:</b> open Play together and tap Host my world to get a four-letter room code. Friends type the code and tap Join to come into your world as Lachie or Charli (pick in the Wardrobe). Everyone shares the same nursery, treats and night snakes. Your friends’ own worlds stay safe on their devices.</p>
             <p><b>Phone:</b> drag on the left side to walk (push far to sprint), drag on the right side to look. Tap to place the selected block or open a gate, press and hold to dig. Use the arrow button to jump.</p>
             <p><b>Keyboard:</b> WASD to move, mouse to look, left click to break, right click to place, middle click to pick up the kind of block you’re looking at, Ctrl+Z to take back the last blocks you put down, Space to jump, Ctrl to sprint, Shift to climb down a ladder, 1–9 or the wheel to pick from the hotbar, E for your bag (E or Esc closes it), Q to swap between the build and fight hotbars, M for the map, P for a photo, Esc to pause. In the bag, point at something and press 1–9 to put it on that hotbar slot. A label under the crosshair tells you what right clicking will do.</p>
           </div>
@@ -255,6 +254,7 @@
     </div>
   </div>
 
+  <div id="toast" role="status" aria-live="polite"></div>
   <div id="flash"></div>
   <div id="loading">Generating world…</div>
 

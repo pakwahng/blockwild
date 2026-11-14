@@ -2,6 +2,16 @@
 
 The same list is in the game: tap the version number on the front screen, or open **What’s new**.
 
+## 73. Easier to use, and lots of fixes (14 Nov 2026)
+- Messages wait their turn instead of replacing each other, stay up longer when they are long, show on top of the bag and menus, and go away when you tap them.
+- Goal lines show the count first (★ 2/3 · …), are bigger to tap, and wrap onto two lines on a tall phone. The Goals tab jumps to your next goal.
+- Bigger hotbar slots on a tall phone, with the Fight/Build button just above the bar. Bigger Done buttons, settings rows and menu headings.
+- Esc closes every card (even while typing on a sign or a name), and Done buttons show their key on a computer.
+- Running out of something, or finding a recipe page, opens the bag on the right tab next time.
+- Pip’s cart shows how many you have of what she wants (red when you need more), and says what you got.
+- Starting a new world asks first. The how-to-play hint is no longer cut off.
+- Fixes: turning Peaceful off just before sunrise no longer counts as a safe night; friends’ slingshot shots keep working while the host is in a menu; joining a friend no longer sets off a burst of messages; cards close when you leave a friend’s world; big-day fireworks still happen on a crown morning; better plurals.
+
 ## 72. Days in a row and big-day fireworks (14 Nov 2026)
 - Do the ☀️ daily job on days in a row to build a run (🔥 shows it). Every 3rd day in a row gives a bonus of 3 fireworks.
 - Big days (day 10, 25, 50, 75 and every 100) get a fireworks show at sunrise.
