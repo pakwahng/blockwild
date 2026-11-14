@@ -589,7 +589,8 @@ body.touch kbd.key, body.touch kbd.slot-key, body.touch #desk-hint { display: no
 /* short screens (a phone on its side): one swipeable row of bag tabs and tighter panels */
 @media (max-height: 500px) {
   #craft-tabs { flex-wrap: nowrap; overflow-x: auto; touch-action: pan-x; overscroll-behavior: contain; scrollbar-width: none; }
-  .tab { padding: 6px 12px; font-size: 13px; }
+  .tab { padding: 6px 9px; font-size: 13px; }
+  #craft-tabs { gap: 4px; }
   .panel { padding: 10px 12px; }
   .panel-head { margin-bottom: 6px; }
   .bag-tip { margin-bottom: 6px; }

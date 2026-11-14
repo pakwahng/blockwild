@@ -2,6 +2,12 @@
 
 The same list is in the game: tap the version number on the front screen, or open **What’s new**.
 
+## 79. Find wandering babies, and a warm welcome back (14 Nov 2026)
+- The map shows any of your animals that have wandered off from the rest (🐥 🐮 🐷 🐑 🐶), so you can go and fetch them.
+- Back after a while? A welcome message reminds you of the day, your next goal and today’s job.
+- On a phone on its side, all the bag tabs fit without swiping.
+- Fixes: Take me home no longer drops you on the bottom of a lake, goes to where the world really began when you have no animals, and isn’t pulled off by a pet that follows you. New recipes really do come first. The game won’t lower How far you can see while a new place is still being built, or if you’d already picked a distance yourself.
+
 ## 78. Quicker to the things you need (14 Nov 2026)
 - In the Goals tab, your next goal has a yellow button (like “Make fences ›”) that takes you straight to the recipe it needs.
 - Tap an empty or used-up hotbar slot a second time to open your bag right where you can get more.

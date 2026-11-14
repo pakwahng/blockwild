@@ -33,6 +33,8 @@ const coarse = matchMedia('(pointer: coarse)').matches;
 // iPads report themselves as Macs, so also check for a touch screen
 const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 const settings = Object.assign({ view: coarse ? 5 : 7, sens: 1, autoJump: true, showFps: false, sound: true, music: true, char: 'lachie', nick: '', fits: {} }, store.get(SET_KEY) || {});
+// From v77 the game may lower How far you can see on a slow phone. A distance someone already picked by hand stays put.
+if (settings.viewChosen === undefined && store.get(SET_KEY) && settings.view !== (coarse ? 5 : 7)) settings.viewChosen = true;
 // Clothes patterns arrived in v26: a device from before then keeps what it has sewn and what anyone is wearing.
 if (!Array.isArray(settings.patterns)) {
   const keep = new Set(settings.sewn || []);
@@ -467,13 +469,7 @@ function startWorld(save) {
   world = new World(seed, World.deserializeEdits(save?.edits));
   let sx = 0.5, sz = 0.5, sy;
   if (save?.pos) [sx, sy, sz] = save.pos;
-  else {
-    // walk outwards until we find dry land
-    outer: for (let r = 0; r < 400; r += 8) for (let a = 0; a < 8; a++) {
-      const x = Math.round(Math.cos(a * Math.PI / 4) * r), z = Math.round(Math.sin(a * Math.PI / 4) * r);
-      if (world.heightAt(x, z) > 30) { sx = x + 0.5; sz = z + 0.5; break outer; }
-    }
-  }
+  else [sx, sz] = dryLand();
   const pcx = Math.floor(sx / CS), pcz = Math.floor(sz / CS);
   for (let dz = -2; dz <= 2; dz++) for (let dx = -2; dx <= 2; dx++) world.generate(pcx + dx, pcz + dz);
   if (sy === undefined) {
@@ -530,6 +526,7 @@ function startWorld(save) {
   snackT = 0; boostEl.hidden = true;
   trader.here = false; trader.day = -1; trader.look = 0; mapView.pin = null; duskWarned = -1; undoStack.length = 0;
   fishing = null; shots.length = 0; nightPops = 0; // nothing carries over from the last world
+  perf.t0 = 0; perf.windows = 0; // a new place is busy being built: don't judge the speed yet
   for (const id of ['#tradecard', '#jobcard', '#signcard', '#mapcard']) $(id).hidden = true;
   jobAnimal = null; signAt = null; mapView.open = false;
   fireworks.rockets.length = 0; fireworks.sparks.length = 0; fireworks.stars.length = 0; starT = 20; wishStar = null; mapChest = null; boxes = []; seek = null; seekT = 150 + Math.random() * 150;
@@ -1811,8 +1808,8 @@ function buildMake() {
   }
   // the ones you know first, then the ones still to learn
   // the ones you can make right now first, then the rest you know, then the ones still to learn
-  const known = here.filter(knows).sort((a, b) => (stats.fresh?.includes(b.out) | 0) - (stats.fresh?.includes(a.out) | 0)); // just learned ones first
-  for (const r of [...known.filter(canMake), ...known.filter(q => !canMake(q)), ...here.filter(q => !knows(q))]) {
+  const known = here.filter(knows), isFresh = q => !!stats.fresh?.includes(q.out);
+  for (const r of [...known.filter(isFresh), ...known.filter(q => !isFresh(q) && canMake(q)), ...known.filter(q => !isFresh(q) && !canMake(q)), ...here.filter(q => !knows(q))]) { // just learned ones first
     if (!knows(r)) {
       const g = GOALS.find(q => !goalsDone.includes(q[0]) && goalRecipes(q[0]).includes(r.out));
       const how = g ? `Finish the goal “${g[1].split(':')[0]}”, or find a recipe page` : 'Find a recipe page: dig leaves, grass, stone or sand, open chests, or swap with Pip';
@@ -1925,7 +1922,7 @@ function pause() {
   music.setMode('menu');
   updateBackupUi();
   showTip();
-  $('#btn-home').hidden = !world;
+  $('#btn-home').hidden = !world || net.isGuest;
   if ($('#story').open) buildStory(); // fresh numbers if it was left open
 }
 
@@ -2212,7 +2209,22 @@ $('#btn-play').addEventListener('click', () => {
   resume();
   hideHintLater();
   noteUpdate();
+  welcomeBack();
 });
+// Back after a while (6 hours or more)? A friendly reminder of where you were.
+let welcomed = false;
+function welcomeBack() {
+  if (welcomed || !world || net.isGuest) return;
+  welcomed = true;
+  const was = settings.lastPlayed || 0;
+  settings.lastPlayed = Date.now(); store.set(SET_KEY, settings);
+  if (!was || Date.now() - was < 6 * 3600e3) return;
+  const g = nextGoal(), j = goalsDone.length >= 3 ? dailyJob() : null;
+  const babies = Object.values(flock.counts()).reduce((a, b) => a + b, 0);
+  setTimeout(() => toast(`👋 Welcome back!${babies ? ' Your babies missed you.' : ''} It’s day ${nights + 1}.`
+    + (g ? ` Next goal: ${g[1]}.` : '') + (j && !stats.daily.done ? ` Today’s job: ${j[1]}.` : ''), 7000), 2600);
+}
+setInterval(() => { if (running && !net.isGuest) { settings.lastPlayed = Date.now(); store.set(SET_KEY, settings); } }, 60000);
 $('#btn-new').addEventListener('click', () => { $('#new-world').hidden = !$('#new-world').hidden; });
 $('#btn-create').addEventListener('click', () => {
   if (!renderer) return;
@@ -2292,15 +2304,29 @@ function saveToSlot(n) {
   saveMsg(`Saved “${name}” in slot ${n + 1}.`);
 }
 // Take me home (pause menu): stuck in a hole or lost? Back beside your tame babies (or where the world began).
+// Where a new world starts you: walk outwards from the middle until there's dry land.
+function dryLand() {
+  for (let r = 0; r < 400; r += 8) for (let a = 0; a < 8; a++) {
+    const x = Math.round(Math.cos(a * Math.PI / 4) * r), z = Math.round(Math.sin(a * Math.PI / 4) * r);
+    if (world.heightAt(x, z) > 30) return [x + 0.5, z + 0.5];
+  }
+  return [0.5, 0.5];
+}
 function takeMeHome() {
-  if (!world || !player) return;
+  if (!world || !player || net.isGuest) return;
+  // the middle of your nursery: animals with a job (like one that follows you) are left out, as they may be with you
   let n = 0, hx = 0, hz = 0;
-  for (const a of flock.animals) if (a.tame) { n++; hx += a.p[0]; hz += a.p[2]; }
-  const x = n ? hx / n + 2 : 0.5, z = n ? hz / n + 2 : 0.5;
+  for (const free of [true, false]) {
+    for (const a of flock.animals) if (a.tame && (!free || !a.job)) { n++; hx += a.p[0]; hz += a.p[2]; }
+    if (n) break;
+  }
+  const [x, z] = n ? [hx / n + 2, hz / n + 2] : dryLand();
   const cx = Math.floor(x / CS), cz = Math.floor(z / CS);
   for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) world.generate(cx + dx, cz + dz);
+  // down through the air (and tree tops) to the first ground or water
   let y = CH - 1;
-  while (y > 1 && !SOLID[world.getBlock(Math.floor(x), y - 1, Math.floor(z))]) y--;
+  for (let b; y > 1 && ((b = world.getBlock(Math.floor(x), y - 1, Math.floor(z))) === B.AIR || b === B.LEAVES); y--);
+  perf.t0 = 0; perf.windows = 0; // the world round here is still being built: don't count it as slow
   if (seat) standUp();
   seat = null; player.flying = false;
   player.pos = [x, y, z]; player.vel = [0, 0, 0];
@@ -2494,6 +2520,7 @@ function updateSignTags(box, eye) {
 // A bird's-eye view around you: the ground you've been to (with your buildings), and the lie of the land beyond
 // from the world's own shape. Markers show you, your nursery, signs, beds, campfires, chests, the trader and friends.
 const MAP_MARK = { [B.BED]: '🛏️', [B.CAMPFIRE]: '🔥', [B.SCARECROW]: '🎃', [B.BELL]: '🔔' };
+const STRAY_MARK = { chick: '🐥', calf: '🐮', piglet: '🐷', lamb: '🐑', pup: '🐶' };
 const MAP_COL = {
   [B.GRASS]: '#62b04c', [B.DIRT]: '#8a5a35', [B.STONE]: '#8e9196', [B.SAND]: '#e6d49a', [B.LOG]: '#7a5230', [B.LEAVES]: '#3c8a38',
   [B.PLANKS]: '#c08850', [B.GLASS]: '#cfeefa', [B.WATER]: '#3a7bd5', [B.COBBLE]: '#8a8d92', [B.BRICK]: '#b5523b', [B.SNOW]: '#f4f7fb',
@@ -2563,6 +2590,10 @@ function drawMap() {
   let n = 0, hx = 0, hz = 0;
   for (const a of flock.animals) if (a.tame) { n++; hx += a.p[0]; hz += a.p[2]; }
   if (n) { emoji('🐣', hx / n, hz / n, 26); label('Nursery', hx / n, hz / n, 20); }
+  // tame animals that have wandered off from the rest show on their own, so you can go and find them
+  if (n > 1) for (const a of flock.animals) {
+    if (a.tame && !a.job && Math.hypot(a.p[0] - hx / n, a.p[2] - hz / n) > 16) emoji(STRAY_MARK[a.sp] || '🐾', a.p[0], a.p[2], 16);
+  }
   if (trader.here) { emoji('🛒', trader.p[0], trader.p[2], 24); label('Pip’s cart', trader.p[0], trader.p[2], 20); }
   if (mapView.pin) { emoji('📍', mapView.pin[0], mapView.pin[1] - 1, 26); label('Pin', mapView.pin[0], mapView.pin[1], 16); }
   for (const s of snakes.list) if (!s.gone) emoji('🐍', s.p[0], s.p[2], 22);
@@ -3650,7 +3681,7 @@ function perfStep(now) {
   const f = perf.n * 1000 / (now - perf.t0);
   perf.t0 = now; perf.n = 0; perf.windows++;
   if (perf.windows < 2 || f >= 22 || settings.view <= 4 || settings.viewChosen || now < perf.next) return; // (the first stretch is busy building the world)
-  settings.view--; applySettings();
+  settings.view--; settings.viewChosen = false; applySettings(); // (false, not unset: the game picked this one)
   perf.next = now + 30000;
   toast('The game was running a bit slowly, so you now see a little less far to make it smoother. (Settings: How far you can see)', 5000);
 }
