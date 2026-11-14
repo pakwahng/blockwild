@@ -38,7 +38,6 @@ export const RECIPES = [
   R(B.PLANKS, 4, [[B.LOG, 1]], 'wood'),
   R(ITEM_STICK, 4, [[B.PLANKS, 2]], 'wood'),
   R(B.TABLE, 1, [[B.PLANKS, 4]], 'wood'),
-  R(ITEM_SWORD, 1, [[B.PLANKS, 2], [ITEM_STICK, 1]], 'wood', true),
   R(B.LADDER, 3, [[ITEM_STICK, 8]], 'wood', true),
   R(ITEM_ROD, 1, [[ITEM_STICK, 4], [B.WOOL, 2]], 'wood', true),
   R(ITEM_FIREWORK, 3, [[ITEM_STICK, 1], [B.SAND, 1], [B.FLOWER_RED, 1], [B.FLOWER_YELLOW, 1]], 'wood', true),

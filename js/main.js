@@ -101,7 +101,7 @@ let crown = 0, seat = null; // crown: 0 none, 1 gold, 2 ruby, 3 diamond
 let streak = 0;              // perfect nights in a row (no baby spooked)
 let sleptNight = false;      // slept through tonight: it doesn't count towards a crown
 // hotbar: nine slots holding item ids (0 = empty); inv: how many of each item you're carrying
-const NEW_HOTBAR = [ITEM_SEEDS, ITEM_SWORD, 0, 0, 0, 0, 0, 0, 0];
+const NEW_HOTBAR = [ITEM_SEEDS, 0, 0, 0, 0, 0, 0, 0, 0];
 let hotbar = [...NEW_HOTBAR];
 // Two hotbars: one for building and farming, one for fighting. Q (or the button by the hotbar) swaps them.
 // hotbar is always the one showing; otherBar waits its turn.
@@ -110,6 +110,29 @@ const FIGHT_ITEMS = new Set([ITEM_SWORD, ITEM_SLING, ITEM_PEBBLE, ITEM_POPPER]);
 const EITHER_ITEMS = new Set([ITEM_BREAD, ITEM_GRILLED, ITEM_PIE, ITEM_FIREWORK]); // fine on either hotbar
 const SNAKE_PRIZES = [[ITEM_PEBBLE, 4], [ITEM_PEBBLE, 6], [ITEM_BONE, 1], [ITEM_APPLE, 2], [ITEM_POPPER, 1], [B.LAMP, 1]]; // left in a popped snake's confetti
 let barMode = 'build', otherBar = [...FIGHT_HOTBAR], otherSel = 0;
+// the fight hotbar only holds fighting things (and snacks and fireworks); the build hotbar holds everything else
+const fitsBar = (id, mode = barMode) => !id || (mode === 'fight' ? FIGHT_ITEMS.has(id) || EITHER_ITEMS.has(id) : !FIGHT_ITEMS.has(id));
+// move anything on the wrong hotbar (from older saves) over to the right one
+function sortBars() {
+  const bb = buildBar(), fb = fightBar();
+  const move = (from, to, mode) => from.forEach((id, i) => {
+    if (fitsBar(id, mode)) return;
+    from[i] = 0;
+    if (to.includes(id)) return;
+    let e = to.indexOf(0);
+    if (e < 0) e = to.findIndex(x => EITHER_ITEMS.has(x));
+    if (e >= 0) to[e] = id;
+  });
+  move(fb, bb, 'fight');
+  move(bb, fb, 'build');
+}
+// put something from the bag on a hotbar slot (the selected one unless given), on whichever hotbar it belongs
+function bagPut(id, slot = selected) {
+  if (!fitsBar(id)) { toggleBar(); slot = hotbar.includes(id) ? hotbar.indexOf(id) : selected; }
+  const was = hotbar.indexOf(id);
+  if (was >= 0 && was !== slot) hotbar[was] = hotbar[slot];
+  hotbar[slot] = id; selected = slot; buildHotbar(); updateHeld();
+}
 const buildBar = () => barMode === 'build' ? hotbar : otherBar, buildSel = () => barMode === 'build' ? selected : otherSel;
 const fightBar = () => barMode === 'fight' ? hotbar : otherBar, fightSel = () => barMode === 'fight' ? selected : otherSel;
 let inv = { ...STARTER };
@@ -516,6 +539,8 @@ function startWorld(save) {
       for (const id of hotbar) if (id && !TOOLS.has(id) && id !== B.THRONE) inv[id] = Math.max(have(id), 32);
       if (save.crown) inv[B.THRONE] = Math.max(have(B.THRONE), 1);
     } else inv = { ...STARTER };
+    if (!have(ITEM_SWORD)) inv[ITEM_SWORD] = 1; // everyone has the toy sword (it can't be made)
+    sortBars();
   }
   while (hotbar.length < 9) hotbar.push(0);
   player.autoJump = settings.autoJump;
@@ -1815,9 +1840,7 @@ function buildOwned() {
     b.addEventListener('pointerleave', () => { if (bagHover === id) bagHover = null; });
     b.addEventListener('click', () => {
       // put it in the chosen slot (swapping if it's already elsewhere on the hotbar)
-      const was = hotbar.indexOf(id);
-      if (was >= 0 && was !== selected) hotbar[was] = hotbar[selected];
-      hotbar[selected] = id; buildHotbar(); closePicker();
+      bagPut(id); closePicker();
     });
     grid.appendChild(b);
   }
@@ -2717,9 +2740,7 @@ document.addEventListener('keydown', e => {
   if (!$('#picker').hidden) {
     const d = /^Digit[1-9]$/.test(e.code) ? +e.code.slice(5) - 1 : -1;
     if (d >= 0 && d < hotbar.length && bagHover) {
-      const was = hotbar.indexOf(bagHover);
-      if (was >= 0 && was !== d) hotbar[was] = hotbar[d];
-      hotbar[d] = bagHover; selected = d; buildHotbar(); buildOwned();
+      bagPut(bagHover, d); buildOwned();
       e.stopPropagation(); return;
     }
     if (esc || e.code === 'KeyE') { e.stopPropagation(); closePicker(); }

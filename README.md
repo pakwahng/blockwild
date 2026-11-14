@@ -67,7 +67,7 @@ Tap a grown-up (hen, cow, pig, sheep or wolf) to pet it and open **Teach a job**
 
 ## Collecting and crafting
 
-- A new world starts with 10 seeds and the toy sword. Everything else you collect.
+- A new world starts with 10 seeds, and the toy sword on the fighting hotbar. Everything else you collect. The sword is never used up, so there is no recipe for it.
 - Hold to **dig** a block and it goes in your bag. Grass gives dirt (and sometimes seeds, wheat or clover), stone gives cobble, leaves can drop apples and sticks, and dirt now and then hides a bone.
 - The hotbar shows how many you have, and picking a slot shows its name and count above the hotbar for a moment (`#slot-name`). Placing a block or throwing a treat uses one up; the sword is never used up. Things you've run out of go grey.
 - Open the **bag** (top right, or E). **Your things** shows what you carry: tap one to put it in the selected hotbar slot. The other tabs (**Wood & tools**, **Farm**, **Building**) show picture cards of what you can make; a yellow dot means a tab has something ready. Each card shows what it needs (have / need).
@@ -86,7 +86,6 @@ Tap a grown-up (hen, cow, pig, sheep or wolf) to pet it and open **Teach a job**
 | 4 Wood | 1 Log |
 | 4 Sticks | 2 Wood |
 | Crafting table | 4 Wood |
-| Sword * | 2 Wood + 1 Stick |
 | 3 Ladders * | 8 Sticks |
 | Fishing rod * | 4 Sticks, 2 Wool |
 | 2 Red / Yellow wool | 2 Wool, 1 red / yellow flower |
@@ -357,7 +356,7 @@ A full day lasts 10 minutes: about 6 minutes of daylight, a pink dusk, roughly 3
 ## Build and fight hotbars, the slingshot, and tougher snakes
 
 - **Two hotbars:** the button at the end of the hotbar (or **Q**) swaps between the building hotbar and the fighting hotbar (`barMode`, `otherBar` in `js/main.js`). The fighting one starts with the sword, slingshot, pebbles, confetti poppers, bread, grilled fish, apple pie and fireworks. Each keeps its own items and selected slot, and both are saved (`hotbar`/`selected` for building, `fightbar`/`fightSel`, and `barMode`). The hotbar gets a red edge while it's the fighting one.
-- **Where new things go:** something you pick up or make that isn't on the showing hotbar goes to the right one: the sword, slingshot, pebbles and poppers to the fighting hotbar, other things to the building one, and snacks and fireworks to whichever is showing (`FIGHT_ITEMS`, `EITHER_ITEMS` in `addItem`). If it's already on the hidden hotbar it stays there. Either way, when it lands on the hidden one the swap button glows (`.bar-swap.got`).
+- **Where new things go:** something you pick up or make that isn't on the showing hotbar goes to the right one: the sword, slingshot, pebbles and poppers to the fighting hotbar, other things to the building one, and snacks and fireworks to whichever is showing (`FIGHT_ITEMS`, `EITHER_ITEMS` in `addItem`). If it's already on the hidden hotbar it stays there. Either way, when it lands on the hidden one the swap button glows (`.bar-swap.got`). The two never mix (`fitsBar`): the fighting hotbar takes only fighting things, snacks and fireworks, and the building one never takes the sword, slingshot, pebbles or poppers. Picking something from the bag that belongs on the other hotbar swaps to it (`bagPut`), and older saves are tidied when they load (`sortBars`).
 - **Pebbles from stone:** digging stone gives 1–2 pebbles about 3 times in 10 (`drops()` in `js/crafting.js`), so you can top up without the crafting table.
 - **Slingshot** (Wood & tools, at a table: 3 sticks, 1 wool; a tool, never used up) and **pebbles** (2 cobble make 6). Hold the slingshot and tap to fling a pebble: it flies fast with a gentle drop and hits the first fox, crow or snake it touches (one hit) or stops at a block. Learned from the grow-up goal.
 - **Confetti popper** (Wood & tools, at a table: 1 stick, 2 sand, 1 yellow flower make 2): thrown in a slow arc, it bursts where it lands and gives every fox, crow and snake within 3 blocks a hit. Learned from the firework goal.

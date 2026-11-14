@@ -2,6 +2,12 @@
 
 The same list is in the game: tap the version number on the front screen, or open **What’s new**.
 
+## 88. Tidier hotbars (14 Nov 2026)
+- The Build hotbar is for building and farming things only, and the Fight hotbar only for fighting things (plus snacks and fireworks). The toy sword now waits on the Fight hotbar.
+- Picking something from your bag that belongs on the other hotbar swaps to that hotbar for you.
+- There’s no recipe for the sword any more: you always have one and it never wears out. Older worlds are tidied up the first time they load.
+
+
 ## 87. Fixes (14 Nov 2026)
 - The yellow outline no longer shows on doors, gates, chests, beds, bells, music boxes, signs, seats or ripe wheat (tapping those uses them), or where a block can’t go because you’re standing there.
 - With Bigger words on, long messages no longer run off the edge of a narrow phone.
