@@ -1,11 +1,15 @@
 // The game's version and what changed in each one. Shown on the front screen ("What's new")
 // and in CHANGELOG.md. When you release: bump VERSION, add an entry at the top of CHANGES,
 // and set the same number in sw.js (CACHE = 'blockwild-v<VERSION>') so phones pick it up.
-export const VERSION = 83;
+export const VERSION = 84;
 export const RELEASED = '14 Nov 2026'; // (the menu shows the newest What's new date instead)
 
 // [version, date, headline, [details]]
 export const CHANGES = [
+  [84, '14 Nov 2026', 'Bigger words, and wider messages', [
+    'New setting: Bigger words and buttons makes the bag, cards, menu, messages and top-of-screen counters bigger.',
+    'On a tall phone, messages now use the whole width of the screen instead of a narrow strip in the middle.',
+  ]],
   [83, '14 Nov 2026', 'A tidier bag', [
     'Your things in the bag is sorted into groups: Tools, Treats & food, Blocks to build with, and Other things, so it’s easier to find what you want.',
   ]],

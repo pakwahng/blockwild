@@ -705,3 +705,11 @@ body:has(#menu:not([hidden])) #loading { display: none; }
 /* headings between the groups in Your things */
 .bag-group { grid-column: 1 / -1; margin: 6px 0 0; font-size: 13px; font-weight: 800; color: var(--ink-dim); text-transform: none; }
 .bag-group:first-child { margin-top: 0; }
+/* Settings: Bigger words and buttons */
+body.big .panel, body.big .menu-card { zoom: 1.15; }
+body.big #nursery, body.big #top-buttons, body.big #toast, body.big #btn-undo { zoom: 1.2; }
+body.big #hotbar .n, body.big .slot .n { font-size: 14px; }
+body.big #nursery { max-width: calc((100vw - 170px) / 1.2); }
+/* messages use the whole width of a narrow phone (centring with left: 50% only left them half the screen) */
+#toast { left: 0; right: 0; margin: 0 auto; width: fit-content; transform: translateY(-10px); }
+#toast.show { transform: none; }

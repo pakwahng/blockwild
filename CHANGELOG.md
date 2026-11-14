@@ -2,6 +2,10 @@
 
 The same list is in the game: tap the version number on the front screen, or open **What’s new**.
 
+## 84. Bigger words, and wider messages (14 Nov 2026)
+- New setting: Bigger words and buttons makes the bag, cards, menu, messages and top-of-screen counters bigger.
+- On a tall phone, messages now use the whole width of the screen instead of a narrow strip in the middle.
+
 ## 83. A tidier bag (14 Nov 2026)
 - Your things in the bag is sorted into groups: Tools, Treats & food, Blocks to build with, and Other things, so it’s easier to find what you want.
 

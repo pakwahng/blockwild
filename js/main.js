@@ -3249,6 +3249,7 @@ function applySettings() {
   sAuto.checked = settings.autoJump; sFps.checked = settings.showFps; sSound.checked = settings.sound;
   $('#set-peace').checked = !!settings.peaceful;
   $('#set-bright').checked = !!settings.brightNights;
+  $('#set-big').checked = !!settings.big; document.body.classList.toggle('big', !!settings.big);
   $('#set-speak').checked = !!settings.speak; $('#set-speak').disabled = !window.speechSynthesis;
   sfx.enabled = settings.sound;
   const vol = Number.isFinite(settings.volume) ? settings.volume : 1;
@@ -3273,6 +3274,7 @@ $('#set-volume').addEventListener('change', () => { sfx.unlock(); sfx.cheep(); }
 sMusic.addEventListener('change', () => { settings.music = sMusic.checked; applySettings(); });
 $('#set-speak').addEventListener('change', e => { settings.speak = e.target.checked; applySettings(); if (settings.speak) toast('I’ll read the messages out loud for you.'); else window.speechSynthesis?.cancel(); });
 $('#set-bright').addEventListener('change', e => { settings.brightNights = e.target.checked; applySettings(); });
+$('#set-big').addEventListener('change', e => { settings.big = e.target.checked; applySettings(); });
 const sPeace = $('#set-peace');
 sPeace.addEventListener('change', () => { settings.peaceful = sPeace.checked; applySettings(); toast((sPeace.checked ? '🕊️ Peaceful: no snakes, foxes or crows will come. Nights won’t count for goals or crowns.' : 'Snakes, foxes and crows are back. Guard your nursery!') + (net.isGuest ? ' (While you’re visiting a friend, their setting is the one that counts.)' : ''), 3500); });
 for (const b of document.querySelectorAll('#set-char .char')) {
