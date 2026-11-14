@@ -201,6 +201,7 @@ Tap a grown-up (hen, cow, pig, sheep or wolf) to pet it and open **Teach a job**
 ## Saved games
 
 - The world you're playing saves itself (every 10 seconds, and when you pause or switch away) to `blockwild.save.v1` in the browser's storage. **Continue** loads it.
+- **Smoother on slow phones** (`perfStep()` in `js/main.js`): while playing, frames are counted over 8-second stretches. After the first stretch, if it runs under 22 fps, How far you can see drops by one (not below 4, at most every 30 s) with a message. Moving the slider yourself sets `settings.viewChosen` and turns this off.
 - **Take me home** (pause menu, `takeMeHome()` in `js/main.js`): puts you on the ground 2 blocks from the middle of your tame animals, or at the world's start (0, 0) if you have none. For getting out of holes or finding your way back. Feeders that run empty (`farmNoteT`, at most every 90 s) and wheat turning golden (every 2 min at most) also show a message.
 - **Bring back your old world**: tapping Create world first copies the world you had to `blockwild.prev.v1` (one only). Saved games then shows **Bring back the world you had before your new one** (`#btn-undo-new`), which swaps it back in and clears the copy.
 - **Saved games** on the menu keeps up to **5 named copies** on the device (`blockwild.slot.0`–`4`, listed in `blockwild.slots.v1` with name, time and number of animals). **Save here** copies the world you're playing into a slot (asking before it saves over one); **Load** swaps it in as the world you're playing (asking first). Loading never deletes a slot.

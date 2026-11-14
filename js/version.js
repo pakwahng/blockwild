@@ -1,11 +1,14 @@
 // The game's version and what changed in each one. Shown on the front screen ("What's new")
 // and in CHANGELOG.md. When you release: bump VERSION, add an entry at the top of CHANGES,
 // and set the same number in sw.js (CACHE = 'blockwild-v<VERSION>') so phones pick it up.
-export const VERSION = 76;
+export const VERSION = 77;
 export const RELEASED = '14 Nov 2026'; // (the menu shows the newest What's new date instead)
 
 // [version, date, headline, [details]]
 export const CHANGES = [
+  [77, '14 Nov 2026', 'Smoother on older phones', [
+    'If the game keeps running slowly, it now sees a little less far on its own (down to Near) so it runs smoother, and tells you. If you set How far you can see yourself, it leaves your choice alone.',
+  ]],
   [76, '14 Nov 2026', 'New recipes stand out', [
     'A recipe you have just learned shows a yellow New! badge in the bag and comes first in its tab, and the tab says New too. The badge goes once you have seen it.',
     'With the bag, a card or the menu open, messages show at the bottom so they don’t cover the tabs and buttons.',

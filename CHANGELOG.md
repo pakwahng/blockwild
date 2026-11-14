@@ -2,6 +2,9 @@
 
 The same list is in the game: tap the version number on the front screen, or open **What’s new**.
 
+## 77. Smoother on older phones (14 Nov 2026)
+- If the game keeps running slowly, it now sees a little less far on its own (down to Near) so it runs smoother, and tells you. If you set How far you can see yourself, it leaves your choice alone.
+
 ## 76. New recipes stand out (14 Nov 2026)
 - A recipe you have just learned shows a yellow New! badge in the bag and comes first in its tab, and the tab says New too. The badge goes once you have seen it.
 - With the bag, a card or the menu open, messages show at the bottom so they don’t cover the tabs and buttons.

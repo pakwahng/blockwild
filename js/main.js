@@ -3156,7 +3156,7 @@ function applySettings() {
   for (const b of document.querySelectorAll('#set-char .char')) { const on = b.dataset.char === settings.char; b.classList.toggle('on', on); b.setAttribute('aria-checked', on); }
   store.set(SET_KEY, settings);
 }
-sView.addEventListener('input', () => { settings.view = +sView.value; applySettings(); });
+sView.addEventListener('input', () => { settings.view = +sView.value; settings.viewChosen = true; applySettings(); }); // you chose: the game won't change it for you
 sSens.addEventListener('input', () => { settings.sens = +sSens.value; applySettings(); });
 sAuto.addEventListener('change', () => { settings.autoJump = sAuto.checked; applySettings(); });
 sFps.addEventListener('change', () => { settings.showFps = sFps.checked; applySettings(); });
@@ -3607,11 +3607,26 @@ let last = performance.now(), fpsAcc = 0, fpsN = 0, fps = 0;
 const pixelRatio = Math.min(window.devicePixelRatio || 1, coarse ? 1.5 : 2);
 
 function loop(now) { requestAnimationFrame(loop); frame(now); }
+// On a slow phone: if the game keeps running jerkily, see a little less far (down to Near) so it's smoother.
+const perf = { t0: 0, n: 0, windows: 0, next: 0 };
+function perfStep(now) {
+  if (!running || document.hidden || wardrobe.open) { perf.t0 = 0; return; }
+  if (!perf.t0) { perf.t0 = now; perf.n = 0; return; }
+  perf.n++;
+  if (now - perf.t0 < 8000) return;
+  const f = perf.n * 1000 / (now - perf.t0);
+  perf.t0 = now; perf.n = 0; perf.windows++;
+  if (perf.windows < 2 || f >= 22 || settings.view <= 4 || settings.viewChosen || now < perf.next) return; // (the first stretch is busy building the world)
+  settings.view--; applySettings();
+  perf.next = now + 30000;
+  toast('The game was running a bit slowly, so you now see a little less far to make it smoother. (Settings: How far you can see)', 5000);
+}
 function frame(now, photo = false) {
   const dt = Math.min(0.05, (now - last) / 1000);
   last = now;
   fpsAcc += dt; fpsN++;
   if (fpsAcc > 0.5) { fps = Math.round(fpsN / fpsAcc); fpsAcc = 0; fpsN = 0; }
+  if (!photo) perfStep(now);
   if (!world || !renderer) return;
 
   renderer.resize(pixelRatio);
@@ -3761,7 +3776,7 @@ function frame(now, photo = false) {
 requestAnimationFrame(loop);
 
 // handy for debugging from the console
-window.blockwild = { toast, fishTap, get fishing() { return fishing; }, selectSlot, get hotbar() { return hotbar; }, get known() { return knownList(); }, learn, unlearned: () => unlearned(knownList(), settings.patterns || []), get settings() { return settings; }, get world() { return world; }, get player() { return player; }, get target() { return target; }, get flock() { return flock; }, get nursery() { return flock; }, get snakes() { return snakes; }, get raiders() { return raiders; }, get weather() { return weather; }, get critters() { return critters; }, music, trader, openMap, get nights() { return nights; }, set nights(n) { nights = n; }, wardrobe, selfieCam, petBaby, openJobs, get inv() { return inv; }, addItem, RECIPES, craft, input, raycast,
+window.blockwild = { toast, perfStep, fishTap, get fishing() { return fishing; }, selectSlot, get hotbar() { return hotbar; }, get known() { return knownList(); }, learn, unlearned: () => unlearned(knownList(), settings.patterns || []), get settings() { return settings; }, get world() { return world; }, get player() { return player; }, get target() { return target; }, get flock() { return flock; }, get nursery() { return flock; }, get snakes() { return snakes; }, get raiders() { return raiders; }, get weather() { return weather; }, get critters() { return critters; }, music, trader, openMap, get nights() { return nights; }, set nights(n) { nights = n; }, wardrobe, selfieCam, petBaby, openJobs, get inv() { return inv; }, addItem, RECIPES, craft, input, raycast,
   get clock() { return clock; }, setTime(t) { clock = t; }, swing: () => swing(), catchFirefly: () => catchFirefly(), fishBottle: () => fishBottle(), startSeek: () => startSeek(), get seek() { return seek; }, playBox: t => playBox(t), get mapChest() { return mapChest; }, get boxes() { return boxes; }, get stats() { return stats; }, get goalsDone() { return goalsDone; }, checkGoals: () => checkGoals(), place: () => placeBlock(), pick: () => pickBlock(), get shots() { return shots; }, toggleBar: () => toggleBar(),
   net, others, get myNetId() { return myNetId; },
   get seat() { return seat; }, awardCrown: l => awardCrown(l), fireworks, get streak() { return streak; }, set streak(v) { streak = v; }, sit: (x, y, z) => sit(x, y, z), standUp: () => standUp(),
