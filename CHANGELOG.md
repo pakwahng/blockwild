@@ -2,6 +2,9 @@
 
 The same list is in the game: tap the version number on the front screen, or open **What’s new**.
 
+## 56. Catching up on updates (14 Nov 2026)
+- If you missed a few updates, the message when you start says how many, and What’s new highlights every one you haven’t seen yet.
+
 ## 55. Glowing snake eyes (14 Nov 2026)
 - Snakes’ big yellow eyes now glow in the dark, so you can spot them coming at night.
 

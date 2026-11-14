@@ -1966,7 +1966,7 @@ function buildVersion() {
   pill.innerHTML = `Version <b>${VERSION}</b> · ${RELEASED}`;
   pill.classList.toggle('new', fresh);
   $('#changelog').innerHTML = CHANGES.map(([v, date, head, list], k) =>
-    `<section class="${k === 0 ? 'latest' : ''}"><h3>${v}. ${esc(head)}<span>${esc(date)}</span></h3><ul>${list.map(t => `<li>${esc(t)}</li>`).join('')}</ul></section>`).join('');
+    `<section class="${(fresh ? v > seen : k === 0) ? 'latest' : ''}"><h3>${v}. ${esc(head)}<span>${esc(date)}</span></h3><ul>${list.map(t => `<li>${esc(t)}</li>`).join('')}</ul></section>`).join('');
   if (fresh) $('#whats-new').open = true;
 }
 buildVersion();
@@ -1994,7 +1994,10 @@ $('#version').addEventListener('click', () => {
 function noteUpdate() {
   const seen = seenVersion();
   if (seen === VERSION) return;
-  if (seen) setTimeout(() => toast(`Updated to version ${VERSION}: ${CHANGES[0][2]}! Open the pause menu and tap What’s new to see everything.`), 1200);
+  const missed = CHANGES.filter(c => c[0] > seen).length;
+  if (seen) setTimeout(() => toast(missed > 1
+    ? `Updated to version ${VERSION}, with ${missed} updates since you last played! Open the pause menu and tap What’s new to see them all.`
+    : `Updated to version ${VERSION}: ${CHANGES[0][2]}! Open the pause menu and tap What’s new to see everything.`), 1200);
   settings.seenVersion = VERSION;
   store.set(SET_KEY, settings);
   $('#version').classList.remove('new');

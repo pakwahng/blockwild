@@ -1,11 +1,14 @@
 // The game's version and what changed in each one. Shown on the front screen ("What's new")
 // and in CHANGELOG.md. When you release: bump VERSION, add an entry at the top of CHANGES,
 // and set the same number in sw.js (CACHE = 'blockwild-v<VERSION>') so phones pick it up.
-export const VERSION = 55;
+export const VERSION = 56;
 export const RELEASED = '10 Nov 2026';
 
 // [version, date, headline, [details]]
 export const CHANGES = [
+  [56, '14 Nov 2026', 'Catching up on updates', [
+    'If you missed a few updates, the message when you start says how many, and What’s new highlights every one you haven’t seen yet.',
+  ]],
   [55, '14 Nov 2026', 'Glowing snake eyes', [
     'Snakes’ big yellow eyes now glow in the dark, so you can spot them coming at night.',
   ]],
