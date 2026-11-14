@@ -1,11 +1,14 @@
 // The game's version and what changed in each one. Shown on the front screen ("What's new")
 // and in CHANGELOG.md. When you release: bump VERSION, add an entry at the top of CHANGES,
 // and set the same number in sw.js (CACHE = 'blockwild-v<VERSION>') so phones pick it up.
-export const VERSION = 62;
+export const VERSION = 63;
 export const RELEASED = '14 Nov 2026'; // (the menu shows the newest What's new date instead)
 
 // [version, date, headline, [details]]
 export const CHANGES = [
+  [63, '14 Nov 2026', 'Tonight’s snakes', [
+    'The “sun is setting” warning now says how many snakes will come tonight, so you know how ready to get.',
+  ]],
   [62, '14 Nov 2026', 'Little fixes', [
     'With Read messages aloud on, tapping your goal at the top reads it out too.',
     'Middle clicking a block shows its name above the hotbar, like picking a slot does.',

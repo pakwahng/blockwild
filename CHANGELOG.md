@@ -2,6 +2,9 @@
 
 The same list is in the game: tap the version number on the front screen, or open **What’s new**.
 
+## 63. Tonight’s snakes (14 Nov 2026)
+- The “sun is setting” warning now says how many snakes will come tonight, so you know how ready to get.
+
 ## 62. Little fixes (14 Nov 2026)
 - With Read messages aloud on, tapping your goal at the top reads it out too.
 - Middle clicking a block shows its name above the hotbar, like picking a slot does.

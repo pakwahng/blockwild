@@ -1,6 +1,6 @@
 // Baby Chicken Empire: bootstrap, game loop, streaming, interaction, UI and saving.
 import { B, T, BLOCKS, SOLID, PLACEABLE, TILE_COUNT, ITEM_SEEDS, ITEM_WHEAT, ITEM_SWORD, ITEM_BONE, ITEM_APPLE, ITEM_CLOVER, ITEM_STICK, ITEM_EGG, ITEM_MILK, ITEM_HOUSE, ITEM_ROD, ITEM_FISH, ITEM_BREAD, ITEM_GRILLED, ITEM_PIE, ITEM_CAKE, ITEM_FIREWORK, ITEM_RING, ITEM_SLING, ITEM_PEBBLE, ITEM_POPPER, FOODS, IS_DOOR, DOOR_TOPS, TREATS, ITEM_NAMES, SHAPED, FEEDER_OF, FEEDER_TREAT, IS_FEEDER } from './blocks.js';
-import { Snakes, SNAKE_KINDS, K_POISON, K_FLYING, K_DIGGER, K_BOOM } from './snakes.js';
+import { Snakes, SNAKE_KINDS, snakesTonight, K_POISON, K_FLYING, K_DIGGER, K_BOOM } from './snakes.js';
 import { Raiders } from './raiders.js';
 import { Weather } from './weather.js';
 import { Critters, BUTTERFLY_KINDS } from './critters.js';
@@ -752,6 +752,10 @@ function floatFx(p, kind, text) {
   setTimeout(() => el.remove(), kind === 'grown' ? 1800 : 1300);
 }
 
+// the night's tally for the sunrise message
+const popOne = d => { if (d > 24) return; nightPops++; // only pops near you count as yours
+  stats.bestPops = Math.max(stats.bestPops || 0, nightPops); };
+const popped = () => nightPops ? ` You popped ${nightPops} ${nightPops === 1 ? 'snake' : 'snakes'} into confetti.` : '';
 function handleChickEvents() {
   const eye = player.eye();
   if (net.isHost && net.guests) {
@@ -823,10 +827,6 @@ function handleChickEvents() {
   }
   flock.events.length = 0;
 
-// the night's tally for the sunrise message
-const popOne = d => { if (d > 24) return; nightPops++; // only pops near you count as yours
-  stats.bestPops = Math.max(stats.bestPops || 0, nightPops); };
-const popped = () => nightPops ? ` You popped ${nightPops} ${nightPops === 1 ? 'snake' : 'snakes'} into confetti.` : '';
   for (const ev of snakes.events) {
     const d = ev.p ? Math.hypot(ev.p[0] - eye[0], ev.p[1] - eye[1], ev.p[2] - eye[2]) : 0;
     if (ev.type === 'night') {
@@ -2651,9 +2651,10 @@ function clockStep() {
   // about 20 seconds before dusk, once per evening
   if (t > DUSK - 20 / CYCLE && t < DUSK && duskWarned !== nights && !net.isGuest && !settings.peaceful) {
     duskWarned = nights; sfx.ding();
+    const k = snakesTonight(nights), expect = k === 1 ? 'a snake' : `${k} snakes`;
     toast(barMode === 'build'
-      ? '🌅 The sun is setting soon. Get ready for the snake: tap ⚔️ Fight (or press Q) for your sword and slingshot.'
-      : '🌅 The sun is setting soon. Get ready to guard the nursery!', 5000);
+      ? `🌅 The sun is setting soon, and ${expect} will come tonight. Tap ⚔️ Fight (or press Q) for your sword and slingshot.`
+      : `🌅 The sun is setting soon, and ${expect} will come tonight. Get ready to guard the nursery!`, 5000);
   }
 }
 function eat(id) {

@@ -11,7 +11,8 @@ const SEGMENTS = 9, SPACING = 0.4 * SIZE, SPEED = 2.0, HALF = 0.45, HEIGHT = 0.9
 export const SCARE_RANGE = 7, SCARE_SLOW = 0.4; // snakes near a scarecrow slow right down
 export const GLOW_RANGE = 5, GLOW_SLOW = 0.7; // and a little near a lamp post or campfire
 const GROUND = new Set([B.GRASS, B.DIRT, B.SAND, B.MUD, B.SNOW]);
-const MAX_SNAKES = 5;
+export const MAX_SNAKES = 5;
+export const snakesTonight = nights => Math.min(MAX_SNAKES, 1 + Math.floor(nights / 2)); // how many come on a night
 
 // The kinds of snake. A new kind joins each night, so the first night only has plain and poison snakes.
 //  plain:   slithers to a baby and spooks it.
@@ -105,7 +106,7 @@ export class Snakes {
     if (this.peaceful && this.list.length) { for (const s of this.list) this.poof(s, false); this.list = []; this.goo = []; }
     if (night && !this.peaceful) {
       // one snake on the first nights, more as the nursery survives more of them
-      const want = Math.min(MAX_SNAKES, 1 + Math.floor(nights / 2));
+      const want = snakesTonight(nights);
       this.timer -= dt;
       if (this.spawned < want && this.timer <= 0) {
         this.timer = 28;
