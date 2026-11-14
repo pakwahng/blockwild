@@ -1,11 +1,14 @@
 // The game's version and what changed in each one. Shown on the front screen ("What's new")
 // and in CHANGELOG.md. When you release: bump VERSION, add an entry at the top of CHANGES,
 // and set the same number in sw.js (CACHE = 'blockwild-v<VERSION>') so phones pick it up.
-export const VERSION = 67;
+export const VERSION = 68;
 export const RELEASED = '14 Nov 2026'; // (the menu shows the newest What's new date instead)
 
 // [version, date, headline, [details]]
 export const CHANGES = [
+  [68, '14 Nov 2026', 'Brighter nights', [
+    'New in Settings: Brighter nights. The land, your babies and the snakes stay easier to see at night on a dim screen, while the sky still turns dark and starry.',
+  ]],
   [67, '14 Nov 2026', 'Low on pebbles', [
     'The number on your pebbles and confetti poppers turns orange when you’re down to 3 or fewer.',
   ]],

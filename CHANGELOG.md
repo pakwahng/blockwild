@@ -2,6 +2,9 @@
 
 The same list is in the game: tap the version number on the front screen, or open **What’s new**.
 
+## 68. Brighter nights (14 Nov 2026)
+- New in Settings: Brighter nights. The land, your babies and the snakes stay easier to see at night on a dim screen, while the sky still turns dark and starry.
+
 ## 67. Low on pebbles (14 Nov 2026)
 - The number on your pebbles and confetti poppers turns orange when you’re down to 3 or fewer.
 

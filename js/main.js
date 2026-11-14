@@ -2960,6 +2960,7 @@ function applySettings() {
   sSens.value = settings.sens; $('#sens-val').textContent = (+settings.sens).toFixed(1) + '×';
   sAuto.checked = settings.autoJump; sFps.checked = settings.showFps; sSound.checked = settings.sound;
   $('#set-peace').checked = !!settings.peaceful;
+  $('#set-bright').checked = !!settings.brightNights;
   $('#set-speak').checked = !!settings.speak; $('#set-speak').disabled = !window.speechSynthesis;
   sfx.enabled = settings.sound;
   sMusic.checked = settings.music; sMusic.disabled = !settings.sound;
@@ -2978,6 +2979,7 @@ sFps.addEventListener('change', () => { settings.showFps = sFps.checked; applySe
 sSound.addEventListener('change', () => { settings.sound = sSound.checked; applySettings(); });
 sMusic.addEventListener('change', () => { settings.music = sMusic.checked; applySettings(); });
 $('#set-speak').addEventListener('change', e => { settings.speak = e.target.checked; applySettings(); if (settings.speak) toast('I’ll read the messages out loud for you.'); else window.speechSynthesis?.cancel(); });
+$('#set-bright').addEventListener('change', e => { settings.brightNights = e.target.checked; applySettings(); });
 const sPeace = $('#set-peace');
 sPeace.addEventListener('change', () => { settings.peaceful = sPeace.checked; applySettings(); toast((sPeace.checked ? '🕊️ Peaceful: no snakes, foxes or crows will come. Nights won’t count for goals or crowns.' : 'Snakes, foxes and crows are back. Guard your nursery!') + (net.isGuest ? ' (While you’re visiting a friend, their setting is the one that counts.)' : ''), 3500); });
 for (const b of document.querySelectorAll('#set-char .char')) {
@@ -3501,6 +3503,10 @@ function frame(now, photo = false) {
   }
   netStep(dt);
   const sky = weather.shade(skyAt(clock));
+  if (settings.brightNights && sky.night > 0) { // the Brighter nights setting: lift the night tint about halfway back to daylight
+    const k = sky.night * 0.45, lift = c => c.map(v => v + (1 - v) * k);
+    sky.tint = lift(sky.tint); sky.entTint = lift(sky.entTint);
+  }
   const pending = stream(running ? 5 : 10);
   $('#loading').hidden = pending === 0 || running || !!document.querySelector('#picker:not([hidden]), #mapcard:not([hidden]), #tradecard:not([hidden]), #jobcard:not([hidden]), #signcard:not([hidden])');
 
