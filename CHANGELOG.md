@@ -2,6 +2,9 @@
 
 The same list is in the game: tap the version number on the front screen, or open **What’s new**.
 
+## 50. Map pins (14 Nov 2026)
+- Tap anywhere on the map to drop a 📍 pin. A blue tag then points the way and counts down the metres, and when you get there it says so. Tap the pin on the map to pick it up again.
+
 ## 49. Peaceful nights (14 Nov 2026)
 - New in Settings: Peaceful. No snakes, foxes or crows come, so little ones can build and raise babies without any scares. The clock shows a 🕊️ at night. Peaceful nights don’t count towards a crown.
 

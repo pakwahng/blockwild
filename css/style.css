@@ -256,6 +256,7 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
 .tag.treasure { box-shadow: inset 0 -3px 0 #ffcf3a; color: #ffe08a; }
 .tag.trader { box-shadow: inset 0 -3px 0 #e2443a; color: #ffd9c8; }
 .tag.snake { box-shadow: inset 0 -3px 0 #ff4d6d; color: #ffc2cc; }
+.tag.pin { box-shadow: inset 0 -3px 0 #4aa8ff; color: #cfe6ff; }
 #nursery .pill.clock { padding: 3px 10px; font-size: 14px; color: #fff3b0; }
 #nursery .pill.clock.night { color: #c9d6ff; background: rgba(20, 24, 60, 0.6); }
 .tag[hidden] { display: none; }

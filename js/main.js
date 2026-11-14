@@ -448,7 +448,7 @@ function startWorld(save) {
   streak = save?.streak | 0; sleptNight = false;
   loadSigns(save?.signs);
   snackT = 0; boostEl.hidden = true;
-  trader.here = false; trader.day = -1; trader.look = 0;
+  trader.here = false; trader.day = -1; trader.look = 0; mapView.pin = null;
   fireworks.rockets.length = 0; fireworks.sparks.length = 0; fireworks.stars.length = 0; starT = 20; wishStar = null; mapChest = null; boxes = []; seek = null; seekT = 150 + Math.random() * 150;
   seat = null;
   showCrown();
@@ -2224,7 +2224,7 @@ const MAP_COL = {
   [B.WOOL_PINK]: '#f29ab8', [B.WOOL_GREEN]: '#5cbf4a', [B.CHEST]: '#ffcf3a', [B.CHEST_OPEN]: '#b58a3a', [B.BED]: '#e2443a',
   [B.CAMPFIRE]: '#ff8a2a', [B.SCARECROW]: '#e3c25a', [B.BELL]: '#ffcf3a', [B.JAR]: '#fff6a0', [B.BOUNCE]: '#f7a8c4', [B.MUSICBOX]: '#c98a3a', [B.SNOWMAN]: '#ffffff', [B.SANDCASTLE]: '#e8d08a', [B.STONEBRICK]: '#a9b1ba', [B.WINDOW]: '#c8ebfa', [B.BENCH]: '#c98a4e', [B.FLOWERPOT]: '#d9774a', [B.LAMPPOST]: '#ffe08a', [B.SIGN]: '#d8924e', [B.PLANTER_RIPE]: '#f2c35a',
 };
-const mapView = { size: 128, open: false };
+const mapView = { size: 128, open: false, pin: null }; // pin: [x, z] you dropped by tapping the map
 const SEE_THROUGH = id => id === B.AIR || (SHAPED[id] && !IS_FEEDER(id) && id !== B.TABLE && id !== B.BED && id !== B.CAMPFIRE && id !== B.SIGN && !(id >= B.PLANTER && id <= B.PLANTER_RIPE));
 // The block you'd see looking straight down on a column, and how high it is.
 function topOf(x, z) {
@@ -2286,6 +2286,7 @@ function drawMap() {
   for (const a of flock.animals) if (a.tame) { n++; hx += a.p[0]; hz += a.p[2]; }
   if (n) { emoji('🐣', hx / n, hz / n, 26); label('Nursery', hx / n, hz / n, 20); }
   if (trader.here) { emoji('🛒', trader.p[0], trader.p[2], 24); label('Pip’s cart', trader.p[0], trader.p[2], 20); }
+  if (mapView.pin) { emoji('📍', mapView.pin[0], mapView.pin[1] - 1, 26); label('Pin', mapView.pin[0], mapView.pin[1], 16); }
   for (const s of snakes.list) if (!s.gone) emoji('🐍', s.p[0], s.p[2], 22);
   for (const x of raiders.foes()) emoji('🦊', x.p[0], x.p[2], 22);
   for (const o of others.values()) {
@@ -2302,7 +2303,7 @@ function drawMap() {
   g.beginPath(); g.moveTo(14, 0); g.lineTo(-9, -9); g.lineTo(-4, 0); g.lineTo(-9, 9); g.closePath(); g.stroke(); g.fill();
   g.restore();
   $('#map-zoom').textContent = N === 128 ? 'Zoom out' : 'Zoom in';
-  $('#map-where').textContent = `You’re at ${Math.floor(player.pos[0])}, ${Math.floor(player.pos[2])}, ${Math.max(0, Math.floor(player.pos[1]) - SEA)} m above the sea. Up is north.`;
+  $('#map-where').textContent = `You’re at ${Math.floor(player.pos[0])}, ${Math.floor(player.pos[2])}, ${Math.max(0, Math.floor(player.pos[1]) - SEA)} m above the sea. Up is north. ${mapView.pin ? 'Tap the 📍 pin to pick it up.' : 'Tap the map to drop a 📍 pin.'}`;
 }
 function openMap() {
   if (!world || mapView.open) return;
@@ -2322,6 +2323,16 @@ function closeMap() {
 }
 $('#btn-map').addEventListener('click', openMap);
 $('#map-close').addEventListener('click', closeMap);
+// Tap the map to drop a pin (a tag then points the way); tap near it again to pick it up.
+$('#map-canvas').addEventListener('click', e => {
+  const cv = $('#map-canvas'), r = cv.getBoundingClientRect(), N = mapView.size;
+  const x = Math.floor(player.pos[0]) - N / 2 + (e.clientX - r.left) / r.width * N;
+  const z = Math.floor(player.pos[2]) - N / 2 + (e.clientY - r.top) / r.height * N;
+  const near = mapView.pin && Math.hypot(mapView.pin[0] - x, mapView.pin[1] - z) < N / 20;
+  mapView.pin = near ? null : [x, z];
+  sfx.place(); buzz(8);
+  drawMap();
+});
 $('#map-zoom').addEventListener('click', () => { mapView.size = mapView.size === 128 ? 256 : 128; drawMap(); });
 $('#mapcard').addEventListener('click', e => { if (e.target.id === 'mapcard') closeMap(); });
 document.addEventListener('keydown', e => {
@@ -3005,6 +3016,20 @@ function updateTags() {
     if (traderEl.lastName !== label) { traderEl.querySelector('.name').textContent = label; traderEl.lastName = label; }
     pinTag(traderEl, 'tag trader', trader.p[0], trader.p[1] + 2.4, trader.p[2], W, H, eye, f, r, u);
   }
+  // Your map pin: a blue tag points the way until you get there.
+  if (!pinEl) {
+    pinEl = document.createElement('div');
+    pinEl.innerHTML = '<span class="arrow" aria-hidden="true"></span><span class="name"></span>';
+    box.appendChild(pinEl);
+  }
+  const pin = mapView.pin, pd = pin && Math.hypot(pin[0] - eye[0], pin[1] - eye[2]);
+  if (pin && pd < 3) { mapView.pin = null; sfx.ding(); toast('📍 You made it to your pin!', 2500); }
+  pinEl.hidden = !mapView.pin;
+  if (!pinEl.hidden) {
+    const label = `📍 Pin · ${Math.round(pd)} m`;
+    if (pinEl.lastName !== label) { pinEl.querySelector('.name').textContent = label; pinEl.lastName = label; }
+    pinTag(pinEl, 'tag pin', pin[0], world.heightAt(Math.floor(pin[0]), Math.floor(pin[1])) + 2.5, pin[1], W, H, eye, f, r, u);
+  }
   // Danger: a red tag points to the nearest snake or fox, so you can find it in the dark.
   if (!foeEl) {
     foeEl = document.createElement('div');
@@ -3035,7 +3060,7 @@ function updateTags() {
   if (homeEl.lastName !== label) { homeEl.querySelector('.name').textContent = label; homeEl.lastName = label; }
   pinTag(homeEl, 'tag home', hx / n, hy / n + 1.2, hz / n, W, H, eye, f, r, u);
 }
-let homeEl = null, traderEl = null, foeEl = null;
+let homeEl = null, traderEl = null, foeEl = null, pinEl = null;
 // Puts a tag over a point, or pins it to the screen edge with an arrow when the point is off screen.
 function pinTag(el, cls, tx, ty, tz, W, H, eye, f, r, u) {
     const at = project(tx, ty, tz);
