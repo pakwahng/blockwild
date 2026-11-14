@@ -1,11 +1,16 @@
 // The game's version and what changed in each one. Shown on the front screen ("What's new")
 // and in CHANGELOG.md. When you release: bump VERSION, add an entry at the top of CHANGES,
 // and set the same number in sw.js (CACHE = 'blockwild-v<VERSION>') so phones pick it up.
-export const VERSION = 63;
+export const VERSION = 64;
 export const RELEASED = '14 Nov 2026'; // (the menu shows the newest What's new date instead)
 
 // [version, date, headline, [details]]
 export const CHANGES = [
+  [64, '14 Nov 2026', 'Pip at sunrise, and undo fixes', [
+    'On a day Pip visits, the sunrise message says she’s coming this morning.',
+    'Your story so far shows Pip’s visit as “Today” right from sunrise.',
+    'Ctrl+Z now takes back one block per press (holding it down no longer undoes lots at once), and it’s off while playing together, so blocks can’t get doubled.',
+  ]],
   [63, '14 Nov 2026', 'Tonight’s snakes', [
     'The “sun is setting” warning now says how many snakes will come tonight, so you know how ready to get.',
   ]],

@@ -2,6 +2,11 @@
 
 The same list is in the game: tap the version number on the front screen, or open **What’s new**.
 
+## 64. Pip at sunrise, and undo fixes (14 Nov 2026)
+- On a day Pip visits, the sunrise message says she’s coming this morning.
+- Your story so far shows Pip’s visit as “Today” right from sunrise.
+- Ctrl+Z now takes back one block per press (holding it down no longer undoes lots at once), and it’s off while playing together, so blocks can’t get doubled.
+
 ## 63. Tonight’s snakes (14 Nov 2026)
 - The “sun is setting” warning now says how many snakes will come tonight, so you know how ready to get.
 

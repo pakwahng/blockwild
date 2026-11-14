@@ -848,7 +848,8 @@ function handleChickEvents() {
       if (more === null) continue;
       sfx.fanfare();
       toast((ev.spooked ? `Day ${nights + 1}. Sunrise! The snake spooked ${ev.spooked} ${ev.spooked === 1 ? 'baby' : 'babies'}, but the nursery made it.`
-        : `Day ${nights + 1}. Sunrise! Every baby made it safely through the night.`) + popped() + more);
+        : `Day ${nights + 1}. Sunrise! Every baby made it safely through the night.`) + popped() + more
+        + (visitDay(nights) ? ' Pip the goose is coming to visit this morning!' : ''));
     } else if (ev.type === 'scared') {
       if (!firsts.includes('scared')) { firsts.push('scared'); toast('Eek! The scarecrow gave the snake a fright. Near a scarecrow it creeps along at under half speed.'); }
     } else if (ev.type === 'glow') {
@@ -1330,6 +1331,8 @@ function placeBlock() {
 // Ctrl+Z (or ⌘Z): take back the last blocks you put down, and get them back in your bag.
 const undoStack = [];
 function undoPlace() {
+  // playing together, someone else may have dug and rebuilt the spot: undo could copy their block, so it's off
+  if (net.isGuest || net.guests) { toast('Ctrl+Z only works when you’re playing on your own. Dig the block instead.', 2600); return; }
   while (undoStack.length) {
     const [x, y, z, id, was] = undoStack.pop();
     if (world.getBlock(x, y, z) !== id) continue; // already dug or changed: skip it
@@ -1341,7 +1344,7 @@ function undoPlace() {
   toast('Nothing to take back. Ctrl+Z picks up the last blocks you put down.', 2200);
 }
 document.addEventListener('keydown', e => {
-  if (e.code !== 'KeyZ' || !(e.ctrlKey || e.metaKey) || !running || e.target.tagName === 'INPUT') return;
+  if (e.code !== 'KeyZ' || e.repeat || !(e.ctrlKey || e.metaKey) || !running || e.target.tagName === 'INPUT') return;
   e.preventDefault(); undoPlace();
 });
 // Tap a tame baby right in front of you (closer than the block you're pointing at) to pet it.
@@ -2015,7 +2018,7 @@ function buildStory() {
   ];
   // when Pip the goose comes next: today if she's here (or still to come this morning), else the next visiting day
   let pd = nights;
-  if (!(trader.here || (visitDay(pd) && clock < TRADE_TILL))) do pd++; while (!visitDay(pd));
+  if (!(trader.here || (visitDay(pd) && (clock < TRADE_TILL || clock >= DAWN)))) do pd++; while (!visitDay(pd)); // (after sunrise, before the clock wraps, counts as the new day)
   rows.push(['🛒', pd === nights ? 'Today' : `Day ${pd + 1}`, 'Pip’s next visit']);
   $('#story-list').innerHTML = rows.map(([e, v, t]) => `<div><b>${e} ${v}</b><span>${t}</span></div>`).join('');
 }
