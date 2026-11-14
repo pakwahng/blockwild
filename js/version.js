@@ -1,11 +1,14 @@
 // The game's version and what changed in each one. Shown on the front screen ("What's new")
 // and in CHANGELOG.md. When you release: bump VERSION, add an entry at the top of CHANGES,
 // and set the same number in sw.js (CACHE = 'blockwild-v<VERSION>') so phones pick it up.
-export const VERSION = 60;
+export const VERSION = 61;
 export const RELEASED = '10 Nov 2026';
 
 // [version, date, headline, [details]]
 export const CHANGES = [
+  [61, '14 Nov 2026', 'Take back a block', [
+    'Keyboard: put a block in the wrong place? Press Ctrl+Z (⌘Z on a Mac) to take it back into your bag. Press it again for the one before, up to 30 blocks.',
+  ]],
   [60, '14 Nov 2026', 'When Pip comes next', [
     'Your story so far (pause menu) now shows when Pip the goose visits next.',
     'The help has a new part on the settings for little ones: Peaceful and Read messages aloud.',

@@ -451,7 +451,7 @@ function startWorld(save) {
   streak = save?.streak | 0; sleptNight = false;
   loadSigns(save?.signs);
   snackT = 0; boostEl.hidden = true;
-  trader.here = false; trader.day = -1; trader.look = 0; mapView.pin = null; duskWarned = -1;
+  trader.here = false; trader.day = -1; trader.look = 0; mapView.pin = null; duskWarned = -1; undoStack.length = 0;
   fireworks.rockets.length = 0; fireworks.sparks.length = 0; fireworks.stars.length = 0; starT = 20; wishStar = null; mapChest = null; boxes = []; seek = null; seekT = 150 + Math.random() * 150;
   seat = null;
   showCrown();
@@ -1320,12 +1320,30 @@ function placeBlock() {
   if (SOLID[id] && player.intersectsBlock(x, y, z)) return;
   if (editBlock(x, y, z, id)) {
     useItem(id); bump(stats, 'placed', id);
+    if (id !== B.THRONE && id !== B.SIGN) { undoStack.push([x, y, z, id, here]); if (undoStack.length > 30) undoStack.shift(); }
     if (id === B.THRONE) buildThrone(x, y, z);
     if (id === B.SIGN) setTimeout(() => openSign(x, y, z), 120);
     remeshAround(x, z); buzz(8); sfx.place();
   }
 }
 
+// Ctrl+Z (or ⌘Z): take back the last blocks you put down, and get them back in your bag.
+const undoStack = [];
+function undoPlace() {
+  while (undoStack.length) {
+    const [x, y, z, id, was] = undoStack.pop();
+    if (world.getBlock(x, y, z) !== id) continue; // already dug or changed: skip it
+    if (!editBlock(x, y, z, was)) return;
+    addItem(id, 1); bump(stats, 'placed', id, -1);
+    remeshAround(x, z); sfx.dig(); buzz(8);
+    return;
+  }
+  toast('Nothing to take back. Ctrl+Z picks up the last blocks you put down.', 2200);
+}
+document.addEventListener('keydown', e => {
+  if (e.code !== 'KeyZ' || !(e.ctrlKey || e.metaKey) || !running || e.target.tagName === 'INPUT') return;
+  e.preventDefault(); undoPlace();
+});
 // Tap a tame baby right in front of you (closer than the block you're pointing at) to pet it.
 let lastPat = { id: 0, t: 0 };
 let ambientT = 4;

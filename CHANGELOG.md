@@ -2,6 +2,9 @@
 
 The same list is in the game: tap the version number on the front screen, or open **What’s new**.
 
+## 61. Take back a block (14 Nov 2026)
+- Keyboard: put a block in the wrong place? Press Ctrl+Z (⌘Z on a Mac) to take it back into your bag. Press it again for the one before, up to 30 blocks.
+
 ## 60. When Pip comes next (14 Nov 2026)
 - Your story so far (pause menu) now shows when Pip the goose visits next.
 - The help has a new part on the settings for little ones: Peaceful and Read messages aloud.
