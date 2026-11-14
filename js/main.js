@@ -35,6 +35,8 @@ const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform 
 const settings = Object.assign({ view: coarse ? 5 : 7, sens: 1, autoJump: true, showFps: false, sound: true, music: true, char: 'lachie', nick: '', fits: {} }, store.get(SET_KEY) || {});
 // From v77 the game may lower How far you can see on a slow phone. A distance someone already picked by hand stays put.
 if (settings.viewChosen === undefined && store.get(SET_KEY) && !(settings.seenVersion >= 77) && settings.view !== (coarse ? 5 : 7)) settings.viewChosen = true;
+// (v79 marked a distance the game itself had lowered on v77/v78 as chosen: undo that, so it can keep helping)
+if (settings.viewChosen === true && settings.seenVersion >= 77 && settings.seenVersion <= 79 && settings.view < (coarse ? 5 : 7)) delete settings.viewChosen;
 // Clothes patterns arrived in v26: a device from before then keeps what it has sewn and what anyone is wearing.
 if (!Array.isArray(settings.patterns)) {
   const keep = new Set(settings.sewn || []);
@@ -539,6 +541,7 @@ function startWorld(save) {
   snackT = 0; boostEl.hidden = true;
   trader.here = false; trader.day = -1; trader.look = 0; mapView.pin = null; duskWarned = -1; undoStack.length = 0;
   fishing = null; shots.length = 0; nightPops = 0; // nothing carries over from the last world
+  nudge = { id: '', p: -1, t: 0 };
   $('#btn-undo').hidden = true;
   perf.t0 = 0; perf.windows = 0; // a new place is busy being built: don't judge the speed yet
   for (const id of ['#tradecard', '#jobcard', '#signcard', '#mapcard']) $(id).hidden = true;
@@ -2907,7 +2910,8 @@ function clockStep() {
   const t = clock;
   const left = snakes.list.filter(s => !s.gone).length;
   const text = t >= NIGHT && t < DAWN ? `🌙 Night ${nights + 1}` + (left ? ` · 🐍 ${left}` : (net.isGuest ? peaceNight : settings.peaceful) ? ' · 🕊️' : '') : t >= DUSK && t < NIGHT ? '🌅 Dusk' : `☀️ Day ${nights + 1}` + (trader.here ? ' · 🛒 Pip' : ''); // Pip's cart is here today
-  if (clockEl.textContent !== text) { clockEl.textContent = text; clockEl.classList.toggle('night', t >= DUSK && t < DAWN); }
+  const sky2 = weather.amount > 0.4 ? (weather.snowing ? ' · ❄️' : ' · 🌧️') : ''; // rain or snow right now
+  if (clockEl.textContent !== text + sky2) { clockEl.textContent = text + sky2; clockEl.classList.toggle('night', t >= DUSK && t < DAWN); }
   // a snake creeping up on the nursery while you're far away: say so, once for each snake
   if (left) {
     let n = 0, hx = 0, hz = 0;
@@ -3270,7 +3274,7 @@ sAuto.addEventListener('change', () => { settings.autoJump = sAuto.checked; appl
 sFps.addEventListener('change', () => { settings.showFps = sFps.checked; applySettings(); });
 sSound.addEventListener('change', () => { settings.sound = sSound.checked; applySettings(); });
 $('#set-volume').addEventListener('input', () => { settings.volume = +$('#set-volume').value; applySettings(); });
-$('#set-volume').addEventListener('change', () => { sfx.unlock(); sfx.cheep(); }); // a little sound so you can hear how loud it is
+$('#set-volume').addEventListener('change', () => { sfx.unlock(); sfx.ctx?.resume().then(() => sfx.cheep()); }); // a little sound so you can hear how loud it is
 sMusic.addEventListener('change', () => { settings.music = sMusic.checked; applySettings(); });
 $('#set-speak').addEventListener('change', e => { settings.speak = e.target.checked; applySettings(); if (settings.speak) toast('I’ll read the messages out loud for you.'); else window.speechSynthesis?.cancel(); });
 $('#set-bright').addEventListener('change', e => { settings.brightNights = e.target.checked; applySettings(); });

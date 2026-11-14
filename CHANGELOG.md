@@ -2,6 +2,10 @@
 
 The same list is in the game: tap the version number on the front screen, or open **What’s new**.
 
+## 85. Rain on the day line, and fixes (14 Nov 2026)
+- The day line at the top shows 🌧️ when it’s raining and ❄️ when it’s snowing.
+- Fixes: the Undo button moved so it no longer gets in the way of walking or the Fight button; the Volume slider’s little test sound always plays; the “need a hand?” reminder starts fresh in a new world; phones whose view the game had already lowered can be helped again.
+
 ## 84. Bigger words, and wider messages (14 Nov 2026)
 - New setting: Bigger words and buttons makes the bag, cards, menu, messages and top-of-screen counters bigger.
 - On a tall phone, messages now use the whole width of the screen instead of a narrow strip in the middle.
