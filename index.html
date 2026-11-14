@@ -66,7 +66,7 @@
     </div>
   </div>
 
-  <div id="picker" hidden>
+  <div id="picker" role="dialog" aria-modal="true" aria-label="Bag" hidden>
     <div class="panel">
       <div class="panel-head"><h2>Bag</h2><button id="picker-close" class="text-btn">Done <kbd class="key in">E</kbd></button></div>
       <div id="bag-body">
@@ -80,7 +80,7 @@
     </div>
   </div>
 
-  <div id="jobcard" hidden>
+  <div id="jobcard" role="dialog" aria-modal="true" aria-labelledby="job-title" hidden>
     <div class="panel job-panel">
       <div class="panel-head"><h2 id="job-title">Teach a job</h2><button type="button" id="job-close" class="text-btn">Done <kbd class="key in">Esc</kbd></button></div>
       <p id="job-now" class="job-now"></p>
@@ -91,7 +91,7 @@
     </div>
   </div>
 
-  <div id="signcard" hidden>
+  <div id="signcard" role="dialog" aria-modal="true" aria-label="Write on the sign" hidden>
     <div class="panel sign-panel">
       <div class="panel-head"><h2>Write on the sign</h2><button type="button" id="sign-done" class="text-btn">Done <kbd class="key in">Esc</kbd></button></div>
       <input id="sign-text" type="text" maxlength="40" autocomplete="off" placeholder="Lachie’s farm" enterkeyhint="done" aria-label="What the sign says">
@@ -99,7 +99,7 @@
     </div>
   </div>
 
-  <div id="mapcard" hidden>
+  <div id="mapcard" role="dialog" aria-modal="true" aria-label="Map" hidden>
     <div class="panel map-panel">
       <div class="panel-head"><h2>Map</h2><div class="head-btns"><button type="button" id="map-zoom" class="text-btn">Zoom out</button><button type="button" id="map-close" class="text-btn">Done <kbd class="key in">M</kbd></button></div></div>
       <canvas id="map-canvas" width="512" height="512" aria-label="Map of the land around you"></canvas>
@@ -108,7 +108,7 @@
     </div>
   </div>
 
-  <div id="tradecard" hidden>
+  <div id="tradecard" role="dialog" aria-modal="true" aria-label="Pip’s cart" hidden>
     <div class="panel trade-panel">
       <div class="panel-head"><h2>🛒 Pip’s cart</h2><button type="button" id="trade-close" class="text-btn">Done <kbd class="key in">Esc</kbd></button></div>
       <p class="note">Honk! Pip the travelling goose swaps things. She has new swaps each visit, and she’s here till early afternoon.</p>
@@ -178,6 +178,7 @@
             <button type="button" id="btn-import" class="secondary">Load a backup</button>
             <input type="file" id="import-file" accept=".json,application/json" hidden>
           </div>
+          <button type="button" id="btn-undo-new" class="secondary undo-new" hidden>↩ Bring back the world you had before your new one</button>
           <p id="save-msg" class="note" role="status" hidden></p>
           <p id="save-busy" class="note" hidden>Saving and loading are off while you play together.</p>
           <p id="save-last" class="note"></p>
@@ -199,17 +200,17 @@
         </details>
         <details class="settings">
           <summary>Settings</summary>
-          <label class="field">View distance <span id="view-val"></span>
+          <label class="field">How far you can see <span id="view-val"></span> <small class="hint">(nearer is smoother on older phones)</small>
             <input id="set-view" type="range" min="3" max="10" step="1"></label>
-          <label class="field">Look sensitivity <span id="sens-val"></span>
+          <label class="field">Turning speed <span id="sens-val"></span>
             <input id="set-sens" type="range" min="0.4" max="2.5" step="0.1"></label>
-          <label class="check"><input id="set-autojump" type="checkbox"> Auto-jump</label>
+          <label class="check"><input id="set-autojump" type="checkbox"> Auto-jump: hop up a block when you walk into it</label>
           <label class="check"><input id="set-sound" type="checkbox"> Sound</label>
           <label class="check"><input id="set-music" type="checkbox"> Theme song</label>
           <label class="check"><input id="set-bright" type="checkbox"> Brighter nights (easier to see on a dim screen)</label>
           <label class="check"><input id="set-speak" type="checkbox"> Read messages aloud</label>
           <label class="check"><input id="set-peace" type="checkbox"> Peaceful: no snakes, foxes or crows (for little ones; nights don’t count for goals or crowns)</label>
-          <label class="check"><input id="set-fps" type="checkbox"> Show FPS and position</label>
+          <label class="check"><input id="set-fps" type="checkbox"> Show speed and position (for grown-ups)</label>
         </details>
         <details class="settings">
           <summary>Controls</summary>
@@ -217,7 +218,7 @@
             <p><b>Baby animals:</b> each baby has a favourite treat: seeds for chicks, wheat for calves, apples for piglets, clover for lambs and a bone for wolf pups. Hold a treat and those babies follow you. Tap to throw it: a baby that eats one joins your nursery, and two fed babies of the same kind make a new baby. Calves like to munch beside hay and piglets love to roll in mud. Animals can’t hop over wood, hay or walls, so build a pen to keep them.</p>
             <p><b>Growing up:</b> babies in your nursery slowly grow up (about seven minutes) into a hen, cow, pig, sheep or wolf. Grown-ups leave gifts on the ground: walk over them to pick them up. Hens lay eggs (throw one and a chick hatches where it lands), cows give milk (throw it near a baby and it drinks it to grow up faster), sheep leave wool for building and pigs dig up apples. Grown wolves guard the nursery and chase off foxes and snakes.</p>
             <p><b>Jobs:</b> tap a grown-up to teach it a job. It costs one of its favourite treats. Workers <b>fetch wood</b> (logs), <b>fetch stone</b> (cobble) or <b>find seeds</b> near you by day and carry what they get back to you on their back. Or teach it to <b>follow you</b> everywhere, like a pet. Tap it again and pick <b>Just play</b> to stop.</p>
-            <p><b>Saved games:</b> your world saves itself, but on the menu you can also save it in one of 5 slots and load it again later, or download a backup file to keep it safe or move it to another device. The menu reminds you now and then to download a backup.</p>
+            <p><b>Saved games:</b> your world saves itself, but on the menu you can also save it in one of 5 slots and load it again later, or download a backup file to keep it safe or move it to another device. The menu reminds you now and then to download a backup. Started a new world by mistake? Saved games has a button to bring back the world you had.</p>
             <p><b>Theme song:</b> the Baby Chicken Empire song plays on the menu, and now and then while you play. Switch it off in Settings.</p>
             <p><b>Treasure:</b> chests are hidden about the world. When one is near, a gold Treasure tag points the way. Tap it to open it for goodies and, most times, a recipe page.</p>
             <p><b>Map:</b> tap the map button (or press M) for a bird’s-eye map: your nursery, signs, beds, campfires, treasure, snakes and friends. Tap the map to drop a 📍 pin, and a blue tag points the way there.</p>

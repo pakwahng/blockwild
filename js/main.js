@@ -789,6 +789,14 @@ function nextToast() {
   const next = toastQueue.shift();
   if (next) toastTimer = setTimeout(() => toast(...next), 350);
 }
+// When a card opens, keyboard focus moves onto its Done button (unless something inside, like the
+// sign's text box, already has it), so Tab and Enter work inside the card rather than behind it.
+for (const [card, done] of [['#picker', '#picker-close'], ['#jobcard', '#job-close'], ['#signcard', '#sign-done'], ['#mapcard', '#map-close'], ['#tradecard', '#trade-close']]) {
+  new MutationObserver(() => {
+    if ($(card).hidden || $(card).contains(document.activeElement)) return;
+    setTimeout(() => { if (!$(card).hidden && !$(card).contains(document.activeElement)) $(done).focus({ preventScroll: true }); }, 30);
+  }).observe($(card), { attributes: true, attributeFilter: ['hidden'] });
+}
 // tap a message to put it away (and see the next one)
 $('#toast').addEventListener('pointerdown', e => { e.stopPropagation(); nextToast(); });
 // "Nugget the lamb", or "Your lamb" / "a lamb" for a baby with no name.
@@ -1740,7 +1748,7 @@ function buildTabs() {
     t.className = 'tab' + (key === bagTab ? ' on' : '');
     t.setAttribute('role', 'tab'); t.setAttribute('aria-selected', key === bagTab);
     const ready = RECIPES.some(r => r.tab === key && canMake(r));
-    t.innerHTML = `${label}${ready ? '<i class="dot" aria-label="(you can make something here)"></i>' : ''}`;
+    t.innerHTML = `${label}${ready ? '<i class="dot" aria-hidden="true"></i><span class="sr">, you can make something here</span>' : ''}`;
     t.addEventListener('click', () => { bagTab = key; buildMake(); });
     tabs.appendChild(t);
   }
@@ -2174,8 +2182,13 @@ $('#btn-create').addEventListener('click', () => {
   if (raw) seed = /^\d+$/.test(raw) ? (+raw >>> 0) : [...raw].reduce((h, ch) => (Math.imul(h, 31) + ch.charCodeAt(0)) >>> 0, 7);
   sfx.unlock();
   enterFullscreen();
+  // keep the old world for a "bring it back" button, in case the new one was a mistake
+  let kept = false;
+  if (world && !net.isGuest) { saveGame(); const old = store.get(SAVE_KEY); kept = old?.seed !== undefined && store.set(PREV_KEY, old); }
   startWorld(seed === undefined ? null : { seed });
   saveGame();
+  updateUndoNew();
+  if (kept) setTimeout(() => toast('A brand new world! Changed your mind? Pause, open Saved games and tap “Bring back the world you had”.', 6000), 2500);
   if (coarse) input.setTouchMode(true);
   resume();
   hideHintLater();
@@ -2238,6 +2251,21 @@ function saveToSlot(n) {
   sfx.pickup();
   saveMsg(`Saved “${name}” in slot ${n + 1}.`);
 }
+// The world you had before you last tapped Create world (one only), so a new world can be undone.
+const PREV_KEY = 'blockwild.prev.v1';
+function updateUndoNew() { $('#btn-undo-new').hidden = !(store.get(PREV_KEY)?.seed !== undefined); }
+$('#btn-undo-new').addEventListener('click', () => {
+  if (saveBusy()) return;
+  const prev = store.get(PREV_KEY);
+  if (prev?.seed === undefined) { updateUndoNew(); return; }
+  if (!confirm('Bring back the world you had before?\n\nThe world you’re playing now will be swapped for it, so save this one in a slot first if you want to keep it.')) return;
+  if (loadSave(prev)) {
+    try { localStorage.removeItem(PREV_KEY); } catch { /* fine */ }
+    updateUndoNew();
+    saveMsg(`Your old world is back. Tap ${world ? 'Resume' : 'Continue'} to play.`);
+  }
+});
+updateUndoNew();
 function loadSlot(n) {
   if (saveBusy()) return;
   const info = slotList().find(s => s.n === n), data = store.get(slotKey(n));
@@ -3084,8 +3112,8 @@ function hideHintLater() { setTimeout(() => $('#touch-hint').classList.add('gone
 const sView = $('#set-view'), sSens = $('#set-sens'), sAuto = $('#set-autojump'), sFps = $('#set-fps'), sSound = $('#set-sound');
 const sMusic = $('#set-music');
 function applySettings() {
-  sView.value = settings.view; $('#view-val').textContent = settings.view + ' chunks';
-  sSens.value = settings.sens; $('#sens-val').textContent = (+settings.sens).toFixed(1) + '×';
+  sView.value = settings.view; $('#view-val').textContent = (settings.view <= 4 ? 'Near' : settings.view <= 7 ? 'Medium' : 'Far') + ` (${settings.view})`;
+  sSens.value = settings.sens; $('#sens-val').textContent = (settings.sens < 0.8 ? 'Slow' : settings.sens > 1.5 ? 'Fast' : 'Normal') + ` (${(+settings.sens).toFixed(1)}×)`;
   sAuto.checked = settings.autoJump; sFps.checked = settings.showFps; sSound.checked = settings.sound;
   $('#set-peace').checked = !!settings.peaceful;
   $('#set-bright').checked = !!settings.brightNights;

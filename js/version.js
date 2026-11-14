@@ -1,11 +1,18 @@
 // The game's version and what changed in each one. Shown on the front screen ("What's new")
 // and in CHANGELOG.md. When you release: bump VERSION, add an entry at the top of CHANGES,
 // and set the same number in sw.js (CACHE = 'blockwild-v<VERSION>') so phones pick it up.
-export const VERSION = 73;
+export const VERSION = 74;
 export const RELEASED = '14 Nov 2026'; // (the menu shows the newest What's new date instead)
 
 // [version, date, headline, [details]]
 export const CHANGES = [
+  [74, '14 Nov 2026', 'Undo a new world, and a tidier screen', [
+    'Started a new world by mistake? Pause, open Saved games and tap “Bring back the world you had” to get your old one back.',
+    'On a tall phone the camera, map, bag and pause buttons line up down the right edge, so your goal lines have room.',
+    'Settings say what they do: how far you can see (Near, Medium, Far), turning speed (Slow, Normal, Fast), and what auto-jump is.',
+    'Bigger buttons for saved games and bigger bag tabs.',
+    'With a keyboard, opening a card puts you on its Done button, and a yellow ring shows where you are. Screen readers hear each card as a window.',
+  ]],
   [73, '14 Nov 2026', 'Easier to use, and lots of fixes', [
     'Messages wait their turn instead of replacing each other, stay up longer when they are long, show on top of the bag and menus, and go away when you tap them.',
     'Goal lines show the count first (★ 2/3 · …), are bigger to tap, and wrap onto two lines on a tall phone. The Goals tab jumps to your next goal.',

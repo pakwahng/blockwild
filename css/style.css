@@ -659,3 +659,22 @@ body:has(#menu:not([hidden])) #loading { top: auto; bottom: calc(10px + var(--sa
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
   }
 }
+
+/* Portrait phones: the top buttons stack down the right edge, so the nursery pills get the width */
+@media (orientation: portrait) {
+  #top-buttons { flex-direction: column; align-items: flex-end; }
+  #nursery { max-width: calc(100vw - 84px - var(--safe-r) - var(--safe-l)); }
+  #goal, #daily { max-width: calc(100vw - 92px - var(--safe-r) - var(--safe-l)); }
+}
+.field .hint { display: block; font-size: 12px; font-weight: 400; opacity: 0.75; }
+/* bigger save-slot buttons and bag tabs for small fingers */
+.save-slot button { padding: 10px 12px; font-size: 14px; min-height: 40px; }
+.save-file button { min-height: 42px; }
+.tab { min-height: 40px; }
+/* text only for screen readers */
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+/* a clear ring on whatever the keyboard is on (not shown for taps and clicks) */
+button:focus-visible, summary:focus-visible, input:focus-visible { outline: 3px solid #ffcf3a; outline-offset: 2px; }
+button:focus:not(:focus-visible) { outline: none; }
+.undo-new { width: 100%; margin-top: 8px; min-height: 42px; }
+.check input { flex: 0 0 auto; }

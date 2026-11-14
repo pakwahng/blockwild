@@ -200,6 +200,7 @@ Tap a grown-up (hen, cow, pig, sheep or wolf) to pet it and open **Teach a job**
 ## Saved games
 
 - The world you're playing saves itself (every 10 seconds, and when you pause or switch away) to `blockwild.save.v1` in the browser's storage. **Continue** loads it.
+- **Bring back your old world**: tapping Create world first copies the world you had to `blockwild.prev.v1` (one only). Saved games then shows **Bring back the world you had before your new one** (`#btn-undo-new`), which swaps it back in and clears the copy.
 - **Saved games** on the menu keeps up to **5 named copies** on the device (`blockwild.slot.0`–`4`, listed in `blockwild.slots.v1` with name, time and number of animals). **Save here** copies the world you're playing into a slot (asking before it saves over one); **Load** swaps it in as the world you're playing (asking first). Loading never deletes a slot.
 - **Download a backup** saves a `.json` file with the world and your learned clothes patterns. **Load a backup** reads one back, on any device. Files that aren't a world are turned away and nothing changes; the bag is cleaned on load so only real items come in.
 - Saving and loading are off while you play together (host or guest). A save is usually a few KB; if the device runs out of room you're told, and the world you're playing is kept.
