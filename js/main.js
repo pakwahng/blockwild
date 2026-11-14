@@ -831,6 +831,8 @@ const popped = () => nightPops ? ` You popped ${nightPops} ${nightPops === 1 ? '
         : `Day ${nights + 1}. Sunrise! Every baby made it safely through the night.`) + popped() + more);
     } else if (ev.type === 'scared') {
       if (!firsts.includes('scared')) { firsts.push('scared'); toast('Eek! The scarecrow gave the snake a fright. Near a scarecrow it creeps along at under half speed.'); }
+    } else if (ev.type === 'glow') {
+      if (!firsts.includes('glow') && d < 40) { firsts.push('glow'); toast('The snake squints in the light! Near a lamp post or campfire, snakes slow down a bit.'); }
     } else if (ev.type === 'hiss') { if (d < 24) sfx.hiss(0.25 * (1 - d / 24)); }
     else if (ev.type === 'spawn') {
       const k = ev.kind | 0;
@@ -976,7 +978,11 @@ function fling(kind) {
   if (slingCool > 0) return;
   const item = kind === 'pebble' ? ITEM_PEBBLE : ITEM_POPPER;
   if (!have(item)) {
-    toast(kind === 'pebble' ? 'Out of pebbles! Dig some stone, or make more from cobble (Wood & tools tab).' : 'No confetti poppers left.', 2400);
+    // out of ammo: grab the sword instead, if it's on this hotbar
+    const sword = hotbar.indexOf(ITEM_SWORD);
+    if (sword >= 0) selectSlot(sword);
+    toast((kind === 'pebble' ? 'Out of pebbles! Dig some stone, or make more from cobble (Wood & tools tab).' : 'No confetti poppers left.')
+      + (sword >= 0 ? ' You grabbed your sword.' : ''), 2800);
     return;
   }
   slingCool = kind === 'pebble' ? 0.4 : 0.6;
@@ -1525,6 +1531,8 @@ function emptyHint(id) {
   if (performance.now() < hintCool) return;
   hintCool = performance.now() + 4000;
   const made = RECIPES.find(r => r.out === id && knows(r));
+  // a tool (sword, rod, slingshot …) isn't "run out": you just don't have one yet
+  if (TOOLS.has(id)) { toast(made ? `You don’t have a ${itemName(id).toLowerCase()} yet. Open your bag at a crafting table to make one.` : `You don’t have a ${itemName(id).toLowerCase()} yet. Finish goals to learn how to make one.`); return; }
   toast(made ? `You’re out of ${itemName(id).toLowerCase()}. Open your bag to make more.` : `You’re out of ${itemName(id).toLowerCase()}. Dig or find some more.`);
 }
 function selectSlot(i) {
@@ -2542,7 +2550,7 @@ function clockStep() {
   }
   // about 20 seconds before dusk, once per evening
   if (t > DUSK - 20 / CYCLE && t < DUSK && duskWarned !== nights && !net.isGuest) {
-    duskWarned = nights;
+    duskWarned = nights; sfx.ding();
     toast(barMode === 'build'
       ? '🌅 The sun is setting soon. Get ready for the snake: tap ⚔️ Fight (or press Q) for your sword and slingshot.'
       : '🌅 The sun is setting soon. Get ready to guard the nursery!', 5000);

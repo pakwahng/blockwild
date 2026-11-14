@@ -257,6 +257,7 @@ A full day lasts 10 minutes: about 6 minutes of daylight, a pink dusk, roughly 3
 - At night the babies doze off, and a big green and purple striped **block snake** (taller than the babies) slithers towards your nursery (one snake at first, up to four on later nights).
 - If it reaches a baby, the baby is spooked out of your nursery and runs off. Feed it again to bring it back. Babies run from a snake that gets close.
 - Snakes slither over a **one-block fence** but not a **two-block wall**.
+- Snakes within 7 blocks of a scarecrow move at 40% speed; within 5 blocks of a lamp post or campfire, at 70% (`GLOW_RANGE`, `GLOW_SLOW` in `js/snakes.js`; a `glow` event gives a first-time tip).
 - Pick the **toy sword** and tap (or click) to swing. Three bonks and the snake poofs into confetti cubes (snakes got tougher in v43).
 - At sunrise any remaining snakes leave. Lamps stay bright at night.
 - The first two nights are gentler: every snake takes one bonk less (never fewer than 2). Each bonk shows how many more it needs ("BONK! 2 more").

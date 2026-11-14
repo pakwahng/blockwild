@@ -2,6 +2,12 @@
 
 The same list is in the game: tap the version number on the front screen, or open **What’s new**.
 
+## 47. Lamp light slows snakes (14 Nov 2026)
+- Snakes squint in the light: near a lamp post or campfire they slow down a bit (a scarecrow still slows them most).
+- A soft chime plays with the “sun is setting” warning.
+- Out of pebbles? You grab your sword automatically, if it’s on the hotbar.
+- Holding a slingshot or fishing rod you haven’t made yet now says how to get one, instead of “you’re out of”.
+
 ## 46. Your story so far, and two new goals (14 Nov 2026)
 - New in the pause menu: Your story so far. See what day it is, how many animals are in your nursery, your safe nights, the snakes you’ve bonked, the blocks you’ve dug, the goals you’ve done and more.
 - Two new goals: pop 3 snakes into confetti in one night, and bonk 25 foxes, crows and snakes in all.

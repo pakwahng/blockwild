@@ -1,11 +1,17 @@
 // The game's version and what changed in each one. Shown on the front screen ("What's new")
 // and in CHANGELOG.md. When you release: bump VERSION, add an entry at the top of CHANGES,
 // and set the same number in sw.js (CACHE = 'blockwild-v<VERSION>') so phones pick it up.
-export const VERSION = 46;
+export const VERSION = 47;
 export const RELEASED = '10 Nov 2026';
 
 // [version, date, headline, [details]]
 export const CHANGES = [
+  [47, '14 Nov 2026', 'Lamp light slows snakes', [
+    'Snakes squint in the light: near a lamp post or campfire they slow down a bit (a scarecrow still slows them most).',
+    'A soft chime plays with the “sun is setting” warning.',
+    'Out of pebbles? You grab your sword automatically, if it’s on the hotbar.',
+    'Holding a slingshot or fishing rod you haven’t made yet now says how to get one, instead of “you’re out of”.',
+  ]],
   [46, '14 Nov 2026', 'Your story so far, and two new goals', [
     'New in the pause menu: Your story so far. See what day it is, how many animals are in your nursery, your safe nights, the snakes you’ve bonked, the blocks you’ve dug, the goals you’ve done and more.',
     'Two new goals: pop 3 snakes into confetti in one night, and bonk 25 foxes, crows and snakes in all.',
