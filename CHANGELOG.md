@@ -2,6 +2,9 @@
 
 The same list is in the game: tap the version number on the front screen, or open **What’s new**.
 
+## 81. Undo on phones and tablets (14 Nov 2026)
+- Put a block in the wrong place? On a touch screen, a ↶ Undo button shows for a few seconds after you put a block down. Tap it to pick the block back up.
+
 ## 80. A volume slider (14 Nov 2026)
 - Settings has a Volume slider for the sounds and the theme song together. Let go of it to hear how loud it is.
 - Fixes: Take me home never leaves you inside a tree’s leaves.

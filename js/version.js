@@ -1,11 +1,14 @@
 // The game's version and what changed in each one. Shown on the front screen ("What's new")
 // and in CHANGELOG.md. When you release: bump VERSION, add an entry at the top of CHANGES,
 // and set the same number in sw.js (CACHE = 'blockwild-v<VERSION>') so phones pick it up.
-export const VERSION = 80;
+export const VERSION = 81;
 export const RELEASED = '14 Nov 2026'; // (the menu shows the newest What's new date instead)
 
 // [version, date, headline, [details]]
 export const CHANGES = [
+  [81, '14 Nov 2026', 'Undo on phones and tablets', [
+    'Put a block in the wrong place? On a touch screen, a ↶ Undo button shows for a few seconds after you put a block down. Tap it to pick the block back up.',
+  ]],
   [80, '14 Nov 2026', 'A volume slider', [
     'Settings has a Volume slider for the sounds and the theme song together. Let go of it to hear how loud it is.',
     'Fixes: Take me home never leaves you inside a tree’s leaves.',

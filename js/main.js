@@ -526,6 +526,7 @@ function startWorld(save) {
   snackT = 0; boostEl.hidden = true;
   trader.here = false; trader.day = -1; trader.look = 0; mapView.pin = null; duskWarned = -1; undoStack.length = 0;
   fishing = null; shots.length = 0; nightPops = 0; // nothing carries over from the last world
+  $('#btn-undo').hidden = true;
   perf.t0 = 0; perf.windows = 0; // a new place is busy being built: don't judge the speed yet
   for (const id of ['#tradecard', '#jobcard', '#signcard', '#mapcard']) $(id).hidden = true;
   jobAnimal = null; signAt = null; mapView.open = false;
@@ -1422,7 +1423,7 @@ function placeBlock() {
   if (SOLID[id] && player.intersectsBlock(x, y, z)) return;
   if (editBlock(x, y, z, id)) {
     useItem(id); bump(stats, 'placed', id);
-    if (id !== B.THRONE && id !== B.SIGN) { undoStack.push([x, y, z, id, here]); if (undoStack.length > 30) undoStack.shift(); }
+    if (id !== B.THRONE && id !== B.SIGN) { undoStack.push([x, y, z, id, here]); if (undoStack.length > 30) undoStack.shift(); showUndo(); }
     if (id === B.THRONE) buildThrone(x, y, z);
     if (id === B.SIGN) setTimeout(() => openSign(x, y, z), 120);
     remeshAround(x, z); buzz(8); sfx.place();
@@ -1433,7 +1434,7 @@ function placeBlock() {
 const undoStack = [];
 function undoPlace() {
   // playing together, someone else may have dug and rebuilt the spot: undo could copy their block, so it's off
-  if (net.isGuest || net.guests) { toast('Ctrl+Z only works when you’re playing on your own. Dig the block instead.', 2600); return; }
+  if (net.isGuest || net.guests) { toast('Undo only works when you’re playing on your own. Dig the block instead.', 2600); return; }
   while (undoStack.length) {
     const [x, y, z, id, was] = undoStack.pop();
     if (world.getBlock(x, y, z) !== id) continue; // already dug or changed: skip it
@@ -1442,8 +1443,21 @@ function undoPlace() {
     remeshAround(x, z); sfx.dig(); buzz(8);
     return;
   }
-  toast('Nothing to take back. Ctrl+Z picks up the last blocks you put down.', 2200);
+  toast(input.usingTouch ? 'Nothing to take back.' : 'Nothing to take back. Ctrl+Z picks up the last blocks you put down.', 2200);
 }
+// On a touch screen, a little Undo button shows for a few seconds after you put a block down.
+let undoT = 0;
+function showUndo() {
+  if (!input.usingTouch || net.isGuest || net.guests) return;
+  $('#btn-undo').hidden = false;
+  clearTimeout(undoT); undoT = setTimeout(() => { $('#btn-undo').hidden = true; }, 4000);
+}
+$('#btn-undo').addEventListener('pointerdown', e => {
+  e.preventDefault(); e.stopPropagation();
+  if (!running) return;
+  undoPlace(); showUndo();
+  if (!undoStack.some(([x, y, z, id]) => world.getBlock(x, y, z) === id)) { clearTimeout(undoT); $('#btn-undo').hidden = true; }
+});
 document.addEventListener('keydown', e => {
   if (e.code !== 'KeyZ' || e.repeat || !(e.ctrlKey || e.metaKey) || !running || e.target.tagName === 'INPUT') return;
   e.preventDefault(); undoPlace();
