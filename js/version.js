@@ -1,11 +1,14 @@
 // The game's version and what changed in each one. Shown on the front screen ("What's new")
 // and in CHANGELOG.md. When you release: bump VERSION, add an entry at the top of CHANGES,
 // and set the same number in sw.js (CACHE = 'blockwild-v<VERSION>') so phones pick it up.
-export const VERSION = 57;
+export const VERSION = 58;
 export const RELEASED = '10 Nov 2026';
 
 // [version, date, headline, [details]]
 export const CHANGES = [
+  [58, '14 Nov 2026', 'Tidier screen-edge tags', [
+    'Tags pointing the same way (a snake, your pin, treasure, Pip’s cart) no longer pile on top of each other at the edge of the screen: they line up so you can read them all.',
+  ]],
   [57, '14 Nov 2026', 'Startled babies', [
     'When one of your babies spots a snake or fox and starts to run, a ❗ pops up over it, so you can see where to help.',
   ]],

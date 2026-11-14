@@ -2,6 +2,9 @@
 
 The same list is in the game: tap the version number on the front screen, or open **What’s new**.
 
+## 58. Tidier screen-edge tags (14 Nov 2026)
+- Tags pointing the same way (a snake, your pin, treasure, Pip’s cart) no longer pile on top of each other at the edge of the screen: they line up so you can read them all.
+
 ## 57. Startled babies (14 Nov 2026)
 - When one of your babies spots a snake or fox and starts to run, a ❗ pops up over it, so you can see where to help.
 

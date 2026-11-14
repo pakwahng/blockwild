@@ -3099,6 +3099,16 @@ function updateTags() {
   pinTag(homeEl, 'tag home', hx / n, hy / n + 1.2, hz / n, W, H, eye, f, r, u);
 }
 let homeEl = null, traderEl = null, foeEl = null, pinEl = null;
+// Tags pinned to the screen edge can land on top of each other: nudge them apart so each one can be read.
+function spreadEdgeTags() {
+  const tags = [...$('#tags').children].filter(el => !el.hidden && el.classList.contains('edge'));
+  if (tags.length < 2) return;
+  const pos = tags.map(el => ({ el, x: parseFloat(el.style.left), y: parseFloat(el.style.top) })).sort((a, b) => a.y - b.y);
+  for (let i = 1; i < pos.length; i++) for (let j = 0; j < i; j++) {
+    const a = pos[j], b = pos[i];
+    if (Math.abs(a.x - b.x) < 130 && Math.abs(b.y - a.y) < 30) { b.y = a.y + 30 > innerHeight - 30 ? a.y - 30 : a.y + 30; b.el.style.top = b.y + 'px'; }
+  }
+}
 // Puts a tag over a point, or pins it to the screen edge with an arrow when the point is off screen.
 function pinTag(el, cls, tx, ty, tz, W, H, eye, f, r, u) {
     const at = project(tx, ty, tz);
@@ -3502,7 +3512,7 @@ function frame(now, photo = false) {
   }, world.chunks.values(), target, now / 1000, { groups: [...a.groups, ...s.groups], shadowGroups: [...a.shadowGroups, ...s.shadowGroups] });
   if (photo) grabPhoto();
 
-  updateTags();
+  updateTags(); spreadEdgeTags();
   if (settings.showFps) {
     const p = player.pos;
     $('#info').textContent = `${fps} fps  ${renderer.stats.chunks} chunks  ${Math.round(renderer.stats.tris / 1000)}k tris\n` +

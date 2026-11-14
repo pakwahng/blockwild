@@ -212,6 +212,7 @@ The front screen shows the version number. Tap it, or open **What’s new**, for
 - Ground you've been near is drawn from the real blocks, with your buildings, paths and wool. Further out it's drawn from the world's own shape (`heightAt`), so you can see hills, beaches and the sea before you get there. Higher ground is lighter, and slopes are shaded from the west.
 - Markers: a white arrow for you (pointing the way you face), 🐣 your nursery, 🪧 signs with their words, 🛏️ beds and 🔥 campfires you've put down, ✨ shut treasure chests in places you've been, 🛒 Pip's cart, 🐍 snakes and 🦊 foxes, and friends playing with you. Code: `drawMap()` in `js/main.js`.
 - **Pins:** tap the map to drop a 📍 pin (`mapView.pin`, world x and z); tap near it again to pick it up. A blue tag (`.tag.pin`) points to it with the distance, and it clears itself with a ding when you get within 3 blocks. Pins aren't saved.
+- Tags pinned to the screen edge are nudged 30 px apart when they'd overlap (`spreadEdgeTags()`, run after `updateTags()` each frame).
 
 ## Pip the travelling goose
 
