@@ -2,6 +2,12 @@
 
 The same list is in the game: tap the version number on the front screen, or open **What’s new**.
 
+## 46. Your story so far, and two new goals (14 Nov 2026)
+- New in the pause menu: Your story so far. See what day it is, how many animals are in your nursery, your safe nights, the snakes you’ve bonked, the blocks you’ve dug, the goals you’ve done and more.
+- Two new goals: pop 3 snakes into confetti in one night, and bonk 25 foxes, crows and snakes in all.
+- Goal rewards now read properly, like “2 fireworks and 3 apples”.
+- The garden goal says where to find clay: dig sand, or the bottom of deep water.
+
 ## 45. Snake alerts and fight trades (14 Nov 2026)
 - If a snake sneaks up on your nursery while you’re far away, a message tells you to hurry back.
 - At night the clock shows how many snakes are still about, and sunrise tells you how many you popped.

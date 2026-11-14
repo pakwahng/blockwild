@@ -599,3 +599,8 @@ body.touch kbd.key, body.touch kbd.slot-key, body.touch #desk-hint { display: no
 .bar-swap img { width: 60%; height: 60%; image-rendering: pixelated; pointer-events: none; }
 .bar-swap.fight { background: rgba(124, 195, 90, 0.55); }
 #hotbar.fight { border-color: rgba(232, 68, 58, 0.7); box-shadow: 0 0 0 2px rgba(232, 68, 58, 0.25); }
+/* Your story so far: a grid of little stat tiles in the pause menu */
+.story { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; margin-top: 8px; }
+.story div { background: rgba(255, 255, 255, 0.06); border: 1px solid var(--panel-edge); border-radius: 10px; padding: 6px 8px; }
+.story b { display: block; font-size: 20px; color: var(--accent); }
+.story span { font-size: 12px; color: var(--ink-dim); }

@@ -1,6 +1,6 @@
 // Goals: a short list of things to try, in order, each with a little reward.
 // They lead a new player from digging their first block to building a pen and surviving the night.
-import { B, ITEM_SEEDS, ITEM_WHEAT, ITEM_APPLE, ITEM_CLOVER, ITEM_BONE, ITEM_STICK, ITEM_EGG, ITEM_MILK, ITEM_HOUSE, ITEM_FISH, FOODS, ITEM_FIREWORK, ITEM_RING, ITEM_SLING, ITEM_PEBBLE, ITEM_POPPER } from './blocks.js';
+import { B, ITEM_SEEDS, ITEM_WHEAT, ITEM_APPLE, ITEM_CLOVER, ITEM_BONE, ITEM_STICK, ITEM_EGG, ITEM_MILK, ITEM_HOUSE, ITEM_FISH, FOODS, ITEM_FIREWORK, ITEM_RING, ITEM_SLING, ITEM_PEBBLE, ITEM_POPPER, ITEM_PIE } from './blocks.js';
 
 // stats: { dug: {id: n}, got: {id: n}, made: {id: n}, placed: {id: n}, tamed, hatched, bonked, filled, nights, climbed, chicks, grown, gifts: {id: n} }
 const n = (map, id) => (map && map[id]) || 0;
@@ -36,7 +36,7 @@ export const GOALS = [
   ['sew', 'Sew something new in the Wardrobe (pause menu)', 1, s => s.sewn || 0, [[B.WOOL, 3], [ITEM_APPLE, 3]]],
   ['fish', 'Catch 5 things with a fishing rod: cast into water, tap when the float bobs', 5, s => s.fished || 0, [[ITEM_FISH, 2], [ITEM_BONE, 3]]],
   ['chest', 'Find 2 treasure chests and open them: look for the gold Treasure tag', 2, s => s.chests || 0, [[ITEM_APPLE, 4], [B.LAMP, 1]]],
-  ['garden', 'Plant a garden: put out 4 flower pots (dig clay from the bottom of deep water)', 4, s => n(s.placed, B.FLOWERPOT), [[B.FLOWER_RED, 3], [B.CLAY, 4]]],
+  ['garden', 'Plant a garden: put out 4 flower pots (clay turns up when you dig sand, and at the bottom of deep water)', 4, s => n(s.placed, B.FLOWERPOT), [[B.FLOWER_RED, 3], [B.CLAY, 4]]],
   ['hat', 'Put a hat on one of your animals: tap it, then pick a hat', 1, s => s.hatted || 0, [[ITEM_CLOVER, 3], [B.WOOL, 2]]],
   ['sign', 'Make a sign and write on it: tap a sign to change what it says', 1, s => s.signed || 0, [[ITEM_APPLE, 3], [B.FLOWER_YELLOW, 2]]],
   ['bench', 'Make a bench and sit on it: tap it', 1, s => s.benched || 0, [[ITEM_APPLE, 3], [ITEM_MILK, 1]]],
@@ -49,6 +49,7 @@ export const GOALS = [
   ['firework', 'Launch a firework (they look best at night!)', 1, s => s.fireworks || 0, [[B.FLOWER_RED, 2], [B.FLOWER_YELLOW, 2]]],
   ['popper', 'Throw a confetti popper and catch a fox, crow or snake in the burst', 1, s => s.popped || 0, [[ITEM_POPPER, 2], [ITEM_BONE, 3]]],
   ['streak', 'Keep every baby safe 3 nights in a row', 3, s => s.bestStreak || 0, [[ITEM_FIREWORK, 3], [ITEM_MILK, 2]]],
+  ['snakes', 'Pop 3 snakes into confetti in one night', 3, s => s.bestPops || 0, [[ITEM_FIREWORK, 2], [ITEM_PIE, 1]]],
   ['bounce', 'Make a bouncy pad and bounce on it 10 times (hold jump as you land to go higher)', 10, s => s.bounced || 0, [[B.LAMP, 2], [ITEM_APPLE, 3]]],
   ['jar', 'Catch 3 fireflies at night: hold glass and tap a firefly to put it in a jar', 3, s => s.jars || 0, [[B.WOOL_ORANGE, 1], [ITEM_CLOVER, 3]]],
   ['wish', 'Spot a shooting star at night and make a wish: look right at it before it goes', 1, s => s.wishes || 0, [[ITEM_FIREWORK, 2], [ITEM_MILK, 1]]],
@@ -58,6 +59,7 @@ export const GOALS = [
   ['seek', 'Play hide and seek: find 2 hiding babies (listen for giggles)', 2, s => s.found || 0, [[ITEM_APPLE, 3], [ITEM_CLOVER, 3]]],
   ['ring', 'Make a swim ring, hold it and swim 60 blocks', 60, s => Math.floor(s.swum || 0), [[ITEM_FISH, 2], [B.WOOL, 2]]],
   ['castle', 'Build a sandcastle on the beach', 1, s => n(s.placed, B.SANDCASTLE), [[ITEM_FIREWORK, 2], [ITEM_APPLE, 3]]],
+  ['guard', 'Bonk 25 foxes, crows and snakes in all', 25, s => s.bonked || 0, [[ITEM_POPPER, 4], [ITEM_PEBBLE, 20]]],
   ['chicks', 'Grow your nursery to 37 chickens', 37, s => s.chicks || 0, [[B.HAY, 4], [ITEM_APPLE, 5]]],
 ];
 export const GOAL_IDS = GOALS.map(g => g[0]);

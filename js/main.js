@@ -206,7 +206,10 @@ function maybePage(id) {
 // ---------- goals ----------
 const goalProgress = g => Math.min(g[2], g[3](stats));
 const nextGoal = () => GOALS.find(g => !goalsDone.includes(g[0]));
-const rewardText = rw => rw.map(([id, k]) => `${k} ${itemName(id).toLowerCase()}`).join(' and ');
+// "2 fireworks", "3 apples", but "2 wool" and "4 glass"
+const PLURAL_S = /(firework|apple|lamp|egg|bone|stick|popper|pie|flower|window|pot|post|brick|cake|bottle|ring|scarecrow|bale|plant)$/;
+const nameN = (id, k) => { const s = itemName(id).toLowerCase(); return k > 1 && PLURAL_S.test(s) ? s + 's' : s; };
+const rewardText = rw => rw.map(([id, k]) => `${k} ${nameN(id, k)}`).join(' and ');
 let shownGoal = '';
 function checkGoals() {
   if (!world) return;
@@ -803,6 +806,7 @@ function handleChickEvents() {
   flock.events.length = 0;
 
 // the night's tally for the sunrise message
+const popOne = () => { nightPops++; stats.bestPops = Math.max(stats.bestPops || 0, nightPops); };
 const popped = () => nightPops ? ` You popped ${nightPops} ${nightPops === 1 ? 'snake' : 'snakes'} into confetti.` : '';
   for (const ev of snakes.events) {
     const d = ev.p ? Math.hypot(ev.p[0] - eye[0], ev.p[1] - eye[1], ev.p[2] - eye[2]) : 0;
@@ -854,11 +858,11 @@ const popped = () => nightPops ? ` You popped ${nightPops} ${nightPops === 1 ? '
       }
       if (!firsts.includes('boom') && d < 60) { firsts.push('boom'); setTimeout(() => toast('BOOM! The boom snake blew a hole in the ground. Bonk them before they fizz out!'), 800); }
     } else if (ev.type === 'bonk') { sfx.bonk(); floatFx(ev.p, 'bonk', ev.left > 0 ? `BONK! ${ev.left} more` : 'BONK!'); buzz(30); }
-    else if (ev.type === 'poof' && ev.wolf) { nightPops++;
+    else if (ev.type === 'poof' && ev.wolf) { popOne();
       sfx.poof(); buzz(40);
       if (d < 60) toast('Your grown-up wolf nipped the snake into confetti! Good wolf.');
     } else if (ev.type === 'poof') {
-      sfx.poof(); buzz(60); bump(stats, 'bonked'); nightPops++;
+      sfx.poof(); buzz(60); bump(stats, 'bonked'); popOne();
       if (!firsts.includes('poof')) { firsts.push('poof'); toast('Bonk, bonk, bonk! The snake poofed into confetti cubes. Snakes take a few hits now: a slingshot helps you hit them from further away.'); }
     }
   }
@@ -1913,6 +1917,21 @@ function buildVersion() {
   if (fresh) $('#whats-new').open = true;
 }
 buildVersion();
+// Your story so far: a few numbers from this world, filled in when you open it.
+function buildStory() {
+  const total = m => Object.values(m || {}).reduce((a, b) => a + b, 0);
+  const animals = world ? Object.values(flock.counts()).reduce((a, b) => a + b, 0) : 0;
+  const rows = [
+    ['☀️', nights + 1, 'Day'], ['🐣', animals, 'Animals in your nursery'], ['🥚', stats.hatched || 0, 'Babies hatched'],
+    ['🌙', stats.nights || 0, 'Safe nights'], ['🔥', stats.bestStreak || 0, 'Best run of safe nights'],
+    ['🐍', stats.bonked || 0, 'Raiders bonked away'], ['🎉', stats.bestPops || 0, 'Most snakes popped in a night'],
+    ['⛏️', total(stats.dug), 'Blocks dug'], ['🧱', total(stats.placed), 'Things put down'], ['🔨', total(stats.made), 'Things made'],
+    ['🐟', stats.fished || 0, 'Things fished up'], ['✨', stats.chests || 0, 'Treasure chests opened'],
+    ['🏆', `${goalsDone.length} / ${GOALS.length}`, 'Goals done'],
+  ];
+  $('#story-list').innerHTML = rows.map(([e, v, t]) => `<div><b>${e} ${v}</b><span>${t}</span></div>`).join('');
+}
+$('#story').addEventListener('toggle', () => { if ($('#story').open) buildStory(); });
 $('#version').addEventListener('click', () => {
   const d = $('#whats-new');
   d.open = true;

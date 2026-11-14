@@ -1,11 +1,17 @@
 // The game's version and what changed in each one. Shown on the front screen ("What's new")
 // and in CHANGELOG.md. When you release: bump VERSION, add an entry at the top of CHANGES,
 // and set the same number in sw.js (CACHE = 'blockwild-v<VERSION>') so phones pick it up.
-export const VERSION = 45;
+export const VERSION = 46;
 export const RELEASED = '10 Nov 2026';
 
 // [version, date, headline, [details]]
 export const CHANGES = [
+  [46, '14 Nov 2026', 'Your story so far, and two new goals', [
+    'New in the pause menu: Your story so far. See what day it is, how many animals are in your nursery, your safe nights, the snakes you’ve bonked, the blocks you’ve dug, the goals you’ve done and more.',
+    'Two new goals: pop 3 snakes into confetti in one night, and bonk 25 foxes, crows and snakes in all.',
+    'Goal rewards now read properly, like “2 fireworks and 3 apples”.',
+    'The garden goal says where to find clay: dig sand, or the bottom of deep water.',
+  ]],
   [45, '14 Nov 2026', 'Snake alerts and fight trades', [
     'If a snake sneaks up on your nursery while you’re far away, a message tells you to hurry back.',
     'At night the clock shows how many snakes are still about, and sunrise tells you how many you popped.',

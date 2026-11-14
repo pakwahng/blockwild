@@ -129,7 +129,8 @@ Tap a grown-up (hen, cow, pig, sheep or wolf) to pet it and open **Teach a job**
 ## Goals
 
 - The star line under the nursery counters shows your **next goal** (tap it to see them all in the bag's **★ Goals** tab).
-- Goals lead from digging your first blocks to chopping a tree, building a crafting table, penning your babies in with fences and a gate, filling a feeder, climbing a ladder, bonking a raider, keeping the nursery safe for a night, watching a baby grow up, picking up gifts from the grown-ups, teaching a grown-up a job, writing on a sign, sleeping in a bed and growing to 37 chickens.
+- Goals lead from digging your first blocks to chopping a tree, building a crafting table, penning your babies in with fences and a gate, filling a feeder, climbing a ladder, bonking a raider, keeping the nursery safe for a night, watching a baby grow up, picking up gifts from the grown-ups, teaching a grown-up a job, writing on a sign, sleeping in a bed, popping 3 snakes in one night, bonking 25 raiders and growing to 37 chickens.
+- **Your story so far** (pause menu, `buildStory()` in `js/main.js`): tiles showing the day, animals in the nursery, babies hatched, safe nights, best run, raiders bonked, most snakes popped in one night (`stats.bestPops`), blocks dug and put down, things made, fish, treasure chests and goals done. Filled in each time you open it.
 - Each goal gives a reward (seeds, wheat, apples, bones, wood, a gate, hay or lamps) when you finish it.
 
 ## Fishing
