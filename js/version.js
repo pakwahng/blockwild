@@ -1,11 +1,16 @@
 // The game's version and what changed in each one. Shown on the front screen ("What's new")
 // and in CHANGELOG.md. When you release: bump VERSION, add an entry at the top of CHANGES,
 // and set the same number in sw.js (CACHE = 'blockwild-v<VERSION>') so phones pick it up.
-export const VERSION = 71;
+export const VERSION = 72;
 export const RELEASED = '14 Nov 2026'; // (the menu shows the newest What's new date instead)
 
 // [version, date, headline, [details]]
 export const CHANGES = [
+  [72, '14 Nov 2026', 'Days in a row and big-day fireworks', [
+    'Do the ☀️ daily job on days in a row to build a run (🔥 shows it). Every 3rd day in a row gives a bonus of 3 fireworks.',
+    'Big days (day 10, 25, 50, 75 and every 100) get a fireworks show at sunrise.',
+    'Your story so far counts your daily jobs done.',
+  ]],
   [71, '14 Nov 2026', 'Today’s jobs, more goals and pause tips', [
     'Once you have done 3 goals, a blue ☀️ Today line under your goal gives a small job each day, with its own little reward. A new one every morning.',
     'Seven new goals for later on: daily jobs, fishing, treasure chests, parties, safe nights in a row, and growing to 67 and then 100 chickens.',

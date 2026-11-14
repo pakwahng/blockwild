@@ -250,6 +250,11 @@ function dailyJob() {
   stats.daily = { seed: world.seed, day: nights, id: j[0], base: j[3](stats), done: false };
   return j;
 }
+// how many days in a row you've done the daily job (still counts today until you miss one)
+function dailyRun() {
+  const r = stats.dailyRun;
+  return world && r && r.seed === world.seed && (r.day === nights || r.day === nights - 1) ? r.n : 0;
+}
 const dailyProgress = j => Math.max(0, Math.min(j[2], j[3](stats) - stats.daily.base));
 let shownDaily = '';
 function dailyStep() {
@@ -257,13 +262,20 @@ function dailyStep() {
   const j = goalsDone.length >= 3 ? dailyJob() : null; // new players get a few goals in before the daily jobs start
   if (j && !stats.daily.done && dailyProgress(j) >= j[2]) {
     stats.daily.done = true; bump(stats, 'dailies');
-    for (const [id, k] of j[4]) addItem(id, k, true);
+    // days in a row: every third one in a row adds a bonus of fireworks
+    const r = stats.dailyRun, n = r && r.seed === world.seed && r.day === nights - 1 ? r.n + 1 : 1;
+    stats.dailyRun = { seed: world.seed, day: nights, n };
+    const got = n % 3 === 0 ? j[4].concat([[ITEM_FIREWORK, 3]]) : j[4];
+    for (const [id, k] of got) addItem(id, k, true);
     sfx.fanfare();
-    toast(`☀️ Today’s job done: ${j[1]}! You got ${rewardText(j[4])}. A new job comes tomorrow.`);
+    toast(`☀️ Today’s job done: ${j[1]}! You got ${rewardText(got)}.`
+      + (n % 3 === 0 ? ` That’s ${n} days in a row, so here’s a bonus!` : n >= 2 ? ` ${n} days in a row! Keep it up: every 3rd day in a row gets a bonus.` : ' A new job comes tomorrow.'), 4000);
     el.classList.remove('done'); void el.offsetWidth; el.classList.add('done');
     saveGame();
   }
-  const text = !j ? '' : stats.daily.done ? '☀️ Today’s job done! New one tomorrow.' : `☀️ Today: ${j[1]}${j[2] > 1 ? ` · ${dailyProgress(j)}/${j[2]}` : ''}`;
+  const run = dailyRun();
+  const text = !j ? '' : (stats.daily.done ? '☀️ Today’s job done! New one tomorrow.' : `☀️ Today: ${j[1]}${j[2] > 1 ? ` · ${dailyProgress(j)}/${j[2]}` : ''}`)
+    + (run >= 2 ? ` · 🔥${run}` : '');
   if (text !== shownDaily) { shownDaily = text; el.querySelector('span').textContent = text; el.hidden = !j; el.classList.toggle('finished', !!j && stats.daily.done); }
 }
 $('#goal').addEventListener('click', () => { const g = nextGoal(); if (g) sayAloud('Your goal: ' + g[1]); bagTab = 'goals'; openPicker(); });
@@ -893,7 +905,8 @@ function handleChickEvents() {
       sfx.fanfare();
       toast((ev.spooked ? `Day ${nights + 1}. Sunrise! The snake spooked ${ev.spooked} ${ev.spooked === 1 ? 'baby' : 'babies'}, but the nursery made it.`
         : `Day ${nights + 1}. Sunrise! Every baby made it safely through the night.`) + popped() + more
-        + (visitDay(nights) ? ' Pip the goose is coming to visit this morning!' : ''));
+        + (visitDay(nights) ? ' Pip the goose is coming to visit this morning!' : '')
+        + milestoneDay());
     } else if (ev.type === 'scared') {
       if (!firsts.includes('scared')) { firsts.push('scared'); toast('Eek! The scarecrow gave the snake a fright. Near a scarecrow it creeps along at under half speed.'); }
     } else if (ev.type === 'glow') {
@@ -2089,7 +2102,7 @@ function buildStory() {
     ['🌙', stats.nights || 0, 'Safe nights'], ['🔥', stats.bestStreak || 0, 'Best run of safe nights'],
     ['🐍', stats.bonked || 0, 'Raiders bonked away'], ['🎉', stats.bestPops || 0, 'Most snakes popped in a night'],
     ['⛏️', total(stats.dug), 'Blocks dug'], ['🧱', total(stats.placed), 'Things put down'], ['🔨', total(stats.made), 'Things made'],
-    ['🐟', stats.fished || 0, 'Things fished up'], ['✨', stats.chests || 0, 'Treasure chests opened'],
+    ['🐟', stats.fished || 0, 'Things fished up'], ['✨', stats.chests || 0, 'Treasure chests opened'], ['☀️', stats.dailies || 0, 'Daily jobs done'],
     ['🏆', `${goalsDone.length} / ${GOALS.length}`, 'Goals done'],
   ];
   // when Pip the goose comes next: today if she's here (or still to come this morning), else the next visiting day
@@ -2806,6 +2819,19 @@ function bellAt(p, who, from) {
 
 const fireworks = new Fireworks();
 let fwCool = 0;
+// Big days (10, 25, 50, 75, 100, then every 100) get a little sky show at sunrise.
+function milestoneDay() {
+  const day = nights + 1;
+  if (!(day === 10 || day === 25 || day === 50 || day === 75 || (day >= 100 && day % 100 === 0))) return '';
+  for (let i = 0; i < 4; i++) setTimeout(() => {
+    if (!player || !running) return;
+    const a = Math.random() * Math.PI * 2, p = [player.pos[0] + Math.cos(a) * 5, player.pos[1], player.pos[2] + Math.sin(a) * 5];
+    const seed = Math.random() * 1e9 | 0;
+    fireworks.launch(p, seed);
+    if (net.isHost) net.broadcast({ t: 'fw', p, seed });
+  }, 600 + i * 700);
+  return ` 🎆 It’s day ${day}! Hooray for ${day} days of looking after your nursery!`;
+}
 function launchFirework() {
   if (fwCool > 0) return;
   fwCool = 0.5;

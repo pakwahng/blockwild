@@ -2,6 +2,11 @@
 
 The same list is in the game: tap the version number on the front screen, or open **What’s new**.
 
+## 72. Days in a row and big-day fireworks (14 Nov 2026)
+- Do the ☀️ daily job on days in a row to build a run (🔥 shows it). Every 3rd day in a row gives a bonus of 3 fireworks.
+- Big days (day 10, 25, 50, 75 and every 100) get a fireworks show at sunrise.
+- Your story so far counts your daily jobs done.
+
 ## 71. Today’s jobs, more goals and pause tips (14 Nov 2026)
 - Once you have done 3 goals, a blue ☀️ Today line under your goal gives a small job each day, with its own little reward. A new one every morning.
 - Seven new goals for later on: daily jobs, fishing, treasure chests, parties, safe nights in a row, and growing to 67 and then 100 chickens.
