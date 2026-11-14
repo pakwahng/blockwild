@@ -1,11 +1,15 @@
 // The game's version and what changed in each one. Shown on the front screen ("What's new")
 // and in CHANGELOG.md. When you release: bump VERSION, add an entry at the top of CHANGES,
 // and set the same number in sw.js (CACHE = 'blockwild-v<VERSION>') so phones pick it up.
-export const VERSION = 75;
+export const VERSION = 76;
 export const RELEASED = '14 Nov 2026'; // (the menu shows the newest What's new date instead)
 
 // [version, date, headline, [details]]
 export const CHANGES = [
+  [76, '14 Nov 2026', 'New recipes stand out', [
+    'A recipe you have just learned shows a yellow New! badge in the bag and comes first in its tab, and the tab says New too. The badge goes once you have seen it.',
+    'With the bag, a card or the menu open, messages show at the bottom so they don’t cover the tabs and buttons.',
+  ]],
   [75, '14 Nov 2026', 'Take me home, and farm news', [
     'Stuck in a hole or lost? Pause and tap 🏠 Take me home to go straight back to your babies.',
     'A message tells you when a feeder runs out of treats, and when wheat in a planter turns golden.',

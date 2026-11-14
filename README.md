@@ -74,6 +74,7 @@ Tap a grown-up (hen, cow, pig, sheep or wolf) to pet it and open **Teach a job**
 - Tap **Make** for one batch, **hold** it to keep making, or tap **All** to use up everything you have.
 - Things marked * need a **crafting table** within 4 blocks. Make the table from 4 wood and place it.
 - Things marked † are food: cook them at a **campfire** within 4 blocks (see Cooking below).
+- **New recipes** (`stats.fresh`): each recipe you learn gets a New! badge, sorts first in its tab, and marks the tab; closing the bag clears the ones you saw.
 - **Learning recipes:** a new world knows only how to make wood, sticks, the crafting table, fences, seeds and hay. Everything else you learn first:
   - **Recipe pages** turn up now and then when you dig (leaves 3%, clay 3%, stone 2.5%, sand and snow 2%, grass 1.5%, dirt 0.8%). A page teaches something you don't know yet, usually something you've already found all the bits for. It could be a crafting recipe or a sewing pattern.
   - **Treasure chests** and **fishing** turn up recipe pages too.

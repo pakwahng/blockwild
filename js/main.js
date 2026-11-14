@@ -176,7 +176,7 @@ const learnName = u => u.kind === 'r' ? itemName(u.out) : (M[{ 0: 'TOPS', 2: 'BO
 // Learn a recipe or pattern. how: 'page' (found one) or 'goal'. Returns its name, or '' if you knew it already.
 function learn(u, how) {
   if (!u) return '';
-  if (u.kind === 'r') { if (knownList().includes(u.out)) return ''; knownList().push(u.out); bagTab = RECIPES.find(r => r.out === u.out)?.tab || bagTab; } // the bag opens on its tab next time
+  if (u.kind === 'r') { if (knownList().includes(u.out)) return ''; knownList().push(u.out); bagTab = RECIPES.find(r => r.out === u.out)?.tab || bagTab; (stats.fresh ||= []).push(u.out); } // the bag opens on its tab next time
   else {
     if ((settings.patterns || []).includes(u.key)) return '';
     settings.patterns = [...(settings.patterns || []), u.key];
@@ -1740,6 +1740,7 @@ function buildOwned() {
 
 // ---- the Make section: picture cards in tabs ----
 let bagTab = 'have', cards = [];
+const seenFresh = new Set(); // newly learned recipes shown in the bag this time
 const stickName = (id, k) => id === ITEM_STICK && k === 1 ? 'Stick' : itemName(id);
 function buildTabs() {
   const tabs = $('#craft-tabs');
@@ -1749,7 +1750,8 @@ function buildTabs() {
     t.className = 'tab' + (key === bagTab ? ' on' : '');
     t.setAttribute('role', 'tab'); t.setAttribute('aria-selected', key === bagTab);
     const ready = RECIPES.some(r => r.tab === key && canMake(r));
-    t.innerHTML = `${label}${ready ? '<i class="dot" aria-hidden="true"></i><span class="sr">, you can make something here</span>' : ''}`;
+    const fresh = RECIPES.some(r => r.tab === key && stats.fresh?.includes(r.out));
+    t.innerHTML = `${label}${fresh ? ' <b class="tab-new">New</b>' : ''}${ready ? '<i class="dot" aria-hidden="true"></i><span class="sr">, you can make something here</span>' : ''}`;
     t.addEventListener('click', () => { bagTab = key; buildMake(); });
     tabs.appendChild(t);
   }
@@ -1778,7 +1780,7 @@ function buildMake() {
   }
   // the ones you know first, then the ones still to learn
   // the ones you can make right now first, then the rest you know, then the ones still to learn
-  const known = here.filter(knows);
+  const known = here.filter(knows).sort((a, b) => (stats.fresh?.includes(b.out) | 0) - (stats.fresh?.includes(a.out) | 0)); // just learned ones first
   for (const r of [...known.filter(canMake), ...known.filter(q => !canMake(q)), ...here.filter(q => !knows(q))]) {
     if (!knows(r)) {
       const g = GOALS.find(q => !goalsDone.includes(q[0]) && goalRecipes(q[0]).includes(r.out));
@@ -1793,7 +1795,9 @@ function buildMake() {
     }
     const c = document.createElement('div');
     c.className = 'card';
-    c.innerHTML = `<div class="card-out"><img alt="" src="${icons[r.out]}">${r.n > 1 ? `<b class="times">×${r.n}</b>` : ''}</div>` +
+    const fresh = stats.fresh?.includes(r.out);
+    if (fresh) { c.classList.add('fresh'); seenFresh.add(r.out); }
+    c.innerHTML = `<div class="card-out"><img alt="" src="${icons[r.out]}">${r.n > 1 ? `<b class="times">×${r.n}</b>` : ''}${fresh ? '<b class="new-badge">New!</b>' : ''}</div>` +
       `<div class="card-name">${itemName(r.out)}</div>` +
       `<div class="card-needs">${r.needs.map(([id, k]) => `<span data-id="${id}" data-k="${k}"><img alt="" src="${icons[id]}"><em></em></span>`).join('')}</div>` +
       (r.table === 'fire' ? `<div class="card-table"><img alt="" src="${icons[B.CAMPFIRE]}">Needs a campfire</div>`
@@ -1865,6 +1869,7 @@ function holdToRepeat(btn, fn) {
 let pickerOpenFromLock = false;
 function closePicker() {
   $('#picker').hidden = true;
+  if (seenFresh.size && stats.fresh) { stats.fresh = stats.fresh.filter(id => !seenFresh.has(id)); seenFresh.clear(); } // "New!" goes once you've seen it
   pickerOpenFromLock = false;
   resume();
 }

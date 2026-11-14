@@ -2,6 +2,10 @@
 
 The same list is in the game: tap the version number on the front screen, or open **What’s new**.
 
+## 76. New recipes stand out (14 Nov 2026)
+- A recipe you have just learned shows a yellow New! badge in the bag and comes first in its tab, and the tab says New too. The badge goes once you have seen it.
+- With the bag, a card or the menu open, messages show at the bottom so they don’t cover the tabs and buttons.
+
 ## 75. Take me home, and farm news (14 Nov 2026)
 - Stuck in a hole or lost? Pause and tap 🏠 Take me home to go straight back to your babies.
 - A message tells you when a feeder runs out of treats, and when wheat in a planter turns golden.

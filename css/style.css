@@ -679,3 +679,13 @@ button:focus:not(:focus-visible) { outline: none; }
 .undo-new { width: 100%; margin-top: 8px; min-height: 42px; }
 .check input { flex: 0 0 auto; }
 #btn-home small { display: block; font-size: 12px; font-weight: 500; opacity: 0.8; }
+/* recipes you've just learned */
+.card.fresh { border-color: #ffcf3a; box-shadow: 0 0 0 2px rgba(255, 207, 58, 0.35); }
+.card-out { position: relative; }
+.new-badge { position: absolute; top: -6px; left: -6px; padding: 1px 6px; border-radius: 99px; background: #ffcf3a; color: #3a2600; font-size: 11px; font-weight: 900; transform: rotate(-8deg); }
+.tab-new { margin-left: 4px; padding: 0 5px; border-radius: 99px; background: #ffcf3a; color: #3a2600; font-size: 10px; font-weight: 900; vertical-align: 1px; }
+/* with a card or the menu open, messages sit at the bottom so they don't cover its tabs and buttons */
+body:has(#picker:not([hidden]), #jobcard:not([hidden]), #signcard:not([hidden]), #mapcard:not([hidden]), #tradecard:not([hidden]), #menu:not([hidden])) #toast {
+  top: auto; bottom: calc(16px + var(--safe-b));
+}
+body:has(#menu:not([hidden])) #loading { display: none; }
