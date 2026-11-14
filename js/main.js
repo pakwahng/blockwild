@@ -834,7 +834,7 @@ function handleChickEvents() {
       sfx.nightfall(); nightPops = 0; peaceNight = !!ev.peaceful;
       toast(ev.peaceful ? 'Night falls under the square moon. It’s a peaceful night: the babies are snoozing and no snakes will come.'
         : nights === 0
-        ? 'Night falls under the square moon… a block snake is coming for the nursery! Grab your toy sword and guard the gate.'
+        ? 'Night falls under the square moon… a block snake is coming for the nursery! Grab your toy sword and guard the gate. (Too scary? Turn on Peaceful in Settings.)'
         : 'Night falls. Watch out for the block snake!');
     } else if (ev.type === 'dawn') {
       if (ev.spooked === 0 && !ev.peaceful) bump(stats, 'nights'); // peaceful nights don't count

@@ -2,6 +2,9 @@
 
 The same list is in the game: tap the version number on the front screen, or open **What’s new**.
 
+## 69. A gentle hint on the first night (14 Nov 2026)
+- The very first nightfall message mentions that you can turn on Peaceful in Settings if snakes are too scary.
+
 ## 68. Brighter nights (14 Nov 2026)
 - New in Settings: Brighter nights. The land, your babies and the snakes stay easier to see at night on a dim screen, while the sky still turns dark and starry.
 
