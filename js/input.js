@@ -108,6 +108,7 @@ export class Input {
       if (document.pointerLockElement !== s) { s.requestPointerLock?.(); return; }
       if (e.button === 0) this.state.breaking = true;
       if (e.button === 2) ui.onPlace();
+      if (e.button === 1) { e.preventDefault(); ui.onPick?.(); } // middle click: pick the block you're looking at
     });
     window.addEventListener('mouseup', e => { if (e.button === 0) this.state.breaking = false; });
     s.addEventListener('contextmenu', e => e.preventDefault());

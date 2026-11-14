@@ -322,7 +322,7 @@ const EVERYONE = 'Everyone’s invited! Chicks, calves, piglets, lambs and pups.
 // ---------- input ----------
 const input = new Input(canvas, {
   stick: $('#stick'), knob: $('#knob'), jump: $('#btn-jump'), down: $('#btn-down'),
-  onPlace: placeBlock, onPicker: openPicker, onPause: pause,
+  onPlace: placeBlock, onPick: () => pickBlock(), onPicker: openPicker, onPause: pause,
   onHotbarScroll: d => selectSlot((selected + d + 9) % 9),
   onHotbarKey: selectSlot,
 });
@@ -1177,6 +1177,18 @@ function remeshAround(x, z) {
 }
 
 // ---------- interaction ----------
+// Middle click: put the kind of block you're looking at in your hand (if you have some).
+function pickBlock() {
+  if (!running || !target) return;
+  const placeable = [...PLACEABLE];
+  const id = placeable.includes(target.id) ? target.id : drops(target.id)[0]?.[0];
+  if (!id) return;
+  if (!have(id)) { toast(`You don’t have any ${itemName(id).toLowerCase()} to build with.`, 2000); return; }
+  if (barMode === 'fight' && !hotbar.includes(id)) toggleBar();
+  let slot = hotbar.indexOf(id);
+  if (slot < 0) { hotbar[selected] = id; buildHotbar(); slot = selected; }
+  selectSlot(slot); sfx.pickup?.();
+}
 function placeBlock() {
   if (!running) return;
   const id = hotbar[selected];
@@ -3484,7 +3496,7 @@ requestAnimationFrame(loop);
 
 // handy for debugging from the console
 window.blockwild = { fishTap, get fishing() { return fishing; }, selectSlot, get hotbar() { return hotbar; }, get known() { return knownList(); }, learn, unlearned: () => unlearned(knownList(), settings.patterns || []), get settings() { return settings; }, get world() { return world; }, get player() { return player; }, get target() { return target; }, get flock() { return flock; }, get nursery() { return flock; }, get snakes() { return snakes; }, get raiders() { return raiders; }, get weather() { return weather; }, get critters() { return critters; }, music, trader, openMap, get nights() { return nights; }, set nights(n) { nights = n; }, wardrobe, selfieCam, petBaby, openJobs, get inv() { return inv; }, addItem, RECIPES, craft, input, raycast,
-  get clock() { return clock; }, setTime(t) { clock = t; }, swing: () => swing(), catchFirefly: () => catchFirefly(), fishBottle: () => fishBottle(), startSeek: () => startSeek(), get seek() { return seek; }, playBox: t => playBox(t), get mapChest() { return mapChest; }, get boxes() { return boxes; }, get stats() { return stats; }, get goalsDone() { return goalsDone; }, checkGoals: () => checkGoals(), place: () => placeBlock(), get shots() { return shots; }, toggleBar: () => toggleBar(),
+  get clock() { return clock; }, setTime(t) { clock = t; }, swing: () => swing(), catchFirefly: () => catchFirefly(), fishBottle: () => fishBottle(), startSeek: () => startSeek(), get seek() { return seek; }, playBox: t => playBox(t), get mapChest() { return mapChest; }, get boxes() { return boxes; }, get stats() { return stats; }, get goalsDone() { return goalsDone; }, checkGoals: () => checkGoals(), place: () => placeBlock(), pick: () => pickBlock(), get shots() { return shots; }, toggleBar: () => toggleBar(),
   net, others, get myNetId() { return myNetId; },
   get seat() { return seat; }, awardCrown: l => awardCrown(l), fireworks, get streak() { return streak; }, set streak(v) { streak = v; }, sit: (x, y, z) => sit(x, y, z), standUp: () => standUp(),
   // advance n frames by hand (useful when the page is in a background tab)

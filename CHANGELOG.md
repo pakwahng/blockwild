@@ -2,6 +2,9 @@
 
 The same list is in the game: tap the version number on the front screen, or open **What’s new**.
 
+## 52. Middle click to pick a block (14 Nov 2026)
+- Keyboard and mouse: middle click a block to put that kind in your hand, if you have some. It jumps to the slot it’s already in, or takes the slot you’re on.
+
 ## 51. Which way the snake is coming (14 Nov 2026)
 - When a snake turns up, a message says which kind it is and which side of the nursery it’s coming from, like “A boom snake is coming from the south-east!”. North is up, like on the map.
 
