@@ -1,5 +1,5 @@
 // Network-first service worker: always fresh when online, still playable offline.
-const CACHE = 'blockwild-v47';
+const CACHE = 'blockwild-v48';
 const ASSETS = [
   './', 'index.html', 'css/style.css', 'manifest.webmanifest',
   'js/main.js', 'js/blocks.js', 'js/textures.js', 'js/noise.js', 'js/world.js',

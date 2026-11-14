@@ -69,7 +69,7 @@ Tap a grown-up (hen, cow, pig, sheep or wolf) to pet it and open **Teach a job**
 
 - A new world starts with 10 seeds and the toy sword. Everything else you collect.
 - Hold to **dig** a block and it goes in your bag. Grass gives dirt (and sometimes seeds, wheat or clover), stone gives cobble, leaves can drop apples and sticks, and dirt now and then hides a bone.
-- The hotbar shows how many you have. Placing a block or throwing a treat uses one up; the sword is never used up. Things you've run out of go grey.
+- The hotbar shows how many you have, and picking a slot shows its name and count above the hotbar for a moment (`#slot-name`). Placing a block or throwing a treat uses one up; the sword is never used up. Things you've run out of go grey.
 - Open the **bag** (top right, or E). **Your things** shows what you carry: tap one to put it in the selected hotbar slot. The other tabs (**Wood & tools**, **Farm**, **Building**) show picture cards of what you can make; a yellow dot means a tab has something ready. Each card shows what it needs (have / need).
 - Tap **Make** for one batch, **hold** it to keep making, or tap **All** to use up everything you have.
 - Things marked * need a **crafting table** within 4 blocks. Make the table from 4 wood and place it.
@@ -254,7 +254,7 @@ The front screen shows the version number. Tap it, or open **What’s new**, for
 
 A full day lasts 10 minutes: about 6 minutes of daylight, a pink dusk, roughly 3 minutes of night under the square moon, then sunrise.
 
-- At night the babies doze off, and a big green and purple striped **block snake** (taller than the babies) slithers towards your nursery (one snake at first, up to four on later nights).
+- At night the babies doze off (sleeping babies near you puff a little "z z z"), and a big green and purple striped **block snake** (taller than the babies) slithers towards your nursery (one snake at first, up to four on later nights).
 - If it reaches a baby, the baby is spooked out of your nursery and runs off. Feed it again to bring it back. Babies run from a snake that gets close.
 - Snakes slither over a **one-block fence** but not a **two-block wall**.
 - Snakes within 7 blocks of a scarecrow move at 40% speed; within 5 blocks of a lamp post or campfire, at 70% (`GLOW_RANGE`, `GLOW_SLOW` in `js/snakes.js`; a `glow` event gives a first-time tip).

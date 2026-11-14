@@ -2,6 +2,10 @@
 
 The same list is in the game: tap the version number on the front screen, or open **What’s new**.
 
+## 48. Hotbar names and sleepy babies (14 Nov 2026)
+- When you pick something on the hotbar, its name and how many you have pop up above it for a moment.
+- Babies sleeping near you at night puff a little “z z z”.
+
 ## 47. Lamp light slows snakes (14 Nov 2026)
 - Snakes squint in the light: near a lamp post or campfire they slow down a bit (a scarecrow still slows them most).
 - A soft chime plays with the “sun is setting” warning.

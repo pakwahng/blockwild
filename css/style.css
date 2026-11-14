@@ -84,6 +84,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .fx.bonk { font-weight: 900; font-size: 26px; color: #ffe23a; text-shadow: 0 2px 0 #6a2a6e, 0 3px 6px rgba(0,0,0,.5); }
 .fx.grown { font-weight: 900; font-size: 20px; color: #fff; white-space: nowrap; text-shadow: 0 2px 0 #3a9a46, 0 3px 6px rgba(0,0,0,.45); animation-duration: 1.8s; }
 .fx.note { font-weight: 900; font-size: 28px; color: #ffd23c; text-shadow: 0 2px 0 #8a4fd0, 0 3px 6px rgba(0,0,0,.45); }
+.fx.zz { font-weight: 900; font-size: 18px; color: #c9d6ff; text-shadow: 0 2px 4px rgba(0,0,0,.5); font-style: italic; }
 
 /* the toy sword, held in the bottom right */
 #held {
@@ -604,3 +605,12 @@ body.touch kbd.key, body.touch kbd.slot-key, body.touch #desk-hint { display: no
 .story div { background: rgba(255, 255, 255, 0.06); border: 1px solid var(--panel-edge); border-radius: 10px; padding: 6px 8px; }
 .story b { display: block; font-size: 20px; color: var(--accent); }
 .story span { font-size: 12px; color: var(--ink-dim); }
+/* the name of what you just picked on the hotbar, shown for a moment above it */
+#slot-name {
+  position: absolute; left: 50%; bottom: calc(var(--slot) + 66px + var(--safe-b)); transform: translateX(-50%);
+  padding: 3px 12px; border-radius: 99px; background: rgba(10, 14, 20, 0.6); color: #fff;
+  font-weight: 800; font-size: 14px; white-space: nowrap; pointer-events: none;
+  opacity: 0; transition: opacity .25s;
+}
+#slot-name.show { opacity: 1; transition: none; }
+body.touch #slot-name { bottom: calc(var(--slot) + 26px + var(--safe-b)); }

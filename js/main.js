@@ -1535,7 +1535,16 @@ function emptyHint(id) {
   if (TOOLS.has(id)) { toast(made ? `You don’t have a ${itemName(id).toLowerCase()} yet. Open your bag at a crafting table to make one.` : `You don’t have a ${itemName(id).toLowerCase()} yet. Finish goals to learn how to make one.`); return; }
   toast(made ? `You’re out of ${itemName(id).toLowerCase()}. Open your bag to make more.` : `You’re out of ${itemName(id).toLowerCase()}. Dig or find some more.`);
 }
+let slotNameT = 0;
 function selectSlot(i) {
+  // say what you picked, for a moment, above the hotbar
+  const id = hotbar[i];
+  if (i !== selected && id && running) {
+    const el = $('#slot-name'), n = have(id);
+    el.textContent = itemName(id) + (TOOLS.has(id) ? '' : ` · ${n}`);
+    el.classList.add('show');
+    clearTimeout(slotNameT); slotNameT = setTimeout(() => el.classList.remove('show'), 1100);
+  }
   selected = i;
   [...$('#hotbar').children].forEach((el, k) => el.classList.toggle('sel', k === i));
   updateHeld();
@@ -2527,7 +2536,7 @@ $('#nursery').appendChild(boostEl);
 const clockEl = document.createElement('div');
 clockEl.className = 'pill clock';
 $('#nursery').prepend(clockEl);
-let duskWarned = -1;
+let duskWarned = -1, zzT = 0;
 function clockStep() {
   const t = clock;
   const left = snakes.list.filter(s => !s.gone).length;
@@ -2547,6 +2556,12 @@ function clockStep() {
         break;
       }
     }
+  }
+  // sleepy babies close by puff a little "z z z" now and then
+  if (performance.now() > zzT) {
+    zzT = performance.now() + 900;
+    const near = flock.animals.filter(a => a.tame && a.mode === 'sleep' && Math.hypot(a.p[0] - player.pos[0], a.p[2] - player.pos[2]) < 14);
+    if (near.length) floatFx(near[Math.random() * near.length | 0].p, 'zz', 'z z z');
   }
   // about 20 seconds before dusk, once per evening
   if (t > DUSK - 20 / CYCLE && t < DUSK && duskWarned !== nights && !net.isGuest) {

@@ -1,11 +1,15 @@
 // The game's version and what changed in each one. Shown on the front screen ("What's new")
 // and in CHANGELOG.md. When you release: bump VERSION, add an entry at the top of CHANGES,
 // and set the same number in sw.js (CACHE = 'blockwild-v<VERSION>') so phones pick it up.
-export const VERSION = 47;
+export const VERSION = 48;
 export const RELEASED = '10 Nov 2026';
 
 // [version, date, headline, [details]]
 export const CHANGES = [
+  [48, '14 Nov 2026', 'Hotbar names and sleepy babies', [
+    'When you pick something on the hotbar, its name and how many you have pop up above it for a moment.',
+    'Babies sleeping near you at night puff a little “z z z”.',
+  ]],
   [47, '14 Nov 2026', 'Lamp light slows snakes', [
     'Snakes squint in the light: near a lamp post or campfire they slow down a bit (a scarecrow still slows them most).',
     'A soft chime plays with the “sun is setting” warning.',
