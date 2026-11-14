@@ -13,7 +13,9 @@ class ModelBuilder {
   constructor() { this.v = []; this.i = []; }
 
   // Rounded box centred at c with full size s, corner radius r.
-  box(c, s, r, color, part = 0, smooth = true) {
+  // rz tilts it about the front-to-back axis (radians), for things like hair swept to one side.
+  box(c, s, r, color, part = 0, smooth = true, rz = 0) {
+    const cz = Math.cos(rz), sz = Math.sin(rz);
     const col = hex(color);
     const h = [s[0] / 2, s[1] / 2, s[2] / 2];
     r = Math.min(r, h[0], h[1], h[2]);
@@ -33,6 +35,7 @@ class ModelBuilder {
         const len = Math.hypot(...d) || 1;
         const n = d.map(v => v / len);
         const p = cl.map((v, k) => v + n[k] * r);
+        if (rz) { [p[0], p[1]] = [p[0] * cz - p[1] * sz, p[0] * sz + p[1] * cz]; [n[0], n[1]] = [n[0] * cz - n[1] * sz, n[0] * sz + n[1] * cz]; }
         this.v.push(c[0] + p[0], c[1] + p[1], c[2] + p[2], n[0], n[1], n[2], col[0], col[1], col[2], part);
       }
       const nw = ws.length;
@@ -63,6 +66,22 @@ class ModelBuilder {
       this.v.push(Math.cos(a) * radius, 0, Math.sin(a) * radius, 0, 1, 0, ...col, part);
     }
     for (let k = 0; k < segs; k++) this.tri(base, base + 1 + k, base + 2 + k);
+    return this;
+  }
+
+  // A flat oval painted on a front (+Z) face: eyes, brows, cheeks, mouths. half = only the bottom half (a D).
+  // (A thin box can't be rounded more than half its depth, so small face parts need this to look round.)
+  oval(c, rx, ry, color, part = 0, { half = false, rot = 0, segs = 18 } = {}) {
+    const col = hex(color), base = this.v.length / 10, cs = Math.cos(rot), sn = Math.sin(rot);
+    const P = (x, y) => [c[0] + x * cs - y * sn, c[1] + x * sn + y * cs, c[2]];
+    this.v.push(...P(0, half ? -ry * 0.35 : 0), 0, 0, 1, ...col, part);
+    const a0 = half ? Math.PI : 0, span = half ? Math.PI : Math.PI * 2;
+    for (let k = 0; k <= segs; k++) {
+      const a = a0 + span * k / segs;
+      this.v.push(...P(Math.cos(a) * rx, Math.sin(a) * ry), 0, 0, 1, ...col, part);
+    }
+    for (let k = 0; k < segs; k++) this.tri(base, base + 1 + k, base + 2 + k);
+    if (half) this.tri(base, base + 1 + segs, base + 1);
     return this;
   }
 
@@ -712,8 +731,8 @@ export const FACE_SVG = {
 // ---- the kids: Lachie and Charli, the two players from the video (the cute chibi look) ----
 // Parts: 4/5 legs swing from the hip, 6/7 arms swing from the shoulder (opposite the leg on the same side),
 // 10 is the big round head, which tilts with where the player is looking.
-const SKIN = '#f3c9a6', SKIN_DARK = '#e8ae8c', HAIR = '#1b1818', SOCK = '#f6f4ef';
-const HIP = 0.46, SHOULDER = 0.78, NECK = 0.8;
+const SKIN = '#f7cba8', SKIN_DARK = '#eeb08e', HAIR = '#1b1818', SOCK = '#f6f4ef';
+const HIP = 0.27, SHOULDER = 0.6, NECK = 0.62;
 
 // ---- clothes: what each kid can wear (the wardrobe) ----
 export const CLOTH_COLORS = ['#d83a2c', '#f08a3c', '#f2c94c', '#5fae4e', '#7fd0c0', '#4a8fe0', '#2c3e74', '#9b7fd8', '#f28bb3', '#cfa978', '#f1efe8', '#2a2a2e'];
@@ -733,8 +752,10 @@ export function cleanFit(f, char) {
 }
 const shade = (c, k) => '#' + [1, 3, 5].map(i => Math.round(Math.min(255, parseInt(c.slice(i, i + 2), 16) * k)).toString(16).padStart(2, '0')).join('');
 
+// Chibi proportions, as on the reference plates: a big head about half their height, a short body,
+// stubby legs and chunky sneakers. Leg pivot (HIP), shoulder and neck heights drive the walk and nod.
 function kidBody(m, fit) {
-  const legX = 0.085, legW = 0.14, armX = 0.215, armW = 0.1, chest = 0.34, chestD = 0.26;
+  const legX = 0.09, legW = 0.13, armX = 0.255, armW = 0.1, chest = 0.4, chestD = 0.3, waist = 0.3;
   const [top, tc, bot, bc, , , sc] = fit;
   const shirt = CLOTH_COLORS[tc], sleeve = shade(shirt, 0.95), pants = CLOTH_COLORS[bc], shoe = CLOTH_COLORS[sc];
   const dress = top === 3, hoodie = top === 2, jumper = top === 4, cape = top === 5;
@@ -744,89 +765,114 @@ function kidBody(m, fit) {
   const stripe = tc === 10 ? CLOTH_COLORS[6] : '#f6f4ef';
   for (const [sx, part] of [[1, 4], [-1, 5]]) {
     const x = sx * legX;
-    m.box([x, 0.05, 0.03], [legW + 0.035, 0.1, legW + 0.11], 0.045, shoe, part, false);          // chunky sneakers
-    m.box([x, 0.095, 0.1], [legW + 0.04, 0.02, 0.03], 0.008, shade(shoe, 0.8), part, false);      // toe stripe
+    m.box([x, 0.055, 0.025], [legW + 0.05, 0.11, legW + 0.13], 0.05, shoe, part);                    // chunky sneakers
+    m.box([x, 0.018, 0.025], [legW + 0.06, 0.036, legW + 0.14], 0.016, shade(shoe, 0.86), part, false); // soles
     if (trousers) {
-      m.box([x, (0.12 + HIP + 0.03) / 2, 0], [legW + 0.03, HIP + 0.03 - 0.12, legW + 0.03], 0.04, pants, part, false);
-      m.box([x, 0.135, 0], [legW + 0.04, 0.04, legW + 0.04], 0.02, shade(pants, 0.85), part, false); // turn-ups
+      m.box([x, (0.1 + waist) / 2, 0], [legW + 0.04, waist - 0.1, legW + 0.04], 0.04, pants, part, false);
+      m.box([x, 0.12, 0], [legW + 0.05, 0.04, legW + 0.05], 0.02, shade(pants, 0.85), part, false);   // turn-ups
       continue;
     }
-    m.box([x, 0.135, 0], [legW + 0.01, 0.08, legW + 0.01], 0.03, SOCK, part, false);              // socks
-    m.box([x, 0.27, 0], [legW, 0.2, legW], 0.03, SKIN, part, false);
-    if (!dress && !skirt) m.box([x, HIP - 0.07, 0], [legW + 0.035, 0.16, legW + 0.035], 0.04, pants, part, false); // shorts legs
+    m.box([x, 0.13, 0], [legW + 0.01, 0.06, legW + 0.01], 0.03, SOCK, part, false);                 // socks
+    m.box([x, 0.19, 0], [legW, 0.1, legW], 0.035, SKIN, part, false);
+    if (!dress && !skirt) {
+      m.box([x, 0.255, 0], [legW + 0.05, 0.12, legW + 0.05], 0.04, pants, part, false);              // shorts legs
+      m.box([x, 0.205, 0], [legW + 0.065, 0.032, legW + 0.065], 0.014, shade(pants, 0.9), part, false); // rolled cuffs
+    }
   }
-  m.box([0, HIP + 0.02, 0], [legX * 2 + legW + 0.035, 0.1, chestD], 0.04, dress ? shirt : pants);
+  m.box([0, 0.31, 0], [chest + 0.01, 0.1, chestD + 0.01], 0.045, dress ? shirt : pants);
   if (tutu) {                                                                                      // a puffy, sticking-out tutu
-    m.box([0, HIP - 0.03, 0], [0.54, 0.09, chestD + 0.22], 0.045, pants);
-    m.box([0, HIP - 0.09, 0], [0.48, 0.06, chestD + 0.16], 0.03, shade(pants, 1.12));
-  } else if (skirt) m.box([0, HIP - 0.06, 0], [0.42, 0.2, chestD + 0.1], 0.06, pants);            // flared skirt
+    m.box([0, 0.27, 0], [0.58, 0.09, chestD + 0.24], 0.045, pants);
+    m.box([0, 0.22, 0], [0.52, 0.06, chestD + 0.18], 0.03, shade(pants, 1.12));
+  } else if (skirt) m.box([0, 0.245, 0], [0.47, 0.17, chestD + 0.1], 0.06, pants);                // flared skirt
   if (dress) {
-    m.box([0, HIP - 0.07, 0], [0.45, 0.24, chestD + 0.12], 0.07, shirt);                           // full skirt of the dress
-    m.box([0, HIP - 0.18, 0], [0.46, 0.03, chestD + 0.13], 0.012, '#f6f4ef', 0, false);            // white hem
+    m.box([0, 0.25, 0], [0.49, 0.22, chestD + 0.12], 0.07, shirt);                                  // full skirt of the dress
+    m.box([0, 0.145, 0], [0.5, 0.03, chestD + 0.13], 0.012, '#f6f4ef', 0, false);                  // white hem
   }
-  m.box([0, (HIP + 0.05 + NECK) / 2, 0], [chest, NECK - HIP - 0.05, chestD], 0.07, tee);
+  m.box([0, (waist + NECK) / 2, 0], [chest, NECK - waist, chestD], 0.08, tee);
+  const front = chestD / 2;
   if (jumper) {
     // knitted chick jumper: ribbed hem, a chick face on the front and little wings
-    m.box([0, HIP + 0.08, 0], [chest + 0.014, 0.05, chestD + 0.014], 0.02, shade(shirt, 0.88), 0, false);
-    for (const sx of [-1, 1]) m.box([sx * 0.065, 0.7, chestD / 2 + 0.006], [0.04, 0.045, 0.01], 0.015, '#2a1e1a', 0, false);
-    m.box([0, 0.645, chestD / 2 + 0.01], [0.07, 0.04, 0.02], 0.012, '#f08a3c', 0, false);
-    for (const sx of [-1, 1]) m.box([sx * 0.12, 0.58, chestD / 2 + 0.004], [0.06, 0.1, 0.01], 0.02, shade(shirt, 0.86), 0, false);
+    m.box([0, 0.33, 0], [chest + 0.014, 0.05, chestD + 0.014], 0.02, shade(shirt, 0.88), 0, false);
+    for (const sx of [-1, 1]) m.oval([sx * 0.065, 0.53, front + 0.004], 0.022, 0.026, '#2a1e1a');
+    m.oval([0, 0.48, front + 0.004], 0.04, 0.026, '#f08a3c', 0, { half: true });
+    for (const sx of [-1, 1]) m.box([sx * 0.13, 0.42, front + 0.002], [0.06, 0.1, 0.01], 0.02, shade(shirt, 0.86), 0, false);
   }
   if (cape) {
     // a hero cape from the shoulders to the knees, with gold clasps
-    m.box([0, (0.3 + NECK) / 2, -chestD / 2 - 0.03], [0.38, NECK - 0.3, 0.025], 0.012, shirt, 0, false);
-    m.box([0, 0.33, -chestD / 2 - 0.05], [0.44, 0.1, 0.025], 0.012, shade(shirt, 0.9), 0, false);
-    for (const sx of [-1, 1]) m.box([sx * 0.13, NECK - 0.03, chestD / 2 + 0.01], [0.05, 0.05, 0.02], 0.015, '#f2c94c', 0, false);
-    m.box([0, NECK - 0.01, -chestD / 2 - 0.02], [0.36, 0.05, 0.05], 0.02, shirt, 0, false);
+    m.box([0, (0.16 + NECK) / 2, -front - 0.03], [0.42, NECK - 0.16, 0.025], 0.012, shirt, 0, false);
+    m.box([0, 0.19, -front - 0.05], [0.48, 0.08, 0.025], 0.012, shade(shirt, 0.9), 0, false);
+    for (const sx of [-1, 1]) m.box([sx * 0.14, NECK - 0.04, front + 0.01], [0.05, 0.05, 0.02], 0.015, '#f2c94c', 0, false);
+    m.box([0, NECK - 0.02, -front - 0.02], [0.38, 0.05, 0.05], 0.02, shirt, 0, false);
   }
   if (dungarees) {
     // bib and straps, with yellow buttons
-    const bibTop = 0.7;
-    m.box([0, (HIP + bibTop) / 2, chestD / 2 + 0.008], [0.24, bibTop - HIP, 0.02], 0.012, pants, 0, false);
-    m.box([0, 0.6, chestD / 2 + 0.02], [0.1, 0.06, 0.01], 0.008, shade(pants, 0.85), 0, false);      // pocket
+    const bibTop = 0.52;
+    m.box([0, (waist + bibTop) / 2, front + 0.008], [0.26, bibTop - waist, 0.02], 0.012, pants, 0, false);
+    m.box([0, 0.44, front + 0.02], [0.1, 0.06, 0.01], 0.008, shade(pants, 0.85), 0, false);         // pocket
     for (const sx of [-1, 1]) {
-      m.box([sx * 0.095, (bibTop + NECK) / 2 + 0.01, chestD / 2 + 0.01], [0.045, NECK - bibTop + 0.04, 0.015], 0.008, pants, 0, false);
-      m.box([sx * 0.095, (HIP + NECK) / 2 + 0.06, -chestD / 2 - 0.01], [0.045, NECK - HIP - 0.08, 0.015], 0.008, pants, 0, false);
-      m.box([sx * 0.095, bibTop - 0.005, chestD / 2 + 0.022], [0.03, 0.03, 0.01], 0.012, '#f2c94c', 0, false);
+      m.box([sx * 0.1, (bibTop + NECK) / 2, front + 0.01], [0.045, NECK - bibTop + 0.02, 0.015], 0.008, pants, 0, false);
+      m.box([sx * 0.1, (waist + NECK) / 2, -front - 0.01], [0.045, NECK - waist, 0.015], 0.008, pants, 0, false);
+      m.oval([sx * 0.1, bibTop - 0.005, front + 0.02], 0.016, 0.016, '#f2c94c');
     }
   }
-  if (top === 1) for (const y of [0.56, 0.65, 0.74]) m.box([0, y, 0], [chest + 0.014, 0.035, chestD + 0.014], 0.02, stripe, 0, false);
+  if (top === 1) for (const y of [0.4, 0.47, 0.54]) m.box([0, y, 0], [chest + 0.014, 0.032, chestD + 0.014], 0.02, stripe, 0, false);
   if (hoodie) {
-    m.box([0, NECK - 0.03, -chestD / 2 - 0.03], [0.3, 0.16, 0.1], 0.05, sleeve, 0, false);          // hood down at the back
-    m.box([0, 0.57, chestD / 2 + 0.01], [0.22, 0.09, 0.02], 0.02, sleeve, 0, false);               // front pocket
-    for (const sx of [-1, 1]) m.box([sx * 0.05, 0.72, chestD / 2 + 0.012], [0.015, 0.1, 0.01], 0.005, '#f6f4ef', 0, false); // cords
+    m.box([0, NECK - 0.05, -front - 0.03], [0.32, 0.14, 0.1], 0.05, sleeve, 0, false);             // hood down at the back
+    m.box([0, 0.39, front + 0.01], [0.24, 0.08, 0.02], 0.02, sleeve, 0, false);                    // front pocket
+    for (const sx of [-1, 1]) m.box([sx * 0.05, 0.54, front + 0.012], [0.015, 0.09, 0.01], 0.005, '#f6f4ef', 0, false); // cords
   }
   for (const [sx, part] of [[1, 6], [-1, 7]]) {
-    const x = sx * armX;
-    m.box([x, SHOULDER - 0.06, 0], [armW + 0.04, 0.13, armW + 0.04], 0.05, cape ? tee : sleeve, part, false);  // puffy sleeves
-    if (top === 1) m.box([x, SHOULDER - 0.07, 0], [armW + 0.05, 0.03, armW + 0.05], 0.012, stripe, part, false);
-    m.box([x, 0.56, 0], [armW + (longSleeve ? 0.02 : 0), 0.16, armW + (longSleeve ? 0.02 : 0)], 0.035, longSleeve ? sleeve : SKIN, part, false);
-    if (jumper) m.box([x, 0.495, 0], [armW + 0.03, 0.035, armW + 0.03], 0.015, shade(shirt, 0.88), part, false); // ribbed cuffs
-    m.box([x, 0.47, 0.01], [armW + 0.015, 0.08, armW + 0.02], 0.04, SKIN, part, false);           // little hands
+    const x = sx * armX, ls = longSleeve ? 0.02 : 0;
+    m.box([x, SHOULDER - 0.045, 0], [armW + 0.055, 0.14, armW + 0.055], 0.06, cape ? tee : sleeve, part); // puffy sleeves
+    if (top === 1) m.box([x, SHOULDER - 0.07, 0], [armW + 0.065, 0.03, armW + 0.065], 0.012, stripe, part, false);
+    m.box([x, 0.43, 0], [armW + ls, 0.14, armW + ls], 0.04, longSleeve ? sleeve : SKIN, part, false);
+    if (jumper) m.box([x, 0.375, 0], [armW + 0.03, 0.035, armW + 0.03], 0.015, shade(shirt, 0.88), part, false); // ribbed cuffs
+    m.box([x, 0.33, 0.01], [armW + 0.025, 0.09, armW + 0.03], 0.045, SKIN, part);                  // little hands
   }
   return chestD;
 }
-// Big round head: huge shiny eyes, rosy cheeks and an open happy smile.
+// A strap across the chest, as a row of small overlapping pieces.
+function strap(m, x0, y0, x1, y1, z, color, n = 16) {
+  for (let k = 0; k <= n; k++) m.box([x0 + (x1 - x0) * k / n, y0 + (y1 - y0) * k / n, z], [0.034, 0.034, 0.014], 0.012, color, 0, false);
+}
+// Big, wide, rounded-square head with huge shiny eyes, soft cheeks and an open happy smile.
 function kidHead(m, w, h, d, girl) {
-  const H = 10, y0 = NECK, zf = d / 2, cy = y0 + h * 0.42;
-  m.box([0, y0 + h / 2, 0], [w, h, d], 0.2, SKIN, H);
+  const H = 10, y0 = NECK - 0.02, hc = y0 + h / 2, r = 0.17, ix = w / 2 - r, iy = h / 2 - r;
+  // how far forward the face is at (x, y), so flat face parts sit on the rounded head without sinking in
+  const face = (x, y, rx = 0, ry = 0, lift = 0.002) => {
+    const ex = Math.max(0, Math.abs(x) - rx - ix), ey = Math.max(0, Math.abs(y - hc) - ry - iy);
+    return d / 2 - (r - Math.sqrt(Math.max(0, r * r - ex * ex - ey * ey))) + lift;
+  };
+  const dot = (x, y, rx, ry, color, lift, o) => m.oval([x, y, face(x, y, rx, ry, lift)], rx, ry, color, H, o);
+  m.box([0, hc, 0], [w, h, d], r, SKIN, H);
   for (const sx of [-1, 1]) {
-    m.box([sx * (w / 2 + 0.02), cy, -0.02], [0.07, 0.12, 0.09], 0.035, SKIN, H, false);          // ears
-    if (girl) m.box([sx * (w / 2 + 0.03), cy - 0.08, 0], [0.03, 0.03, 0.03], 0.012, '#8d8f96', H, false); // stud earrings
-    const ex = sx * w * 0.22, ey = cy + 0.03;
-    m.box([ex, ey, zf + 0.004], [0.14, 0.15, 0.02], 0.06, '#ffffff', H, false);                  // whites
-    m.box([ex, ey - 0.005, zf + 0.014], [0.12, 0.135, 0.02], 0.055, '#3a1f14', H, false);         // big brown eyes
-    m.box([ex, ey - 0.01, zf + 0.022], [0.065, 0.075, 0.01], 0.03, '#140c08', H, false);
-    m.box([ex - 0.025, ey + 0.03, zf + 0.03], [0.035, 0.035, 0.01], 0.015, '#ffffff', H, false);  // catchlights
-    m.box([ex + 0.03, ey - 0.035, zf + 0.03], [0.016, 0.016, 0.01], 0.007, '#ffffff', H, false);
-    if (girl) m.box([ex + sx * 0.065, ey + 0.05, zf + 0.012], [0.04, 0.02, 0.01], 0.008, HAIR, H, false); // lashes
-    m.box([ex, ey + 0.115, zf + 0.008], [0.11, 0.028, 0.02], 0.012, HAIR, H, false);              // brows
-    m.box([sx * w * 0.33, cy - 0.08, zf + 0.002], [0.1, 0.06, 0.01], 0.028, '#f6a3a0', H, false); // rosy cheeks
+    m.box([sx * (w / 2 + 0.012), y0 + h * 0.4, -0.03], [0.07, 0.13, 0.11], 0.04, SKIN, H);        // ears
+    m.box([sx * (w / 2 + 0.035), y0 + h * 0.4, -0.02], [0.02, 0.07, 0.05], 0.01, SKIN_DARK, H, false);
+    if (girl) m.box([sx * (w / 2 + 0.03), y0 + h * 0.32, 0], [0.03, 0.03, 0.03], 0.014, '#9a9ca4', H, false); // stud earrings
+    const ex = sx * w * 0.2, ey = y0 + h * 0.42, ix2 = ex - sx * 0.012;
+    // soft rosy cheeks
+    dot(sx * w * 0.3, y0 + h * 0.27, 0.075, 0.045, '#f8c0aa', 0.001);
+    dot(sx * w * 0.3, y0 + h * 0.27, 0.055, 0.032, '#f6a29c', 0.002);
+    // eyes: a dark upper lid, white, a big brown iris, a dark pupil and two catchlights
+    dot(ex, ey + 0.064, 0.074, 0.02, '#20140f', 0.002);
+    dot(ex, ey, 0.068, 0.072, '#ffffff', 0.004);
+    dot(ix2, ey - 0.004, 0.058, 0.066, '#5a2f1a', 0.006);
+    dot(ix2, ey - 0.008, 0.036, 0.042, '#1c0d07', 0.008);
+    dot(ix2 - 0.022, ey + 0.024, 0.02, 0.02, '#ffffff', 0.01);
+    dot(ix2 + 0.022, ey - 0.028, 0.009, 0.009, '#ffffff', 0.01);
+    if (girl) for (const [dx, dy, a] of [[0.07, 0.07, 0.7], [0.082, 0.048, 0.35]])                 // lashes
+      dot(ex + sx * dx, ey + dy, 0.022, 0.009, '#20140f', 0.003, { rot: sx * a });
+    // thick arched brows
+    const by = ey + 0.125;
+    dot(ex, by + 0.006, 0.034, 0.016, HAIR, 0.003);
+    dot(ex - sx * 0.04, by - 0.004, 0.03, 0.015, HAIR, 0.003, { rot: sx * 0.4 });
+    dot(ex + sx * 0.04, by - 0.004, 0.03, 0.015, HAIR, 0.003, { rot: -sx * 0.4 });
   }
-  m.box([0, cy - 0.05, zf + 0.02], [0.05, 0.04, 0.04], 0.02, SKIN_DARK, H, false);               // button nose
-  m.box([0, cy - 0.14, zf + 0.004], [0.13, 0.07, 0.02], 0.03, '#a8323a', H, false);               // open smile
-  m.box([0, cy - 0.12, zf + 0.012], [0.1, 0.022, 0.01], 0.01, '#ffffff', H, false);               // teeth
-  m.box([0, cy - 0.155, zf + 0.012], [0.07, 0.025, 0.01], 0.012, '#f07a80', H, false);           // tongue
+  m.box([0, y0 + h * 0.32, face(0, y0 + h * 0.32) + 0.008], [0.05, 0.04, 0.04], 0.02, SKIN_DARK, H); // button nose
+  const my = y0 + h * 0.2;
+  dot(0, my, 0.075, 0.068, '#9e2f36', 0.003, { half: true });                                       // open smile
+  dot(0, my - 0.016, 0.058, 0.014, '#ffffff', 0.005);                                                // teeth
+  dot(0, my - 0.046, 0.04, 0.019, '#f2737b', 0.005);                                                 // tongue
   return { y0, top: y0 + h };
 }
 // A hat on top of the head (part 10, so it nods along).
@@ -904,44 +950,57 @@ export function animalHatModel(kind, hat) {
 export function kidModel(char, fit) {
   const m = new ModelBuilder(), H = 10;
   fit = cleanFit(fit, char);
-  const chestD = kidBody(m, fit);
+  const chestD = kidBody(m, fit), front = chestD / 2;
   if (char === 'charli') {
-    if (fit[0] === 0) m.box([0, NECK - 0.02, 0], [0.32, 0.06, chestD + 0.02], 0.03, '#d9466e', 0, false); // pink collar
+    if (fit[0] === 0) {                                                                            // pink scarf at the neck
+      m.box([0, NECK - 0.015, 0.005], [0.35, 0.07, chestD + 0.03], 0.035, '#c8396b');
+      m.box([0, NECK - 0.06, front + 0.012], [0.14, 0.07, 0.03], 0.03, '#c8396b', 0, false);
+    }
     if (fit[7]) {                                                                                  // little black bag on a thin strap
-      for (let k = 0; k < 7; k++) m.box([0.12 - k * 0.04, 0.76 - k * 0.04, chestD / 2 + 0.008], [0.03, 0.04, 0.014], 0.006, '#26252a', 0, false);
-      m.box([-0.17, 0.5, chestD / 2 + 0.02], [0.1, 0.12, 0.07], 0.03, '#2a292e', 0, false);
-      m.box([-0.17, 0.52, chestD / 2 + 0.058], [0.02, 0.025, 0.01], 0.006, '#9a9aa0', 0, false);
+      strap(m, 0.15, NECK - 0.02, -0.15, 0.36, front + 0.01, '#26252a');
+      m.box([-0.15, 0.32, front + 0.035], [0.1, 0.12, 0.06], 0.025, '#2a292e');
+      m.box([-0.15, 0.35, front + 0.067], [0.022, 0.026, 0.01], 0.006, '#9a9aa0', 0, false);
     }
-    // round head with smooth hair, a middle part, side strands and a ponytail
-    const w = 0.6, h = 0.62, d = 0.56, { y0, top } = kidHead(m, w, h, d, true);
-    m.box([0, top - 0.02, -0.02], [w + 0.05, 0.13, d + 0.05], 0.07, HAIR, H);
-    m.box([0, y0 + h * 0.55, -d / 2 - 0.02], [w + 0.05, h * 0.9, 0.08], 0.06, HAIR, H, false);
+    // smooth hair with a middle part, curtains swept to the sides, ears showing, and a low ponytail
+    const w = 0.74, h = 0.66, d = 0.64, { y0, top } = kidHead(m, w, h, d, true);
+    m.box([0, top - 0.04, -0.02], [w + 0.07, 0.24, d + 0.07], 0.12, HAIR, H);
+    m.box([0, y0 + h * 0.5, -d / 2 - 0.015], [w + 0.06, h * 0.95, 0.1], 0.05, HAIR, H);
     for (const sx of [-1, 1]) {
-      m.box([sx * (w / 2 + 0.018), y0 + h * 0.6, -0.04], [0.05, h * 0.7, d - 0.08], 0.03, HAIR, H, false);
-      m.box([sx * 0.15, top - 0.08, d / 2 + 0.015], [0.27, 0.1, 0.05], 0.045, HAIR, H, false);          // swept either side of the part
-      m.box([sx * (w / 2 - 0.03), y0 + h * 0.62, d / 2 + 0.01], [0.06, h * 0.42, 0.04], 0.025, HAIR, H, false); // framing strands
+      m.box([sx * (w / 2 + 0.025), y0 + h * 0.52, -0.2], [0.08, h * 0.8, 0.2], 0.04, HAIR, H);        // behind the ears
+      m.box([sx * (w / 2 + 0.02), y0 + h * 0.76, 0.06], [0.07, h * 0.3, 0.22], 0.035, HAIR, H);        // over the temples
+      m.box([sx * 0.19, top - 0.13, d / 2 + 0.012], [0.4, 0.13, 0.08], 0.055, HAIR, H, true, -sx * 0.42); // swept down from the part
+      m.box([sx * (w / 2 - 0.025), y0 + h * 0.64, d / 2 - 0.04], [0.08, 0.2, 0.12], 0.04, HAIR, H);    // framing the face
     }
-    m.box([-0.12, y0 + h * 0.35, -d / 2 - 0.08], [0.1, 0.1, 0.08], 0.04, '#2b2626', H, false);       // hair tie
-    m.box([-0.14, y0 + h * 0.05, -d / 2 - 0.07], [0.12, 0.34, 0.1], 0.05, HAIR, H, false);           // ponytail
-    kidHat(m, fit, w, h, d, top);
+    m.box([-0.15, y0 + h * 0.28, -d / 2 - 0.08], [0.1, 0.1, 0.08], 0.04, '#2b2626', H, false);       // hair tie
+    m.box([-0.17, y0 + 0.02, -d / 2 - 0.07], [0.13, 0.36, 0.11], 0.06, HAIR, H);                     // ponytail
+    kidHat(m, fit, w + 0.04, h, d + 0.04, top + 0.05);
   } else {
     if (fit[7]) {                                                                                  // black bum bag slung across the chest
-      for (let k = 0; k < 6; k++) m.box([-0.13 + k * 0.05, 0.77 - k * 0.045, chestD / 2 + 0.008], [0.06, 0.035, 0.016], 0.008, '#1f1f22', 0, false);
-      m.box([0.05, 0.56, chestD / 2 + 0.04], [0.21, 0.1, 0.08], 0.045, '#2f3034', 0, false);
-      m.box([0.05, 0.58, chestD / 2 + 0.082], [0.17, 0.012, 0.01], 0.004, '#c8c8c8', 0, false);      // zip
+      strap(m, -0.15, NECK - 0.01, 0.0, 0.44, front + 0.01, '#1f1f22');
+      strap(m, 0.15, 0.42, 0.2, 0.39, front + 0.006, '#1f1f22', 3);
+      m.box([0.06, 0.42, front + 0.045], [0.22, 0.1, 0.09], 0.045, '#2f3034');
+      m.box([0.06, 0.445, front + 0.091], [0.18, 0.012, 0.01], 0.004, '#c8c8c8', 0, false);           // zip
+      m.box([-0.035, 0.435, front + 0.094], [0.018, 0.03, 0.01], 0.004, '#c8c8c8', 0, false);
     }
-    // round head with spiky black hair on top and a choppy fringe
-    const w = 0.62, h = 0.6, d = 0.56, { y0, top } = kidHead(m, w, h, d, false);
-    m.box([0, top - 0.02, -0.02], [w + 0.06, 0.16, d + 0.06], 0.08, HAIR, H);
-    m.box([0, y0 + h * 0.58, -d / 2 - 0.02], [w + 0.05, h * 0.8, 0.08], 0.06, HAIR, H, false);
-    for (const sx of [-1, 1]) m.box([sx * (w / 2 + 0.02), y0 + h * 0.74, -0.06], [0.06, h * 0.42, d - 0.1], 0.03, HAIR, H, false);
-    for (let k = 0; k < 5; k++) {                                                                   // fringe points
-      const x = -0.24 + k * 0.12;
-      m.box([x, top - 0.11 - (k % 2) * 0.03, d / 2 + 0.02], [0.13, 0.1 + (k % 2) * 0.04, 0.06], 0.04, HAIR, H, false);
+    // a big mop of black hair: messy clumps on top and a chunky fringe
+    const w = 0.78, h = 0.64, d = 0.66, { y0, top } = kidHead(m, w, h, d, false);
+    m.box([0, top - 0.02, -0.02], [w + 0.08, 0.2, d + 0.08], 0.1, HAIR, H);
+    m.box([0, y0 + h * 0.56, -d / 2 - 0.015], [w + 0.07, h * 0.85, 0.1], 0.05, HAIR, H);
+    for (const sx of [-1, 1]) {
+      m.box([sx * (w / 2 + 0.025), y0 + h * 0.72, -0.06], [0.08, h * 0.42, d - 0.08], 0.04, HAIR, H);
+      m.box([sx * (w / 2 - 0.02), y0 + h * 0.68, d / 2 - 0.06], [0.1, 0.2, 0.16], 0.045, HAIR, H);     // at the temples
     }
-    if (![1, 2, 5, 6].includes(fit[4])) for (const [x, z, s] of [[-0.18, 0.12, 0.1], [0.02, 0.18, 0.12], [0.2, 0.08, 0.1], [-0.08, -0.08, 0.12], [0.14, -0.16, 0.1], [-0.22, -0.18, 0.09]])
-      m.box([x, top + 0.07, z], [s, 0.1, s], 0.04, HAIR, H, false);                                  // spikes (tucked under a cap or beanie)
-    kidHat(m, fit, w, h, d, top);
+    // fringe: five chunky, uneven clumps, each ending in a rounded point (x, bottom, width, length)
+    for (const [x, b, cw, len] of [[-0.27, 0.72, 0.2, 0.17], [-0.11, 0.66, 0.2, 0.23], [0.05, 0.7, 0.19, 0.19], [0.19, 0.65, 0.19, 0.24], [0.31, 0.73, 0.15, 0.15]]) {
+      const yb = y0 + h * b, z = d / 2 + 0.03;
+      m.box([x, yb + 0.05 + len / 2, z - 0.005], [cw, len, 0.09], 0.06, HAIR, H);
+      m.box([x + 0.01, yb + 0.035, z], [cw * 0.5, 0.09, 0.075], 0.035, HAIR, H);                         // the point
+    }
+    // spiky clumps sticking up on top (tucked under a cap or beanie): x, z, width, height
+    if (![1, 2, 5, 6].includes(fit[4])) for (const [x, z, s, hh] of [[-0.24, 0.18, 0.2, 0.15], [0.0, 0.22, 0.22, 0.17], [0.24, 0.15, 0.19, 0.14],
+      [-0.14, -0.04, 0.22, 0.19], [0.14, -0.02, 0.2, 0.18], [-0.04, -0.22, 0.22, 0.15], [0.24, -0.2, 0.17, 0.13]])
+      m.box([x, top + hh / 2 - 0.01, z], [s, hh, s], s * 0.32, HAIR, H);
+    kidHat(m, fit, w + 0.04, h, d + 0.04, top + 0.05);
   }
   return m.done({ wing: [0, 0], leg: [HIP, 0, 0], head: [NECK, 0], tail: [0], arm: SHOULDER - 0.02 });
 }

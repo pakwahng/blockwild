@@ -1,11 +1,16 @@
 // The game's version and what changed in each one. Shown on the front screen ("What's new")
 // and in CHANGELOG.md. When you release: bump VERSION, add an entry at the top of CHANGES,
 // and set the same number in sw.js (CACHE = 'blockwild-v<VERSION>') so phones pick it up.
-export const VERSION = 88;
+export const VERSION = 89;
 export const RELEASED = '14 Nov 2026'; // (the menu shows the newest What's new date instead)
 
 // [version, date, headline, [details]]
 export const CHANGES = [
+  [89, '14 Nov 2026', 'Lachie and Charli look like themselves again', [
+    'Lachie and Charli are back to their cute look: a big head, a short body and little legs in chunky sneakers.',
+    'New faces: big round shiny eyes, arched brows, rosy cheeks and a happy open smile, instead of square ones.',
+    'Lachie has a messy mop with a chunky fringe, and Charli has smooth hair swept from a middle part. Their bag straps are no longer dotted lines.',
+  ]],
   [88, '14 Nov 2026', 'Tidier hotbars', [
     'The Build hotbar is for building and farming things only, and the Fight hotbar only for fighting things (plus snacks and fireworks). The toy sword now waits on the Fight hotbar.',
     'Picking something from your bag that belongs on the other hotbar swaps to that hotbar for you.',

@@ -405,7 +405,7 @@ A full day lasts 10 minutes: about 6 minutes of daylight, a pink dusk, roughly 3
 | `js/snakes.js` | The night snakes and their kinds (poison goo, flying, digging, boom): spawning, slithering body, spooking babies, sword hits, confetti |
 | `js/sky.js` | Day/night clock: sky colours, light tint, sun and moon |
 | `js/net.js` | Play together: room codes, hosting and joining (PeerJS / WebRTC) |
-| `js/models.js` | Rounded-box 3D models for the babies, Lachie and Charli in their outfits (clothes list and `kidModel`), and treats (with leg, head and tail rigs), treat icons, counter faces |
+| `js/models.js` | Rounded-box 3D models for the babies, Lachie and Charli in their outfits (clothes list and `kidModel`; chibi proportions from the cute reference plates: head about half their height, stubby legs; face parts are flat `oval`s, and `box` can tilt with `rz`), and treats (with leg, head and tail rigs), treat icons, counter faces |
 | `js/audio.js` | Synthesized cheeps, moos, oinks, baas, yips and sound effects |
 | `js/renderer.js` | WebGL2 shaders, texture array, frustum culling, water pass, block outline |
 | `js/player.js` | Movement, collision, swimming, ladders, voxel raycast |
