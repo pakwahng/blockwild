@@ -243,7 +243,7 @@ export function snakeHeadModel(kind = 0) {
   }
   for (const sx of [-1, 1]) {
     m.box([sx * 0.07, 0.23, 0.351], [0.04, 0.03, 0.02], 0.012, NOSE, 0, false); // nostrils
-    m.box([sx * 0.12, 0.47, 0.1], [0.17, 0.19, 0.1], 0.07, '#ffe23a');              // big yellow eyes
+    m.box([sx * 0.12, 0.47, 0.1], [0.17, 0.19, 0.1], 0.07, '#ffe23a', 11);          // big yellow eyes (part 11: they glow in the dark)
     m.box([sx * 0.11, 0.46, 0.152], [0.08, 0.1, 0.02], 0.03, '#7a2e14', 0, false);
     m.box([sx * 0.11 - 0.02, 0.49, 0.164], [0.03, 0.03, 0.01], 0.01, '#ffffff', 0, false);
     m.box([sx * 0.13, 0.6, 0.1], [0.14, 0.035, 0.05], 0.015, '#2e1a14', 0, false);  // cheeky brows

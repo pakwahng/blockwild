@@ -160,7 +160,7 @@ Tap a grown-up (hen, cow, pig, sheep or wolf) to pet it and open **Teach a job**
 ## Butterflies and fireflies
 
 - By day, butterflies (orange, blue and pink) flutter round wild flowers and over meadows, and sometimes land on a flower. At night, fireflies drift and blink over the grass. They're just for looking at, and each device has its own (`js/critters.js`).
-- Firefly tails glow in the dark: in the model shader, part 11 of a model ignores the night tint.
+- Firefly tails and snake eyes glow in the dark: in the model shader, part 11 of a model ignores the night tint.
 
 ## Names, rain and rainbows
 

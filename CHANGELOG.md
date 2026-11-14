@@ -2,6 +2,9 @@
 
 The same list is in the game: tap the version number on the front screen, or open **What’s new**.
 
+## 55. Glowing snake eyes (14 Nov 2026)
+- Snakes’ big yellow eyes now glow in the dark, so you can spot them coming at night.
+
 ## 54. Peaceful fixes (14 Nov 2026)
 - Peaceful now really keeps foxes and crows away too, not just snakes.
 - Peaceful nights no longer count for the night goals or the Safe nights total.
