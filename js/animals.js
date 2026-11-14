@@ -495,7 +495,7 @@ export class Nursery {
       a.flee = Math.max(0, (a.flee || 0) - dt);
       let threat = null, td = 4.5 * 4.5;
       if (!guard) for (const t of threats) { const d = dist2(a.p, t); if (d < td && Math.abs(t[1] - a.p[1]) < 4) { td = d; threat = t; } }
-      if (threat) { a.flee = Math.max(a.flee, 1.5); a.fleeFrom = threat; }
+      if (threat) { if (a.tame && !(a.flee > 0)) this.events.push({ type: 'eek', p: [...a.p] }); a.flee = Math.max(a.flee, 1.5); a.fleeFrom = threat; }
       // a grown wolf chases off foxes and snakes that come near the nursery
       let foe = null;
       let homeward = false;

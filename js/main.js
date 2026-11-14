@@ -751,6 +751,7 @@ function handleChickEvents() {
   }
   for (const ev of flock.events) {
     const d = Math.hypot(ev.p[0] - eye[0], ev.p[1] - eye[1], ev.p[2] - eye[2]);
+    if (ev.type === 'eek') { if (d < 30) floatFx(ev.p, 'eek', '❗'); continue; } // a baby just spotted a snake or fox
     if (ev.type === 'call') { if (d < 20) sfx.call(ev.sp, 0.35 * (1 - d / 20)); continue; }
     if (ev.type === 'gift') {
       // whoever walked over a gift gets it

@@ -2,6 +2,9 @@
 
 The same list is in the game: tap the version number on the front screen, or open **What’s new**.
 
+## 57. Startled babies (14 Nov 2026)
+- When one of your babies spots a snake or fox and starts to run, a ❗ pops up over it, so you can see where to help.
+
 ## 56. Catching up on updates (14 Nov 2026)
 - If you missed a few updates, the message when you start says how many, and What’s new highlights every one you haven’t seen yet.
 
